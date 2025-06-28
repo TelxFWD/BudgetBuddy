@@ -8,6 +8,10 @@ from sqlalchemy import create_engine, event, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import StaticPool
+from dotenv import load_dotenv
+
+# Load environment variables first
+load_dotenv()
 
 from utils.env_loader import get_database_url
 from utils.logger import setup_logger
@@ -18,7 +22,9 @@ logger = setup_logger()
 DATABASE_URL = get_database_url()
 
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL environment variable is required")
+    # Fallback to a default SQLite database for development
+    DATABASE_URL = "sqlite:///./app.db"
+    logger.warning("DATABASE_URL not found, using default SQLite database")
 
 # Create SQLAlchemy engine
 engine = create_engine(
@@ -305,8 +311,13 @@ def initialize_database():
         
         logger.info("Database connection established successfully")
         
+        # Import all models to ensure they're registered
+        from database.models import (
+            User, TelegramAccount, DiscordAccount, ForwardingPair, 
+            PaymentHistory, APIKey, ErrorLog, QueueTask, Coupon
+        )
+        
         # Create tables if they don't exist
-        from database import models
         Base.metadata.create_all(bind=engine)
         
         logger.info("Database initialization completed")

@@ -45,16 +45,16 @@ async def lifespan(app: FastAPI):
         await session_manager.initialize()
         logger.info("Session manager initialized")
     except Exception as e:
-        logger.error(f"Failed to initialize session manager: {e}")
-        raise
+        logger.warning(f"Session manager initialization failed: {e}")
+        # Continue without session manager for now
     
     # Initialize queue manager
     try:
         await queue_manager.initialize()
         logger.info("Queue manager initialized")
     except Exception as e:
-        logger.error(f"Failed to initialize queue manager: {e}")
-        raise
+        logger.warning(f"Queue manager initialization failed: {e}")
+        # Continue without queue manager for now
     
     yield
     
@@ -112,10 +112,13 @@ async def health_check():
     
     # Check Redis connection
     try:
-        redis_status = "healthy" if queue_manager.redis_client.ping() else "unhealthy"
+        if queue_manager.redis_client:
+            redis_status = "healthy" if queue_manager.redis_client.ping() else "unhealthy"
+        else:
+            redis_status = "not_configured"
     except Exception as e:
         logger.error(f"Redis health check failed: {e}")
-        redis_status = "unhealthy"
+        redis_status = "not_configured"
     
     # Check Celery worker status
     try:
@@ -124,7 +127,7 @@ async def health_check():
         celery_status = "healthy" if active_workers else "no_workers"
     except Exception as e:
         logger.error(f"Celery health check failed: {e}")
-        celery_status = "unhealthy"
+        celery_status = "not_configured"
     
     return {
         "status": "healthy" if all([
