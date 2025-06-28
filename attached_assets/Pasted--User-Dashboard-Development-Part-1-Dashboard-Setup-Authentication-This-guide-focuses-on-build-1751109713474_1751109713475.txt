@@ -1,0 +1,89 @@
+# User Dashboard Development Part 1: Dashboard Setup & Authentication
+
+This guide focuses on building the best user dashboard with a clean, modern, and highly responsive design. The user dashboard will be directly connected to the backend system created in earlier phases.
+
+The dashboard must provide a **seamless user experience (UX)** and be fully synchronized with the backend and Telegram Bot.
+
+## ✅ Recommended Stack
+
+* **Frontend Language:** TypeScript
+* **Framework:** React.js (or Next.js for SEO-friendly server-side rendering)
+* **Styling:** Tailwind CSS (dark theme, Path of Hanzo inspired)
+* **State Management:** Redux Toolkit or React Context
+* **Real-Time Updates:** WebSockets or API polling
+
+---
+
+## 📂 Step 1: Project Setup
+
+* Initialize a Next.js (preferred) or React.js project with TypeScript.
+* Configure Tailwind CSS with a dark theme and neon accent colors.
+* Setup ESLint and Prettier for code quality.
+
+---
+
+## 📂 Step 2: Folder Structure
+
+```text
+user-dashboard/
+├── pages/                 # Page-level components (Next.js routing)
+├── components/            # Reusable UI components (buttons, cards)
+├── layouts/               # Layout files (sidebar, header)
+├── hooks/                 # Custom React hooks
+├── services/              # API interaction files
+├── store/                 # Redux Toolkit slices or Context Providers
+├── utils/                 # Helper functions and formatters
+├── styles/                # Tailwind CSS files
+└── public/                # Static assets (icons, images)
+```
+
+---
+
+## 📂 Step 3: Telegram Authentication Integration
+
+### Telegram Login Flow (via OTP)
+
+* User enters their **phone number** on the dashboard login page.
+* Dashboard sends the phone number to the backend API.
+* Backend sends OTP using Pyrogram.
+* User inputs OTP on the dashboard.
+* Backend verifies OTP and returns:
+
+  * JWT token for website session.
+  * Telegram Session String (linked in the backend, not sent to frontend).
+
+### Session Sharing:
+
+* Website session is tracked via JWT.
+* Telegram Session is linked in backend to the user account.
+* Telegram Bot and Dashboard both use the same Telegram session for forwarding functions.
+
+---
+
+## 📂 Step 4: Core Dashboard Navigation
+
+* Create a collapsible sidebar with these navigation links:
+
+```text
+🏠 Dashboard  📱 Telegram Accounts  💬 Discord Servers  🔗 My Pairs  📊 Analytics  💳 Billing  ⚙️ Settings
+```
+
+* Dashboard home page must display:
+
+  * Active subscription plan
+  * Remaining pairs and account slots
+  * Session status (Telegram / Discord)
+
+---
+
+### ✅ Completion Checklist for Part 1
+
+* [ ] React.js / Next.js project configured with TypeScript and Tailwind CSS.
+* [ ] Telegram OTP login fully functional and connected to backend.
+* [ ] JWT session management active on the dashboard.
+* [ ] Sidebar navigation with route-based pages.
+* [ ] User dashboard home page showing account and session overview.
+
+---
+
+This part strictly covers **dashboard setup and user authentication.** Frontend API calls and forwarding management will be built in Part 2.
