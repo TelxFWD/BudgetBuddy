@@ -24,9 +24,9 @@ interface DashboardLayoutProps {
 
 const navigationItems = [
   { icon: Home, label: 'Dashboard', href: '/' },
+  { icon: Link, label: 'Forwarding Pairs', href: '/forwarding' },
   { icon: Smartphone, label: 'Telegram Accounts', href: '/telegram' },
   { icon: MessageSquare, label: 'Discord Servers', href: '/discord' },
-  { icon: Link, label: 'My Pairs', href: '/pairs' },
   { icon: BarChart3, label: 'Analytics', href: '/analytics' },
   { icon: CreditCard, label: 'Billing', href: '/billing' },
   { icon: Settings, label: 'Settings', href: '/settings' },

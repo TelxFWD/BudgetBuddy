@@ -1,0 +1,101 @@
+You are tasked with building the Forwarding Management System for the AutoForwardX User Dashboard. Focus on multi-account support, visual forwarding pair builder, and real-time sync with the backend.
+
+📌 Key Requirements:
+Build the forwarding pair management UI with:
+
+Searchable, selectable list of all Telegram channels (fetched from backend)
+
+Multi-Telegram account handling with account switcher
+
+Real-time forwarding pair controls: Add, Edit, Pause, Resume, Delete
+
+Ensure real-time status tracking and sync with the Telegram bot and backend
+
+✅ Detailed Instructions:
+Telegram & Discord Account Management UI:
+
+Show all connected Telegram accounts with real-time session status:
+
+Active / Disconnected / Reconnecting
+
+Provide option to:
+
+Add new Telegram accounts (trigger backend OTP)
+
+Remove Telegram accounts (if no active pairs)
+
+Show all connected Discord servers and channels with option to add or remove.
+
+Visual Forwarding Pair Builder:
+
+Allow user to:
+
+Select source Telegram account from a list
+
+Select source channel from a searchable list of joined channels
+
+Select destination channel from a searchable list
+
+Set forwarding delay: Instant, 5s, 10s, Custom
+
+Enable/disable Copy Mode and Silent Mode
+
+Allow account switching without losing channel selections
+
+Use visual drag-and-drop (optional for premium UX)
+
+Per-Pair Controls:
+
+Pause / Resume forwarding
+
+Edit source/destination/delay settings
+
+Delete forwarding pair
+
+Show real-time queue processing status (queue load, retry status)
+
+Bulk Management Options:
+
+Pause All / Resume All / Delete All forwarding pairs for the active account
+
+Display summary (Total Pairs, Active, Paused)
+
+Multi-Account Pair Visibility:
+
+Clearly label which Telegram account each forwarding pair belongs to
+
+Use color-coded badges or icons for each account
+
+Add a quick-switcher UI for multi-account navigation
+
+Real-Time Sync Requirements:
+
+Use WebSocket connection (preferred) or API polling to:
+
+Sync forwarding pair status updates
+
+Update Telegram session health
+
+Reflect real-time changes from the Telegram bot
+
+UI Style:
+
+Maintain dark theme with neon accents
+
+Use ghost buttons with hover glow for controls
+
+Use inline loading spinners or progress bars for real-time status
+
+✅ Completion Checklist:
+ Telegram and Discord account management fully implemented
+
+ Forwarding pair builder supports channel selection and multi-account switching
+
+ Real-time sync with backend and bot fully operational
+
+ Pause/Resume/Delete (single and bulk) forwarding pair management functional
+
+ Real-time queue status display implemented
+
+ Visual differentiation of accounts and pairs across multiple Telegram accounts
+

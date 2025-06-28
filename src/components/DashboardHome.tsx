@@ -239,14 +239,14 @@ export default function DashboardHome() {
       <div className="glass-effect rounded-xl p-6 border border-dark-border">
         <h3 className="text-lg font-semibold text-dark-text mb-4">Quick Actions</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <a href="/forwarding" className="ghost-button px-4 py-3 rounded-lg text-center block">
+            Manage Forwarding Pairs
+          </a>
           <button className="ghost-button px-4 py-3 rounded-lg text-center">
             Add Telegram Account
           </button>
           <button className="ghost-button px-4 py-3 rounded-lg text-center">
             Connect Discord Server
-          </button>
-          <button className="ghost-button px-4 py-3 rounded-lg text-center">
-            Create Forwarding Pair
           </button>
         </div>
       </div>
