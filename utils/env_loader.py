@@ -15,13 +15,12 @@ def load_environment() -> Dict[str, Any]:
     # Load .env file if it exists
     load_dotenv()
     
-    # Required environment variables
-    required_vars = [
-        "DATABASE_URL"
-    ]
+    # Required environment variables (none for Replit compatibility)
+    required_vars = []
     
     # Optional environment variables with defaults
     optional_vars = {
+        "DATABASE_URL": "sqlite:///./message_forwarding.db",
         "ENVIRONMENT": "production",
         "HOST": "0.0.0.0",
         "PORT": "5000",
@@ -77,13 +76,13 @@ def load_environment() -> Dict[str, Any]:
         "JWT_SECRET_KEY": os.getenv("JWT_SECRET_KEY"),
         "API_SECRET": os.getenv("API_SECRET"),
         "HOST": os.getenv("HOST"),
-        "PORT": int(os.getenv("PORT"))
+        "PORT": int(os.getenv("PORT", "5000"))
     }
     
     # Telegram configuration
     telegram_api_id = os.getenv("TELEGRAM_API_ID")
     telegram_config = {
-        "TELEGRAM_API_ID": int(telegram_api_id) if telegram_api_id and telegram_api_id.strip() else None,
+        "TELEGRAM_API_ID": int(telegram_api_id) if telegram_api_id and telegram_api_id.strip() else 0,
         "TELEGRAM_API_HASH": os.getenv("TELEGRAM_API_HASH"),
         "TELEGRAM_BOT_TOKEN": os.getenv("TELEGRAM_BOT_TOKEN")
     }
@@ -104,16 +103,16 @@ def load_environment() -> Dict[str, Any]:
     
     # Rate limiting configuration
     rate_limit_config = {
-        "RATE_LIMIT_FREE_PLAN": int(os.getenv("RATE_LIMIT_FREE_PLAN")),
-        "RATE_LIMIT_PRO_PLAN": int(os.getenv("RATE_LIMIT_PRO_PLAN")),
-        "RATE_LIMIT_ELITE_PLAN": int(os.getenv("RATE_LIMIT_ELITE_PLAN"))
+        "RATE_LIMIT_FREE_PLAN": int(os.getenv("RATE_LIMIT_FREE_PLAN") or "10"),
+        "RATE_LIMIT_PRO_PLAN": int(os.getenv("RATE_LIMIT_PRO_PLAN") or "100"),
+        "RATE_LIMIT_ELITE_PLAN": int(os.getenv("RATE_LIMIT_ELITE_PLAN") or "1000")
     }
     
     # Session configuration
     session_config = {
-        "SESSION_CHECK_INTERVAL": int(os.getenv("SESSION_CHECK_INTERVAL")),
-        "SESSION_RETRY_ATTEMPTS": int(os.getenv("SESSION_RETRY_ATTEMPTS")),
-        "SESSION_RETRY_DELAY": int(os.getenv("SESSION_RETRY_DELAY"))
+        "SESSION_CHECK_INTERVAL": int(os.getenv("SESSION_CHECK_INTERVAL") or "300"),
+        "SESSION_RETRY_ATTEMPTS": int(os.getenv("SESSION_RETRY_ATTEMPTS") or "3"),
+        "SESSION_RETRY_DELAY": int(os.getenv("SESSION_RETRY_DELAY") or "30")
     }
     
     # Logging configuration
