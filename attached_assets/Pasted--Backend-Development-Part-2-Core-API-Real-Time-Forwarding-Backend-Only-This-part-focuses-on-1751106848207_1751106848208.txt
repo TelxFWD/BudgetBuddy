@@ -1,0 +1,126 @@
+# Backend Development Part 2: Core API & Real-Time Forwarding (Backend Only)
+
+This part focuses on building API endpoints for the website dashboard and Telegram bot, implementing real-time forwarding between Telegram and Discord, managing queues, enabling webhook support, and building a resilient self-healing system. This is strictly backend-focused. No frontend or UI development should be done at this stage.
+
+---
+
+## 📂 Website API Development (FastAPI)
+
+### Authentication APIs
+
+* JWT-based user login and registration endpoints.
+* Endpoint to manage Telegram and Discord account linking.
+* Secure token refresh endpoint.
+
+### Forwarding Pair APIs
+
+* CRUD APIs for managing forwarding pairs (add, edit, pause, resume, delete).
+* APIs for multi-account Telegram management.
+* APIs for Discord server and channel management.
+
+### Analytics APIs
+
+* Endpoint to fetch real-time forwarding statistics (volume, success, errors).
+* Endpoint to view active sessions and queue status.
+
+### Payment APIs
+
+* Endpoints to handle PayPal and NowPayments confirmation.
+* Webhooks to auto-upgrade or downgrade plans based on payment status.
+
+---
+
+## 📂 Telegram Bot API Development
+
+### Bot Authentication
+
+* Telegram bot token-based user linking.
+* Validate bot commands based on authenticated user session.
+
+### Bot Features
+
+* View active forwarding pairs.
+* Add new forwarding pairs via inline keyboard.
+* Edit, pause, resume, and delete pairs directly from bot menus.
+* Switch between multiple Telegram accounts via bot commands.
+* Display real-time plan details and remaining pair limits.
+
+### Dynamic Inline Menus
+
+* Multi-step selection: Source channel ➜ Destination channel ➜ Delay setup ➜ Confirmation.
+* Per-pair action buttons: Pause, Resume, Edit, Delete.
+* Bot notifications for payment status, errors, and session alerts.
+
+---
+
+## 📂 Webhook & API Key Management
+
+### Webhook Broadcasting
+
+* Build system to broadcast forwarding events to user-defined webhooks.
+
+### API Key Management
+
+* API to generate and revoke API keys for third-party integrations.
+* Enforce rate-limiting and plan-based restrictions on API key usage.
+* Secure API key storage and validation middleware.
+
+---
+
+## 📂 Real-Time Forwarding Logic
+
+### Forwarding Handlers
+
+* Telegram ➜ Telegram
+* Telegram ➜ Discord
+* Discord ➜ Telegram
+
+### Core Forwarding Functions
+
+* Forward message content, media, and attachments.
+* Preserve reply chains between platforms.
+* Handle message edits and deletions.
+* Support silent mode and per-pair delays.
+* Implement copy mode to hide source.
+
+### Rate Limiting and Anti-Ban System
+
+* Implement smart rate limiting based on user plan.
+* Auto-throttle queue processing when approaching Telegram API limits.
+
+---
+
+## 📂 Error Handling & Self-Healing
+
+### Error Capture
+
+* Capture all queue errors, session drops, and webhook failures.
+
+### Self-Healing Logic
+
+* Auto-reconnect Telegram and Discord sessions.
+* Automatically retry failed forwarding tasks.
+* Escalate unresolved errors to admin dashboard for manual review.
+
+### Admin Recovery API
+
+* Admin endpoint to force-restart sessions.
+* Admin endpoint to clear or re-queue failed tasks.
+
+---
+
+### ✅ Completion Checklist for Part 2:
+
+* [ ] Website API fully functional for login, session, pairs, analytics, payments.
+* [ ] Telegram bot API with inline keyboard menus completed.
+* [ ] Dynamic bot menus and multi-account switching operational.
+* [ ] Webhook system and API key security tested.
+* [ ] Real-time forwarding logic fully working across Telegram and Discord.
+* [ ] Message reply chains, edits, deletions preserved.
+* [ ] Rate limiting and anti-ban system active.
+* [ ] Queue errors and session drops captured and auto-recovered.
+* [ ] Admin API controls for manual error recovery available.
+
+---
+
+This part should be completed with a strict backend-only approach. UI components will be developed in later phases.
