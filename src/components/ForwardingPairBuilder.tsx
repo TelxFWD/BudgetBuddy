@@ -1,359 +1,335 @@
-/**
- * Visual Drag-and-Drop Forwarding Pair Builder
- * Allows users to create forwarding pairs by dragging sources to destinations
- */
+'use client';
 
-import React, { useState, useCallback } from 'react';
-import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { useDispatch } from 'react-redux';
+import { createForwardingPair, updateForwardingPair } from '@/store/slices/forwardingSlice';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { 
-  ChevronRight, 
-  Settings, 
-  Plus, 
-  Trash2, 
-  Play, 
-  Pause, 
+  X, 
+  ArrowRight, 
+  Clock, 
+  Volume2, 
   Copy,
-  Clock,
-  Volume2,
-  VolumeX
+  Smartphone,
+  MessageSquare,
+  Plus
 } from 'lucide-react';
-
-interface Account {
-  id: number;
-  platform: 'telegram' | 'discord';
-  name: string;
-  status: 'active' | 'inactive' | 'error';
-  channels: Channel[];
-}
-
-interface Channel {
-  id: string;
-  name: string;
-  type: 'channel' | 'group' | 'dm';
-}
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'react-hot-toast';
 
 interface ForwardingPair {
   id: number;
-  sourceAccount: Account;
-  sourceChannel: Channel;
-  destinationAccount: Account;
-  destinationChannel: Channel;
-  delay: number;
-  silentMode: boolean;
-  copyMode: boolean;
-  status: 'active' | 'paused' | 'error';
+  source_platform: string;
+  source_account_id: number;
+  source_chat_id: string;
+  destination_platform: string;
+  destination_account_id: number;
+  destination_chat_id: string;
+  delay_seconds: number;
+  is_active: boolean;
+  silent_mode: boolean;
+  copy_mode: boolean;
 }
 
 interface ForwardingPairBuilderProps {
-  accounts: Account[];
-  existingPairs: ForwardingPair[];
-  onCreatePair: (pair: Omit<ForwardingPair, 'id'>) => void;
-  onUpdatePair: (pairId: number, updates: Partial<ForwardingPair>) => void;
-  onDeletePair: (pairId: number) => void;
+  pair?: ForwardingPair | null;
+  onClose: () => void;
+  onSuccess: () => void;
 }
 
-export const ForwardingPairBuilder: React.FC<ForwardingPairBuilderProps> = ({
-  accounts,
-  existingPairs,
-  onCreatePair,
-  onUpdatePair,
-  onDeletePair
-}) => {
-  const [selectedSource, setSelectedSource] = useState<{account: Account, channel: Channel} | null>(null);
-  const [showSettings, setShowSettings] = useState<number | null>(null);
-  const [draggedItem, setDraggedItem] = useState<{account: Account, channel: Channel} | null>(null);
+export function ForwardingPairBuilder({ pair, onClose, onSuccess }: ForwardingPairBuilderProps) {
+  const dispatch = useDispatch();
+  const [formData, setFormData] = useState({
+    source_platform: 'telegram',
+    source_account_id: 1,
+    source_chat_id: '',
+    destination_platform: 'discord',
+    destination_account_id: 1,
+    destination_chat_id: '',
+    delay_seconds: 0,
+    silent_mode: false,
+    copy_mode: false
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleDragStart = useCallback((start: any) => {
-    const [accountId, channelId] = start.draggableId.split('-');
-    const account = accounts.find(a => a.id.toString() === accountId);
-    const channel = account?.channels.find(c => c.id === channelId);
-    
-    if (account && channel) {
-      setDraggedItem({ account, channel });
+  useEffect(() => {
+    if (pair) {
+      setFormData({
+        source_platform: pair.source_platform,
+        source_account_id: pair.source_account_id,
+        source_chat_id: pair.source_chat_id,
+        destination_platform: pair.destination_platform,
+        destination_account_id: pair.destination_account_id,
+        destination_chat_id: pair.destination_chat_id,
+        delay_seconds: pair.delay_seconds,
+        silent_mode: pair.silent_mode,
+        copy_mode: pair.copy_mode
+      });
     }
-  }, [accounts]);
+  }, [pair]);
 
-  const handleDragEnd = useCallback((result: DropResult) => {
-    setDraggedItem(null);
-    
-    if (!result.destination) return;
-    
-    const [sourceAccountId, sourceChannelId] = result.draggableId.split('-');
-    const [destAccountId, destChannelId] = result.destination.droppableId.split('-');
-    
-    const sourceAccount = accounts.find(a => a.id.toString() === sourceAccountId);
-    const sourceChannel = sourceAccount?.channels.find(c => c.id === sourceChannelId);
-    const destAccount = accounts.find(a => a.id.toString() === destAccountId);
-    const destChannel = destAccount?.channels.find(c => c.id === destChannelId);
-    
-    if (sourceAccount && sourceChannel && destAccount && destChannel) {
-      // Check if pair already exists
-      const existingPair = existingPairs.find(p => 
-        p.sourceAccount.id === sourceAccount.id && 
-        p.sourceChannel.id === sourceChannel.id &&
-        p.destinationAccount.id === destAccount.id &&
-        p.destinationChannel.id === destChannel.id
-      );
-      
-      if (!existingPair) {
-        onCreatePair({
-          sourceAccount,
-          sourceChannel,
-          destinationAccount: destAccount,
-          destinationChannel: destChannel,
-          delay: 0,
-          silentMode: false,
-          copyMode: false,
-          status: 'active'
-        });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      if (pair) {
+        await dispatch(updateForwardingPair({
+          pairId: pair.id,
+          updates: formData
+        }) as any).unwrap();
+        toast.success('Forwarding pair updated successfully');
+      } else {
+        await dispatch(createForwardingPair(formData) as any).unwrap();
+        toast.success('Forwarding pair created successfully');
       }
+      onSuccess();
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to save forwarding pair');
     }
-  }, [accounts, existingPairs, onCreatePair]);
+    setIsSubmitting(false);
+  };
 
-  const AccountCard: React.FC<{ account: Account; isDestination?: boolean }> = ({ account, isDestination = false }) => (
-    <div className={`
-      bg-dark-card border border-dark-border rounded-lg p-4 mb-4
-      ${isDestination ? 'border-neon-blue border-dashed' : ''}
-    `}>
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className={`w-3 h-3 rounded-full ${
-            account.status === 'active' ? 'bg-neon-green' : 
-            account.status === 'error' ? 'bg-red-500' : 'bg-gray-500'
-          }`} />
-          <h3 className="font-semibold text-dark-text">{account.name}</h3>
-          <span className="text-xs px-2 py-1 rounded bg-gray-700 text-gray-300">
-            {account.platform}
-          </span>
-        </div>
-      </div>
-      
-      {isDestination ? (
-        <Droppable droppableId={`${account.id}-destination`} type="channel">
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={`
-                min-h-[100px] p-3 rounded border-2 border-dashed transition-colors
-                ${snapshot.isDraggingOver 
-                  ? 'border-neon-blue bg-blue-900/20' 
-                  : 'border-gray-600'
-                }
-              `}
-            >
-              <p className="text-center text-gray-400 text-sm">
-                Drop channel here to create forwarding pair
-              </p>
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      ) : (
-        <div className="space-y-2">
-          {account.channels.map((channel, index) => (
-            <Draggable
-              key={`${account.id}-${channel.id}`}
-              draggableId={`${account.id}-${channel.id}`}
-              index={index}
-            >
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.draggableProps}
-                  {...provided.dragHandleProps}
-                  className={`
-                    p-2 rounded bg-gray-800 border border-gray-700 cursor-move
-                    transition-all duration-200 hover:border-neon-blue
-                    ${snapshot.isDragging ? 'rotate-2 scale-105 shadow-lg shadow-neon-blue/30' : ''}
-                  `}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-dark-text text-sm">{channel.name}</span>
-                    <span className="text-xs text-gray-400">{channel.type}</span>
-                  </div>
-                </div>
-              )}
-            </Draggable>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  const platformOptions = [
+    { value: 'telegram', label: 'Telegram', icon: Smartphone, color: 'bg-blue-500' },
+    { value: 'discord', label: 'Discord', icon: MessageSquare, color: 'bg-purple-500' }
+  ];
 
-  const ForwardingPairCard: React.FC<{ pair: ForwardingPair }> = ({ pair }) => (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="bg-dark-card border border-dark-border rounded-lg p-4 mb-4"
-    >
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
-          <div className={`w-3 h-3 rounded-full ${
-            pair.status === 'active' ? 'bg-neon-green' : 
-            pair.status === 'error' ? 'bg-red-500' : 'bg-yellow-500'
-          }`} />
-          <span className="text-dark-text font-medium">Forwarding Pair #{pair.id}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowSettings(showSettings === pair.id ? null : pair.id)}
-            className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
-          >
-            <Settings size={16} />
-          </button>
-          <button
-            onClick={() => onUpdatePair(pair.id, { 
-              status: pair.status === 'active' ? 'paused' : 'active' 
-            })}
-            className="p-1 rounded hover:bg-gray-700 text-gray-400 hover:text-white"
-          >
-            {pair.status === 'active' ? <Pause size={16} /> : <Play size={16} />}
-          </button>
-          <button
-            onClick={() => onDeletePair(pair.id)}
-            className="p-1 rounded hover:bg-red-700 text-gray-400 hover:text-red-400"
-          >
-            <Trash2 size={16} />
-          </button>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-4 mb-3">
-        <div className="flex-1">
-          <div className="text-xs text-gray-400">From</div>
-          <div className="text-sm text-dark-text">
-            {pair.sourceAccount.name} → {pair.sourceChannel.name}
-          </div>
-        </div>
-        <ChevronRight className="text-neon-blue" size={20} />
-        <div className="flex-1">
-          <div className="text-xs text-gray-400">To</div>
-          <div className="text-sm text-dark-text">
-            {pair.destinationAccount.name} → {pair.destinationChannel.name}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-4 text-xs text-gray-400">
-        <div className="flex items-center gap-1">
-          <Clock size={12} />
-          <span>{pair.delay}s delay</span>
-        </div>
-        <div className="flex items-center gap-1">
-          {pair.silentMode ? <VolumeX size={12} /> : <Volume2 size={12} />}
-          <span>{pair.silentMode ? 'Silent' : 'Normal'}</span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Copy size={12} />
-          <span>{pair.copyMode ? 'Copy' : 'Forward'}</span>
-        </div>
-      </div>
-
-      <AnimatePresence>
-        {showSettings === pair.id && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="mt-4 pt-4 border-t border-gray-700"
-          >
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs text-gray-400 mb-1">Delay (seconds)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="300"
-                  value={pair.delay}
-                  onChange={(e) => onUpdatePair(pair.id, { delay: parseInt(e.target.value) || 0 })}
-                  className="w-full px-2 py-1 text-sm bg-gray-800 border border-gray-700 rounded"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-xs text-gray-400">
-                  <input
-                    type="checkbox"
-                    checked={pair.silentMode}
-                    onChange={(e) => onUpdatePair(pair.id, { silentMode: e.target.checked })}
-                    className="rounded"
-                  />
-                  Silent Mode
-                </label>
-                <label className="flex items-center gap-2 text-xs text-gray-400">
-                  <input
-                    type="checkbox"
-                    checked={pair.copyMode}
-                    onChange={(e) => onUpdatePair(pair.id, { copyMode: e.target.checked })}
-                    className="rounded"
-                  />
-                  Copy Mode
-                </label>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.div>
-  );
-
-  const sourceAccounts = accounts.filter(a => a.status === 'active');
-  const destinationAccounts = accounts.filter(a => a.status === 'active');
+  const getPlatformIcon = (platform: string) => {
+    const option = platformOptions.find(p => p.value === platform);
+    return option ? option.icon : Smartphone;
+  };
 
   return (
-    <DragDropContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-dark-text">Forwarding Pair Builder</h2>
-          <div className="text-sm text-gray-400">
-            Drag channels from source to destination to create forwarding pairs
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Source Accounts */}
-          <div>
-            <h3 className="text-lg font-semibold text-dark-text mb-4">Source Accounts</h3>
-            {sourceAccounts.map(account => (
-              <AccountCard key={`source-${account.id}`} account={account} />
-            ))}
-          </div>
-
-          {/* Destination Accounts */}
-          <div>
-            <h3 className="text-lg font-semibold text-dark-text mb-4">Destination Accounts</h3>
-            {destinationAccounts.map(account => (
-              <AccountCard key={`dest-${account.id}`} account={account} isDestination />
-            ))}
-          </div>
-        </div>
-
-        {/* Existing Forwarding Pairs */}
-        {existingPairs.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold text-dark-text mb-4">Active Forwarding Pairs</h3>
-            <AnimatePresence>
-              {existingPairs.map(pair => (
-                <ForwardingPairCard key={pair.id} pair={pair} />
-              ))}
-            </AnimatePresence>
-          </div>
-        )}
-
-        {/* Drag Preview */}
-        {draggedItem && (
-          <div className="fixed top-4 right-4 z-50 bg-dark-card border border-neon-blue rounded-lg p-3 shadow-lg">
-            <div className="text-sm text-dark-text">
-              Dragging: {draggedItem.account.name} → {draggedItem.channel.name}
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
+        className="w-full max-w-2xl"
+      >
+        <Card className="glass-effect border-dark-border">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-dark-text flex items-center gap-2">
+                <Plus className="h-5 w-5 text-neon-blue" />
+                {pair ? 'Edit Forwarding Pair' : 'Create Forwarding Pair'}
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="text-dark-muted hover:text-dark-text"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            <div className="text-xs text-gray-400">
-              Drop on destination channel to create pair
-            </div>
-          </div>
-        )}
-      </div>
-    </DragDropContext>
+          </CardHeader>
+
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Visual Flow */}
+              <div className="flex items-center justify-between p-4 bg-dark-border rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg ${formData.source_platform === 'telegram' ? 'bg-blue-500' : 'bg-purple-500'} flex items-center justify-center`}>
+                    {React.createElement(getPlatformIcon(formData.source_platform), { className: "h-5 w-5 text-white" })}
+                  </div>
+                  <div>
+                    <p className="text-dark-text font-medium capitalize">{formData.source_platform}</p>
+                    <p className="text-dark-muted text-sm">{formData.source_chat_id || 'Source chat'}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <ArrowRight className="h-6 w-6 text-neon-green" />
+                  {formData.delay_seconds > 0 && (
+                    <div className="flex items-center gap-1 text-neon-orange text-xs">
+                      <Clock className="h-3 w-3" />
+                      {formData.delay_seconds}s
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-lg ${formData.destination_platform === 'telegram' ? 'bg-blue-500' : 'bg-purple-500'} flex items-center justify-center`}>
+                    {React.createElement(getPlatformIcon(formData.destination_platform), { className: "h-5 w-5 text-white" })}
+                  </div>
+                  <div>
+                    <p className="text-dark-text font-medium capitalize">{formData.destination_platform}</p>
+                    <p className="text-dark-muted text-sm">{formData.destination_chat_id || 'Destination chat'}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Source Configuration */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-dark-text">Source Configuration</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="source_platform" className="text-dark-text">Platform</Label>
+                    <select
+                      id="source_platform"
+                      value={formData.source_platform}
+                      onChange={(e) => setFormData(prev => ({ ...prev, source_platform: e.target.value }))}
+                      className="w-full mt-1 px-3 py-2 bg-dark-border border border-dark-border rounded-lg text-dark-text focus:border-neon-blue focus:outline-none"
+                    >
+                      {platformOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="source_account_id" className="text-dark-text">Account ID</Label>
+                    <Input
+                      id="source_account_id"
+                      type="number"
+                      value={formData.source_account_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, source_account_id: parseInt(e.target.value) || 1 }))}
+                      className="mt-1 bg-dark-border border-dark-border text-dark-text focus:border-neon-blue"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="source_chat_id" className="text-dark-text">Chat ID / Channel Username</Label>
+                  <Input
+                    id="source_chat_id"
+                    value={formData.source_chat_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, source_chat_id: e.target.value }))}
+                    placeholder="@channel_name or chat_id"
+                    className="mt-1 bg-dark-border border-dark-border text-dark-text focus:border-neon-blue"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Destination Configuration */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-dark-text">Destination Configuration</h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="destination_platform" className="text-dark-text">Platform</Label>
+                    <select
+                      id="destination_platform"
+                      value={formData.destination_platform}
+                      onChange={(e) => setFormData(prev => ({ ...prev, destination_platform: e.target.value }))}
+                      className="w-full mt-1 px-3 py-2 bg-dark-border border border-dark-border rounded-lg text-dark-text focus:border-neon-blue focus:outline-none"
+                    >
+                      {platformOptions.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="destination_account_id" className="text-dark-text">Account ID</Label>
+                    <Input
+                      id="destination_account_id"
+                      type="number"
+                      value={formData.destination_account_id}
+                      onChange={(e) => setFormData(prev => ({ ...prev, destination_account_id: parseInt(e.target.value) || 1 }))}
+                      className="mt-1 bg-dark-border border-dark-border text-dark-text focus:border-neon-blue"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="destination_chat_id" className="text-dark-text">Chat ID / Channel Username</Label>
+                  <Input
+                    id="destination_chat_id"
+                    value={formData.destination_chat_id}
+                    onChange={(e) => setFormData(prev => ({ ...prev, destination_chat_id: e.target.value }))}
+                    placeholder="@channel_name or chat_id"
+                    className="mt-1 bg-dark-border border-dark-border text-dark-text focus:border-neon-blue"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Advanced Options */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-dark-text">Advanced Options</h3>
+                
+                <div>
+                  <Label htmlFor="delay_seconds" className="text-dark-text">Delay (seconds)</Label>
+                  <Input
+                    id="delay_seconds"
+                    type="number"
+                    min="0"
+                    max="3600"
+                    value={formData.delay_seconds}
+                    onChange={(e) => setFormData(prev => ({ ...prev, delay_seconds: parseInt(e.target.value) || 0 }))}
+                    className="mt-1 bg-dark-border border-dark-border text-dark-text focus:border-neon-blue"
+                  />
+                  <p className="text-dark-muted text-sm mt-1">
+                    Add delay between receiving and forwarding messages
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-dark-border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Volume2 className="h-4 w-4 text-neon-orange" />
+                    <div>
+                      <p className="text-dark-text font-medium">Silent Mode</p>
+                      <p className="text-dark-muted text-sm">Forward messages without notifications</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.silent_mode}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, silent_mode: checked }))}
+                    className="data-[state=checked]:bg-neon-orange"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-3 bg-dark-border rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Copy className="h-4 w-4 text-neon-purple" />
+                    <div>
+                      <p className="text-dark-text font-medium">Copy Mode</p>
+                      <p className="text-dark-muted text-sm">Preserve original message formatting</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={formData.copy_mode}
+                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, copy_mode: checked }))}
+                    className="data-[state=checked]:bg-neon-purple"
+                  />
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="flex-1 border-dark-border hover:border-red-400 hover:text-red-400"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-neon-green hover:bg-neon-green/90 text-black font-semibold"
+                >
+                  {isSubmitting ? 'Saving...' : pair ? 'Update Pair' : 'Create Pair'}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </motion.div>
+    </div>
   );
-};
+}

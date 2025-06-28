@@ -4,6 +4,7 @@ import authSlice from './slices/authSlice';
 import dashboardSlice from './slices/dashboardSlice';
 import notificationSlice from './slices/notificationSlice';
 import forwardingSlice from './slices/forwardingSlice';
+import analyticsSlice from './slices/analyticsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -11,6 +12,7 @@ export const store = configureStore({
     dashboard: dashboardSlice,
     notifications: notificationSlice,
     forwarding: forwardingSlice,
+    analytics: analyticsSlice,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
