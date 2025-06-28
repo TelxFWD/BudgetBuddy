@@ -9,11 +9,16 @@ import { authService } from '@/services/authService';
 import DashboardLayout from '@/components/DashboardLayout';
 import DashboardHome from '@/components/DashboardHome';
 import LoginForm from '@/components/LoginForm';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { Toaster } from 'react-hot-toast';
 
 export default function HomePage() {
   const dispatch = useDispatch();
   const { user, tokens, isLoading } = useSelector((state: RootState) => state.auth);
   const isAuthenticated = authService.isAuthenticated();
+  
+  // Initialize WebSocket connection for real-time updates when authenticated
+  useWebSocket();
 
   useEffect(() => {
     if (isAuthenticated && !user) {
@@ -44,8 +49,21 @@ export default function HomePage() {
   }
 
   return (
-    <DashboardLayout>
-      <DashboardHome />
-    </DashboardLayout>
+    <>
+      <DashboardLayout>
+        <DashboardHome />
+      </DashboardLayout>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#1f2937',
+            color: '#f9fafb',
+            border: '1px solid #374151'
+          }
+        }}
+      />
+    </>
   );
 }

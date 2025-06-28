@@ -1,8 +1,17 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
+import { useWebSocket } from '@/hooks/useWebSocket';
+import { DragDropPairBuilder } from '@/components/forwarding/DragDropPairBuilder';
+import { RealTimeAnalyticsDashboard } from '@/components/analytics/RealTimeAnalyticsDashboard';
+import { SystemHealthDashboard } from '@/components/monitoring/SystemHealthDashboard';
+import { APIKeyManager } from '@/components/apikeys/APIKeyManager';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Activity, 
   Users, 
@@ -11,12 +20,24 @@ import {
   CheckCircle, 
   AlertCircle,
   Clock,
-  Shield
+  Shield,
+  MessageSquare,
+  BarChart3,
+  Monitor,
+  Key,
+  Settings,
+  Wifi,
+  WifiOff,
+  ArrowRight,
+  Smartphone
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function DashboardHome() {
   const { user } = useSelector((state: RootState) => state.auth);
   const { stats, health } = useSelector((state: RootState) => state.dashboard);
+  const { isConnected } = useWebSocket();
+  const [activeSection, setActiveSection] = useState('overview');
 
   const planFeatures = {
     free: { pairs: 2, telegrams: 1, discords: 1 },
@@ -37,14 +58,28 @@ export default function DashboardHome() {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-dark-text mb-2">
-          Welcome back, {user?.username || 'User'}!
-        </h1>
-        <p className="text-dark-muted">
-          Here's an overview of your message forwarding system
-        </p>
+      {/* Welcome Header with Real-time Status */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-dark-text mb-2 flex items-center gap-3">
+            <Activity className="h-8 w-8 text-neon-green" />
+            Welcome back, {user?.username || 'User'}!
+          </h1>
+          <p className="text-dark-muted flex items-center gap-2">
+            <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-neon-green' : 'bg-red-500'}`}></div>
+            {isConnected ? 'Live updates active' : 'Connection lost'} • Real-time dashboard
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Badge variant="outline" className="text-neon-green border-neon-green">
+            {user?.plan === 'elite' ? 'Elite Plan' : user?.plan === 'pro' ? 'Pro Plan' : 'Free Plan'}
+          </Badge>
+          <Badge variant={isConnected ? 'default' : 'destructive'}>
+            {isConnected ? <Wifi className="h-3 w-3 mr-1" /> : <WifiOff className="h-3 w-3 mr-1" />}
+            {isConnected ? 'Connected' : 'Disconnected'}
+          </Badge>
+        </div>
       </div>
 
       {/* Stats Grid */}
