@@ -70,12 +70,14 @@ class DiscordAccount(Base):
     
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    discord_token = Column(String(500), nullable=False)  # Bot token
-    discord_servers = Column(JSON, default=list, nullable=False)  # List of server IDs
-    status = Column(String(50), default="active", nullable=False)  # active, inactive, disconnected
+    discord_user_id = Column(Integer, nullable=False)
+    bot_token = Column(String(100), unique=True, nullable=False)
+    bot_name = Column(String(100), nullable=True)
+    status = Column(String(20), default="active", nullable=False)
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
     last_seen = Column(DateTime, nullable=True)
+    discord_servers = Column(JSON, default=list, nullable=True)
     
     # Relationships
     user = relationship("User", back_populates="discord_accounts")
