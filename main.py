@@ -80,6 +80,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Import and register API routers
+from api import auth, forwarding, analytics, admin, payments
+
+app.include_router(auth.router)
+app.include_router(forwarding.router)
+app.include_router(analytics.router)
+app.include_router(admin.router)
+app.include_router(payments.router)
+
 @app.get("/")
 async def root():
     """Root endpoint for health check."""

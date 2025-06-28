@@ -3,7 +3,7 @@ SQLAlchemy database models for the message forwarding application.
 Contains all database table definitions and relationships.
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, JSON, ForeignKey, Float
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, JSON, ForeignKey, Float, DECIMAL
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -16,8 +16,13 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(Integer, primary_key=True, index=True)
+    username = Column(String(50), unique=True, index=True, nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
+    password_hash = Column(String(255), nullable=False)
     plan = Column(String(50), default="free", nullable=False)  # free, pro, elite
+    status = Column(String(20), default="active", nullable=False)  # active, suspended, banned
+    last_login = Column(DateTime, nullable=True)
+    plan_expires_at = Column(DateTime, nullable=True)
     plan_expiry = Column(DateTime, nullable=True)
     max_pairs = Column(Integer, default=2, nullable=False)
     max_telegram_accounts = Column(Integer, default=1, nullable=False)
@@ -237,3 +242,66 @@ class QueueTask(Base):
     
     def __repr__(self):
         return f"<QueueTask(id={self.id}, task_id={self.task_id}, type={self.task_type}, status={self.status})>"
+
+class Payment(Base):
+    """Payments table for tracking user subscriptions and transactions."""
+    __tablename__ = "payments"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    external_payment_id = Column(String(255), unique=True, index=True, nullable=True)
+    provider_transaction_id = Column(String(255), nullable=True)
+    
+    # Payment details
+    plan = Column(String(50), nullable=False)  # pro, elite
+    billing_cycle = Column(String(20), nullable=False)  # monthly, yearly
+    payment_method = Column(String(50), nullable=False)  # paypal, crypto
+    amount = Column(DECIMAL(10, 2), nullable=False)
+    original_amount = Column(DECIMAL(10, 2), nullable=True)  # Before coupon discount
+    currency = Column(String(10), default="usd", nullable=False)
+    
+    # Status and timestamps
+    status = Column(String(50), nullable=False)  # pending, completed, failed, refunded
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    completed_at = Column(DateTime, nullable=True)
+    
+    # Crypto payment details
+    crypto_address = Column(String(255), nullable=True)
+    crypto_amount = Column(DECIMAL(20, 8), nullable=True)
+    crypto_currency = Column(String(10), nullable=True)
+    
+    # Coupon information
+    coupon_id = Column(Integer, ForeignKey("coupons.id"), nullable=True)
+    
+    # Relationships
+    user = relationship("User")
+    coupon = relationship("Coupon")
+    
+    def __repr__(self):
+        return f"<Payment(id={self.id}, user_id={self.user_id}, plan={self.plan}, status={self.status})>"
+
+class Coupon(Base):
+    """Coupons table for promotional discounts."""
+    __tablename__ = "coupons"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    code = Column(String(50), unique=True, index=True, nullable=False)
+    
+    # Discount details
+    discount_percent = Column(DECIMAL(5, 2), nullable=True)  # Percentage discount
+    discount_amount = Column(DECIMAL(10, 2), nullable=True)  # Fixed amount discount
+    
+    # Validity and usage
+    valid_until = Column(DateTime, nullable=False)
+    usage_limit = Column(Integer, default=1, nullable=False)
+    usage_count = Column(Integer, default=0, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    
+    # Restrictions
+    plan_restriction = Column(String(50), nullable=True)  # Restrict to specific plan
+    
+    # Timestamps
+    created_at = Column(DateTime, default=func.now(), nullable=False)
+    
+    def __repr__(self):
+        return f"<Coupon(id={self.id}, code={self.code}, discount={self.discount_percent or self.discount_amount})>"

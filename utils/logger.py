@@ -221,3 +221,6 @@ def initialize_logging():
 
 # Auto-initialize when module is imported
 initialize_logging()
+
+# Create default logger instance for easy importing
+logger = setup_logger()
