@@ -29,6 +29,7 @@ class QueueManager:
         self.celery_app = None
         self.feature_gating = FeatureGating()
         self._initialized = False
+        self.redis_available = False
         
         # Queue configuration
         self.queue_names = {
@@ -88,6 +89,7 @@ class QueueManager:
             # Test connection
             await asyncio.get_event_loop().run_in_executor(None, self.redis_client.ping)
             logger.info("Redis connection established")
+            self.redis_available = True
             
         except Exception as e:
             logger.error(f"Failed to initialize Redis: {e}")

@@ -1,6 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  allowedDevOrigins: ['https://317fe22f-0282-420b-a01d-2a82b255ecb7-00-z2cs1mhi0k3z.sisko.replit.dev'],
+  allowedDevOrigins: [
+    'http://localhost:5000',
+    'http://0.0.0.0:5000',
+    'https://*.replit.dev',
+    'https://*.replit.app',
+    'http://127.0.0.1:5000'
+  ],
   async rewrites() {
     return [
       {

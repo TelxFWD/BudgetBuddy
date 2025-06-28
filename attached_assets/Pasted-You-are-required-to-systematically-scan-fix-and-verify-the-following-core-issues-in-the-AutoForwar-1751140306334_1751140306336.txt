@@ -1,0 +1,131 @@
+You are required to systematically scan, fix, and verify the following core issues in the AutoForwardX project to make the system fully functional and correctly connected.
+
+📂 🔧 Key Issues to Address:
+1. ✅ Redis Connection Failure
+Investigate and fix the Redis connection issue:
+
+text
+Copy
+Edit
+Error 99 connecting to localhost:6379
+Ensure the Redis server is installed, running, and listening on the correct port.
+
+Verify Redis connection strings and environment variables in both backend and Celery configurations.
+
+Restart Redis and Celery services and confirm queue processing works.
+
+2. ✅ CORS Misconfiguration
+Properly configure allowedDevOrigins in next.config.js:
+
+js
+Copy
+Edit
+const nextConfig = {
+  allowedDevOrigins: [
+    'https://your-replit-url', // replace with your active development URL
+    'http://localhost:5000'
+  ],
+};
+
+module.exports = nextConfig;
+Validate FastAPI CORS middleware:
+
+python
+Copy
+Edit
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Use specific URLs in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+Ensure no cross-origin request blocking for /api/* and /_next/* resources.
+
+3. ✅ API and WebSocket Connection Validation
+Confirm frontend is using the correct API base URL and WebSocket URL:
+
+Example: http://localhost:8000/api and ws://localhost:8000/ws
+
+Validate that:
+
+Authentication tokens are stored and attached to all API requests.
+
+WebSocket subscriptions are established after login.
+
+WebSocket events are properly handled and UI updates are triggered.
+
+4. ✅ Redis Queue and WebSocket Backend Validation
+Ensure queue processing (Celery) is working correctly with Redis.
+
+Verify that backend WebSocket is:
+
+Broadcasting live forwarding pair status updates.
+
+Sending queue and session health events.
+
+Confirm WebSocket connections are not silently failing or timing out.
+
+5. ✅ Frontend API Integration and UI Rendering
+Ensure the frontend is:
+
+Properly calling all backend API endpoints.
+
+Subscribing to WebSocket events and updating UI in real-time.
+
+Fully develop the UI components:
+
+Real-time dashboard
+
+Forwarding pair management
+
+Drag-and-drop builder
+
+API key management
+
+Webhook management
+
+Session and queue monitoring
+
+Add loading indicators, toast notifications, and error handling for all user interactions.
+
+6. ✅ Mobile Responsiveness and Styling
+Properly style the login page and all dashboard components using Tailwind CSS.
+
+Ensure all components are mobile-friendly and responsive.
+
+Fix the bg-dark-card/80 utility class error:
+
+Either correct the Tailwind config to support opacity or use:
+
+html
+Copy
+Edit
+bg-dark-card bg-opacity-80
+7. ✅ System Health Testing
+Test:
+
+Login and OTP functionality end-to-end.
+
+API connectivity from the frontend.
+
+WebSocket live updates.
+
+Queue processing via Redis.
+
+Real-time UI updates for forwarding status.
+
+✅ Final Deliverables:
+Fully working Redis connection.
+
+CORS issues resolved with no blocked requests.
+
+WebSocket fully integrated and showing live updates.
+
+API requests working correctly from frontend to backend.
+
+Login page and dashboard fully styled and responsive.
+
+Real-time UI components (status, queue, session, analytics) fully visible and functional.
