@@ -1,0 +1,125 @@
+You are required to complete the remaining features of the AutoForwardX User Dashboard.
+This includes building real-time synchronization, advanced forwarding controls, API management, queue health monitoring, and mobile responsiveness.
+
+📌 Key Requirements:
+WebSocket-based real-time sync between the dashboard, backend, and Telegram bot.
+
+Webhook and API key management UI for Elite plan users.
+
+Visual drag-and-drop forwarding pair builder for a premium user experience.
+
+Bulk forwarding pair management options (pause, resume, delete all).
+
+Custom per-pair delay configuration.
+
+Detailed analytics and reporting with exportable CSV and PDF files.
+
+Queue and session health dashboard.
+
+Full mobile optimization of all dashboard pages.
+
+✅ Detailed Instructions:
+📂 1. WebSocket Integration for Real-Time Sync
+Connect the frontend to backend using WebSocket (Socket.IO or FastAPI WebSocket).
+
+Push live updates for:
+
+Forwarding pair status (start, pause, resume)
+
+Telegram/Discord session health (connected/disconnected)
+
+Queue processing status
+
+Display real-time notifications and inline live status updates without page reload.
+
+📂 2. Webhook & API Key Management UI
+Build API Key management:
+
+Generate, display, revoke API keys.
+
+Show usage limits per plan.
+
+Build Webhook management:
+
+Add, edit, test webhook URLs.
+
+Display webhook trigger logs and validation status.
+
+📂 3. Visual Drag-and-Drop Forwarding Pair Builder
+Build a drag-and-drop UI to create forwarding pairs:
+
+Source ➜ Destination ➜ Set Delay ➜ Confirm
+
+Allow visual chain creation and inline delay editing.
+
+📂 4. Bulk Forwarding Pair Operations
+Build bulk actions:
+
+Pause All
+
+Resume All
+
+Delete All
+
+Add multi-selection controls (checkbox selection per pair).
+
+📂 5. Custom Delay Per Pair UI
+Build per-pair delay configuration:
+
+Custom input with delay validation
+
+Visual override indicator if per-pair delay is applied
+
+📂 6. Detailed Analytics & Reporting
+Build real-time forwarding analytics dashboard.
+
+Show message volumes by:
+
+Date range
+
+Telegram account
+
+Discord account
+
+Forwarding pair
+
+Build CSV and PDF export features.
+
+Add filtering by time range, platform, user, and account.
+
+📂 7. Queue & Session Health Monitoring
+Build system health dashboard:
+
+Queue backlog
+
+Retry counts
+
+Session status indicators (Green/Yellow/Red)
+
+Build session reconnection alerts and live health status.
+
+📂 8. Mobile Optimization
+Make the dashboard fully mobile responsive:
+
+Collapsible sidebar for mobile
+
+Optimized mobile-friendly forms and pair builder
+
+Responsive charts and loading skeletons
+
+✅ Completion Checklist:
+ WebSocket-based real-time sync fully integrated
+
+ Webhook and API key UI fully developed
+
+ Visual drag-and-drop forwarding pair builder completed
+
+ Bulk forwarding pair operations functional
+
+ Custom delay per pair configuration working
+
+ Detailed analytics and reporting implemented
+
+ Queue and session health dashboard live
+
+ Mobile responsiveness fully tested and optimized
