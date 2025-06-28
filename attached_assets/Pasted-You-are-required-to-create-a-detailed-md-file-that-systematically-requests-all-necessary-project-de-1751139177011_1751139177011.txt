@@ -1,0 +1,86 @@
+You are required to create a detailed .md file that systematically requests all necessary project details from the developer or system to help diagnose and resolve the issue where:
+
+The User Dashboard UI is not updating or reflecting completed features.
+
+The login page remains in its basic state despite backend completion.
+
+📂 The .md file should request the following:
+Project Overview:
+
+Full project description.
+
+Tech stack used (frontend, backend, database, libraries, frameworks).
+
+Frontend Details:
+
+List of all frontend files.
+
+Confirmation of whether Tailwind CSS is fully configured.
+
+Component tree structure (which components are built and active).
+
+Confirmation if WebSocket and API connections are integrated into the frontend.
+
+Status of real-time UI components (queue display, forwarding builder, API key management).
+
+Backend Details:
+
+List of all API endpoints created.
+
+Full WebSocket integration status.
+
+Backend health (confirm if the Telegram OTP endpoint is working and accessible).
+
+Any pending backend API deployments.
+
+API Connection:
+
+Confirm if the frontend is correctly connected to the backend endpoints.
+
+Validate if API routes return correct responses to the frontend.
+
+Check whether CORS and dev origins are properly configured.
+
+WebSocket Integration:
+
+Confirm if WebSocket events are correctly subscribed in the frontend.
+
+Verify if real-time updates are pushed and rendered in the UI.
+
+UI Development:
+
+List of completed UI components.
+
+Confirmation of drag-and-drop forwarding builder availability.
+
+Confirmation of real-time analytics chart integration.
+
+Confirm if mobile responsiveness and styling updates are implemented.
+
+Deployment Environment:
+
+Confirm whether the current environment is production, staging, or dev.
+
+Validate URLs, ports, and CORS settings.
+
+Error Logs:
+
+Request server-side error logs.
+
+Request frontend console error logs.
+
+Check if there are any API call failures visible in the browser network tab.
+
+Visual Verification:
+
+Ask for current screenshots of the User Dashboard (dashboard, forwarding builder, API key page, health monitoring page).
+
+📌 Completion Requirement:
+The .md file must clearly list all the above requested details, structured section-wise, so that a reviewer or AI agent can fully diagnose:
+
+If the backend and frontend are correctly integrated.
+
+If the real-time UI features are built and connected.
+
+If the API and WebSocket setups are live and operational.
+
