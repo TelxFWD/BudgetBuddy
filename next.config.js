@@ -4,7 +4,7 @@ const nextConfig = {
     return [
       {
         source: '/api/:path*',
-        destination: 'http://0.0.0.0:5000/:path*', // Proxy to FastAPI backend
+        destination: 'http://0.0.0.0:8000/:path*', // Proxy to FastAPI backend
       },
     ]
   },
