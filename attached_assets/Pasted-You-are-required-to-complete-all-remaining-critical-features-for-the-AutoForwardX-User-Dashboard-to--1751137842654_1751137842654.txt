@@ -1,0 +1,113 @@
+You are required to complete all remaining critical features for the AutoForwardX User Dashboard to make it fully production-ready, real-time, mobile-optimized, and user-friendly.
+
+📂 Key Features to Develop:
+WebSocket Real-Time Sync:
+
+Implement WebSocket using Socket.IO or FastAPI WebSocket.
+
+Enable live updates for:
+
+Forwarding pair status (start, pause, resume)
+
+Telegram and Discord session health (connected/disconnected)
+
+Queue load and processing rate
+
+Push real-time status and notifications to the dashboard without page reload.
+
+Webhook & API Key Management:
+
+Build UI to generate, view, and revoke API keys.
+
+Show API key usage limits and plan-based restrictions.
+
+Build UI to add, edit, test, and delete webhook URLs.
+
+Show webhook trigger logs and validation results in the dashboard.
+
+Visual Forwarding Pair Builder:
+
+Build a drag-and-drop interface to set up forwarding pairs.
+
+Allow visual configuration of source, destination, delay, and modes.
+
+Enable users to quickly build complex forwarding chains.
+
+Bulk Forwarding Management:
+
+Add bulk options to:
+
+Pause all pairs
+
+Resume all pairs
+
+Delete all pairs
+
+Enable multi-select functionality using checkboxes.
+
+Custom Delay Per Pair:
+
+Build UI for users to configure custom delays per forwarding pair.
+
+Allow per-pair and per-account delay overrides with input validation.
+
+Detailed Analytics & Reporting:
+
+Build dashboard charts for:
+
+Message forwarding volume by date, Telegram account, Discord account, and pair.
+
+Enable live updates on charts using WebSocket.
+
+Allow users to export analytics as CSV or PDF.
+
+Build filtering by user, platform, pair, and time range.
+
+Queue & Session Health Monitoring:
+
+Build dashboard to show:
+
+Queue backlog
+
+Retry counts
+
+Live session status (connected/disconnected)
+
+Use visual health indicators (green/yellow/red).
+
+Push real-time session reconnection alerts.
+
+Allow admin to:
+
+Restart sessions
+
+Clear queues
+
+Monitor system errors directly from the dashboard.
+
+Mobile Optimization:
+
+Fully responsive layout for all dashboard pages.
+
+Mobile-friendly drag-and-drop builder and charts.
+
+Mobile navigation using collapsible sidebar.
+
+Use skeleton loaders and optimized card designs for smaller screens.
+
+✅ Completion Checklist:
+ WebSocket-based real-time sync completed.
+
+ Webhook and API key UI completed.
+
+ Visual drag-and-drop forwarding builder completed.
+
+ Bulk forwarding pair operations functional.
+
+ Custom delay per pair implemented.
+
+ Detailed analytics and export tools working.
+
+ Queue and session health dashboard fully functional.
+
+ Mobile responsiveness tested and optimized.

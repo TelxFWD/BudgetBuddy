@@ -1,0 +1,156 @@
+Build User Dashboard – Part 4
+(Real-Time Sync, Advanced Controls, API Management, Mobile Optimization)
+
+You are required to complete the remaining critical features of the AutoForwardX User Dashboard.
+Your tasks should ensure the platform becomes production-ready, mobile-optimized, and fully functional in real-time.
+
+📂 Key Features to Build and Integrate:
+1. ✅ Real-Time WebSocket Integration
+Set up WebSocket connections using either Socket.IO or FastAPI WebSocket.
+
+Enable real-time updates for:
+
+Forwarding pair status: Start, Pause, Resume
+
+Telegram and Discord session health (Connected, Disconnected)
+
+Queue load and processing rates
+
+UI Integration:
+Push real-time notifications to the dashboard without requiring a page refresh.
+
+Display live queue status and session health with inline progress indicators.
+
+2. ✅ Webhook & API Key User Interface
+API Key Management:
+Build UI for users to:
+
+Generate new API keys
+
+View active API keys
+
+Revoke API keys
+
+Show API key usage limits and rate consumption based on the user’s plan.
+
+Webhook Management:
+Build UI to:
+
+Add, edit, and delete webhook URLs
+
+Test webhook URLs with immediate success/failure response
+
+Show webhook trigger logs and error states for user reference
+
+3. ✅ Advanced Forwarding Controls
+Visual Drag-and-Drop Pair Builder:
+Create a drag-and-drop interface that lets users:
+
+Select source and destination channels
+
+Configure delays and modes visually
+
+Build forwarding chains with ease
+
+Bulk Pair Management:
+Add bulk operations such as:
+
+Pause All
+
+Resume All
+
+Delete All
+
+Allow users to select multiple pairs via checkboxes.
+
+Custom Delay Per Pair:
+Add UI controls to allow users to:
+
+Set individual delays for each forwarding pair
+
+Override global delay settings
+
+Validate input to prevent incorrect configurations
+
+4. ✅ Detailed Analytics & Reporting
+Analytics Dashboard:
+Build charts to display:
+
+Total messages forwarded per date range
+
+Volume by Telegram account, Discord account, and individual pairs
+
+Real-Time Analytics:
+Use WebSocket to live update analytics graphs in real time.
+
+Reporting Tools:
+Allow users to export forwarding statistics as CSV or PDF.
+
+Add filtering by:
+
+Date Range
+
+Platform
+
+Telegram or Discord Account
+
+Forwarding Pair
+
+5. ✅ Queue & Session Health Monitoring
+System Health Dashboard:
+Show:
+
+Queue backlog
+
+Retry counts
+
+Session connection status
+
+Use visual indicators (Green/Yellow/Red) for system health status.
+
+Push real-time session reconnection alerts to the dashboard.
+
+Optional Admin UI:
+Allow admin users to:
+
+Restart sessions
+
+Clear queues
+
+Monitor system logs and errors live
+
+6. ✅ Mobile Optimization
+Make all dashboard pages fully responsive for mobile and tablet.
+
+Ensure the drag-and-drop builder and analytics charts are mobile-friendly.
+
+Build a collapsible sidebar and smooth mobile navigation.
+
+Use skeleton loaders and card-based layouts to improve mobile UX.
+
+✅ Completion Checklist:
+ WebSocket-based real-time sync fully working
+
+ Webhook and API key management UI completed
+
+ Drag-and-drop forwarding pair builder functional
+
+ Bulk forwarding pair operations implemented
+
+ Custom delay configuration per pair working
+
+ Detailed analytics with export options live
+
+ Queue and session health monitoring dashboard operational
+
+ Mobile responsiveness fully tested and optimized
+
+📌 Development Notes:
+Maintain consistent Tailwind CSS design system.
+
+Prioritize mobile-first development.
+
+Use responsive charts (Chart.js or Recharts recommended).
+
+Keep WebSocket and REST APIs secured and rate-limited per user plan.
+

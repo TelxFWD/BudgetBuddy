@@ -35,7 +35,27 @@ export const fetchSystemHealth = createAsyncThunk(
 const dashboardSlice = createSlice({
   name: 'dashboard',
   initialState,
-  reducers: {},
+  reducers: {
+    updateForwardingPairStatus: (state, action) => {
+      const { pairId, status, lastForwarded } = action.payload;
+      // Update forwarding pair status in real-time
+      if (state.stats) {
+        // Implementation will be added when we have forwarding pairs in stats
+      }
+    },
+    updateStats: (state, action) => {
+      const { queueStats } = action.payload;
+      if (state.stats) {
+        state.stats = { ...state.stats, ...queueStats };
+      }
+    },
+    updateRealTimeMetrics: (state, action) => {
+      const metrics = action.payload;
+      if (state.stats) {
+        state.stats = { ...state.stats, ...metrics };
+      }
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchUserStats.pending, (state) => {
@@ -54,4 +74,5 @@ const dashboardSlice = createSlice({
   },
 });
 
+export const { updateForwardingPairStatus, updateStats, updateRealTimeMetrics } = dashboardSlice.actions;
 export default dashboardSlice.reducer;
