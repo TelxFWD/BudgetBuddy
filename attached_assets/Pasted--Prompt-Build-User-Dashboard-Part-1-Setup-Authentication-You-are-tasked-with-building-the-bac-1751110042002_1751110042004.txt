@@ -1,0 +1,106 @@
+✅ Prompt: Build User Dashboard (Part 1: Setup & Authentication)
+You are tasked with building the backend-connected User Dashboard for AutoForwardX, focusing on a clean, modern, and highly responsive UI/UX.
+
+📌 Key Requirements:
+Build the frontend using:
+
+TypeScript
+
+Next.js (preferred for SEO and performance) or React.js
+
+Tailwind CSS with a dark theme and neon accents (inspired by Path of Hanzo)
+
+Build the authentication system using:
+
+Telegram OTP login (via phone number)
+
+Shared Telegram session for both website and forwarding backend
+
+Focus exclusively on dashboard setup and authentication flow.
+
+✅ Detailed Instructions:
+Project Setup:
+
+Initialize a Next.js + TypeScript project.
+
+Configure Tailwind CSS for a dark theme with neon accents.
+
+Setup ESLint and Prettier for code consistency.
+
+Folder Structure:
+
+text
+Copy
+Edit
+user-dashboard/
+├── pages/                 # Next.js page routing
+├── components/            # Reusable UI components (buttons, inputs, status cards)
+├── layouts/               # Dashboard layout with sidebar and header
+├── hooks/                 # Custom React hooks for authentication
+├── services/              # API interaction files (Axios recommended)
+├── store/                 # Redux Toolkit or React Context
+├── utils/                 # Formatters and helpers
+├── styles/                # Tailwind CSS files
+└── public/                # Static files (icons, images)
+Build Telegram OTP Authentication Flow:
+
+Dashboard login page should accept phone number input.
+
+Send phone number to backend via API to trigger OTP using Pyrogram.
+
+OTP input page to verify the code.
+
+On successful OTP verification:
+
+Store JWT token for web session.
+
+Telegram session string must be securely stored only on the backend.
+
+Ensure session persistence and create a shared session for the bot and dashboard.
+
+Dashboard Navigation Structure:
+
+text
+Copy
+Edit
+🏠 Dashboard
+📱 Telegram Accounts
+💬 Discord Servers
+🔗 My Pairs
+📊 Analytics
+💳 Billing
+⚙️ Settings
+Dashboard Home Page:
+
+Show:
+
+Current plan and expiry
+
+Active forwarding pairs used vs allowed
+
+Number of Telegram and Discord accounts connected
+
+Real-time session status (Active / Disconnected)
+
+UI Style:
+
+Use dark theme with neon blue, purple, or orange accents.
+
+Sidebar with icon + text navigation.
+
+Ghost buttons (outline buttons with glowing hover effect).
+
+Smooth transitions (opacity, slide) for page and button interactions.
+
+✅ Completion Checklist:
+ Project is configured with TypeScript, Next.js, and Tailwind CSS.
+
+ Telegram OTP login flow is fully functional and connected to backend.
+
+ JWT-based web session management is active.
+
+ Sidebar navigation and page routing are properly set up.
+
+ Dashboard home page shows account, plan, and session overview.
+
+ Shared Telegram session is properly linked for bot and dashboard.

@@ -1,0 +1,52 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply bg-dark-bg text-dark-text;
+  }
+}
+
+@layer components {
+  .glass-effect {
+    @apply bg-dark-card/80 backdrop-blur-sm border border-dark-border;
+  }
+  
+  .neon-glow {
+    @apply transition-all duration-300 hover:shadow-lg hover:shadow-neon-blue/20;
+  }
+  
+  .ghost-button {
+    @apply border border-neon-blue/50 text-neon-blue hover:bg-neon-blue/10 hover:border-neon-blue transition-all duration-300 hover:shadow-lg hover:shadow-neon-blue/30;
+  }
+  
+  .status-active {
+    @apply text-neon-green border-neon-green/30 bg-neon-green/10;
+  }
+  
+  .status-inactive {
+    @apply text-dark-muted border-dark-border bg-dark-border/10;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-dark-bg;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-dark-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-neon-blue/50;
+}
