@@ -1,0 +1,77 @@
+✅ Prompt: Scan and Fix User Dashboard Project (AutoForwardX)
+You are required to:
+
+🔍 Scan the entire User Dashboard project codebase
+
+✅ Verify if the dashboard is built correctly as per the provided development plan
+
+🔧 Fix existing issues in the login flow and user dashboard structure
+
+📂 Key Checks to Perform:
+Network Error Handling:
+
+Investigate why “Network Error” appears on the login page.
+
+Ensure backend API is correctly connected and reachable.
+
+Validate API endpoint URLs and environment configurations.
+
+OTP Sending Flow:
+
+Check if the OTP API request is properly triggered when the user clicks “Send OTP.”
+
+Ensure the correct phone number format is sent to the backend.
+
+Verify backend response handling and error feedback.
+
+Session Management:
+
+Confirm that JWT session tokens are correctly stored and persisted.
+
+Validate session sharing between the User Dashboard and Telegram forwarding system.
+
+UI/UX Implementation:
+
+Check if the dashboard uses the correct design:
+
+TypeScript + Next.js (or React.js)
+
+Tailwind CSS dark theme (Path of Hanzo inspired)
+
+Ensure all project folders and components are properly structured.
+
+Check responsive design and input validation.
+
+Routing and Navigation:
+
+Confirm that sidebar navigation is correctly configured.
+
+Validate route files and page-level navigation.
+
+Real-Time Backend Connectivity:
+
+Test API endpoints for authentication, session retrieval, and status checks.
+
+Ensure backend errors are gracefully handled in the UI.
+
+🔄 Required Fixes:
+Fix network request issues and ensure correct API connection.
+
+Fix UI responsiveness and design gaps.
+
+Ensure the dashboard is fully aligned with the Part 1 development prompt.
+
+Rebuild or restructure components if any parts of the dashboard are missing.
+
+Add proper error messages and loading states to improve UX.
+
+✅ Completion Validation:
+ OTP login flow works without errors.
+
+ Dashboard loads correctly after login.
+
+ Sidebar navigation and routing are fully functional.
+
+ Real-time session status syncs with backend.
+
+ JWT session is valid and persistent.

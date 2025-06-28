@@ -8,13 +8,13 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Key, Plus, Copy, Trash2, Eye, EyeOff, Globe, Shield, AlertCircle } from 'lucide-react';
-import { ApiKeyService } from '@/services/apiKeyService';
+import { ApiKeyService, ApiKey, Webhook } from '@/services/apiKeyService';
 import { BillingService } from '@/services/billingService';
 
 export default function ApiKeysPage() {
   const { user } = useAppSelector((state) => state.auth);
-  const [apiKeys, setApiKeys] = useState([]);
-  const [webhooks, setWebhooks] = useState([]);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
+  const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newKeyName, setNewKeyName] = useState('');

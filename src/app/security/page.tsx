@@ -7,14 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Shield, Key, Monitor, AlertTriangle, LogOut, Globe, Clock, UserCheck } from 'lucide-react';
-import { SecurityService } from '@/services/securityService';
+import { SecurityService, SecurityOverview } from '@/services/securityService';
 import { SessionManager } from '@/components/security/SessionManager';
 import { RateLimitMonitor } from '@/components/security/RateLimitMonitor';
 import { SecuritySettings } from '@/components/security/SecuritySettings';
 
 export default function SecurityPage() {
   const { user } = useAppSelector((state) => state.auth);
-  const [securityData, setSecurityData] = useState(null);
+  const [securityData, setSecurityData] = useState<SecurityOverview | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
