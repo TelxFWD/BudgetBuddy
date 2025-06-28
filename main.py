@@ -104,8 +104,9 @@ async def health_check():
     """Detailed health check endpoint."""
     try:
         # Check database connection
+        from sqlalchemy import text
         db = next(get_db())
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db_status = "healthy"
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
