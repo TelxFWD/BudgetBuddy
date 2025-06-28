@@ -1,0 +1,148 @@
+Build User Dashboard (Part 3: Payments, Analytics, Security, Plan-Based Feature Control, Admin Messaging)
+You are tasked with building the Payment System, Analytics, Webhooks, Plan-Based Feature Control, and Security Layers for the AutoForwardX User Dashboard. The system must also allow real-time plan enforcement across both the dashboard and the Telegram bot.
+
+📌 Key Requirements:
+Build payment management UI with PayPal and NowPayments support.
+
+Show real-time analytics and forwarding statistics.
+
+Implement API key management and webhook configuration.
+
+Build detailed plan-based feature control (Free, Pro, Elite) across all functions.
+
+Integrate system notifications and admin messaging.
+
+Ensure security features like API rate limiting and session control are fully visible and enforced.
+
+✅ Detailed Instructions:
+1. Payment & Subscription Management
+Show current subscription plan with expiry countdown.
+
+Show PayPal and NowPayments transaction history.
+
+Allow plan upgrades and coupon code application.
+
+Real-time sync with backend for plan changes and session updates.
+
+UI Components:
+Billing history table.
+
+Plan selection cards with feature breakdown.
+
+Coupon input field and success/failure indicators.
+
+2. Analytics & Reporting
+Show:
+
+Total forwarded messages (daily/weekly/monthly)
+
+Per-pair success rate and failure rate
+
+Real-time queue load per user
+
+Build CSV and PDF export functionality for reports.
+
+Add custom filters:
+
+By user, Telegram account, forwarding pair, platform, date range.
+
+Build 48-hour auto-generated summary reports and display them in the dashboard.
+
+Optionally, send reports via Telegram bot.
+
+3. API Key & Webhook Management (Elite Plan)
+Build UI for:
+
+Generating new API keys
+
+Viewing usage statistics per API key
+
+Revoking API keys
+
+Allow users to:
+
+Add and update webhook URLs
+
+Validate webhook URLs before saving
+
+Clearly show which features are restricted based on the user’s plan.
+
+4. Notification Preferences & Admin Announcements
+Allow user to configure Telegram bot notifications for:
+
+Session drops
+
+Payment expiry reminders
+
+System errors and queue failures
+
+Display admin-generated announcements and system-wide promotional messages.
+
+Free Plan users should receive upgrade prompts via dashboard and bot.
+
+5. Security & Session Controls
+Show active sessions per device.
+
+Force logout option for lost or compromised sessions.
+
+Display API rate limits per plan.
+
+Enforce session expiration after a fixed inactivity period.
+
+6. Plan-Based Feature Control (Detailed Logic)
+Backend Plan Schema Example:
+json
+Copy
+Edit
+{
+  \"user_id\": \"user_123\",
+  \"plan\": \"Pro\",
+  \"max_pairs\": 15,
+  \"max_accounts\": 3,
+  \"features\": [\"discord_forwarding\", \"copy_mode\", \"chain_forwarding\", \"webhook_integration\"]
+}
+Feature Enforcement Flow:
+On every API call (Dashboard or Bot):
+
+Validate user plan and feature access.
+
+Reject unauthorized requests with clear upgrade prompts.
+
+Dashboard UI:
+
+Hide or disable restricted features based on the plan.
+
+Show upgrade option inline for restricted actions.
+
+Bot UI:
+
+Show bot menus dynamically based on available features.
+
+Plan Upgrade Process:
+Immediate backend update on payment confirmation.
+
+Dashboard and bot must reflect new plan limits instantly.
+
+Telegram bot should send plan upgrade confirmation messages.
+
+Plan Downgrade or Expiry:
+Instantly restrict access to premium features.
+
+Update dashboard and bot menus immediately.
+
+Show downgrade notification and offer to renew.
+
+✅ Completion Checklist:
+ Payment system fully integrated and real-time plan updates working.
+
+ Analytics dashboard with exportable reports completed.
+
+ Webhook and API key management built and operational.
+
+ Notification preferences and admin announcements displayed correctly.
+
+ API rate limiting, session management, and security controls active.
+
+ Plan-based feature access fully enforced on both dashboard and bot.
+
+ Real-time sync between payments, user plans, and dashboard UI validated.
