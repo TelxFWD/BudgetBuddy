@@ -1,0 +1,154 @@
+# Backend Development Part 1: Core System Setup (Backend Only)
+
+This guide is strictly for backend development. Frontend (website/dashboard) will not be developed in this phase. Focus is on building a scalable, error-resistant, and easily upgradeable backend with a clean folder structure, complete database schema, multi-platform session management, and queue processing.
+
+---
+
+## 📂 Project Initialization
+
+* Setup **Python FastAPI backend structure** for scalable API development.
+* Use **PostgreSQL** as the primary database engine for data integrity and relational management.
+* Setup **Redis with Celery** for asynchronous task queues and forwarding management.
+* Configure a secure `.env` file to store all sensitive configurations:
+
+  * PostgreSQL Database URL
+  * Redis Queue URL
+  * API Secrets and JWT keys
+  * Payment Gateway API keys (PayPal, NowPayments)
+* Setup and configure `requirements.txt` with dependencies:
+
+  * FastAPI, Uvicorn, SQLAlchemy, Alembic, Celery, Redis, Pyrogram/Telethon, discord.py, python-dotenv
+
+---
+
+## 📂 Database Schema Design
+
+Build complete SQLAlchemy models for:
+
+* **Users Table:**
+
+  * Stores Website User ID, Email, Plan, Plan Expiry, Max Pairs, Max Telegram Accounts, Max Discord Accounts, API Keys, CreatedAt.
+
+* **Telegram Accounts Table:**
+
+  * Stores TelegramAccountID, Linked UserID, TelegramUserID, TelegramPhone, Session Data, Status.
+
+* **Discord Accounts Table:**
+
+  * Stores DiscordAccountID, Linked UserID, DiscordToken, DiscordServers, Status.
+
+* **Forwarding Pairs Table:**
+
+  * Stores PairID, Linked UserID, TelegramAccountID, DiscordAccountID, Source Channel, Destination Channel, Delay, SilentMode, Status, PlatformType.
+
+* **Payment History Table:**
+
+  * Stores PaymentID, Linked UserID, PaymentType, PaymentStatus, PaymentDate, Amount.
+
+* **API Keys Table:**
+
+  * Stores APIKeyID, Linked UserID, APIKey, RateLimit, CreatedAt.
+
+* **Error Logs Table:**
+
+  * Stores ErrorID, Linked UserID, TelegramAccountID, ErrorType, ErrorMessage, Timestamp.
+
+* Setup Alembic migrations for database version control.
+
+---
+
+## 📂 Telegram Session Manager
+
+* Develop multi-account Telegram session handler using **Pyrogram or Telethon**.
+* Authenticate via OTP-based phone number login.
+* Manage and store multiple sessions per user.
+* Persist sessions securely to disk/database.
+* Build auto-reconnect logic for dropped sessions.
+* Implement session health checker running every 5 minutes to ensure active sessions.
+
+---
+
+## 📂 Redis Queue Setup
+
+* Configure **Redis with Celery** for background task processing.
+* Create queues for each user and each forwarding pair.
+* Implement priority queues based on user plan (Free, Pro, Elite).
+* Support:
+
+  * Per-pair custom delays
+  * Global delays per account
+  * Rate-limiting logic per plan
+* Configure automatic retry mechanisms on task failure.
+
+---
+
+## 📂 Discord Client Integration
+
+* Setup **discord.py** client to manage multiple Discord bot sessions.
+* Allow each user to link multiple Discord servers.
+* Enable forwarding between Telegram ➜ Discord and Discord ➜ Telegram.
+* Configure multi-server authentication and session persistence.
+
+---
+
+## 📂 Feature Gating Logic
+
+* Centralize plan validation for every backend action (queue processing, session management, forwarding task).
+* Enforce plan-based limits:
+
+  * Max forwarding pairs
+  * Max Telegram accounts
+  * Max Discord accounts
+  * Feature availability (Copy Mode, Chain Forwarding, Discord Forwarding)
+* Validate feature access on every backend call from bot and website APIs.
+
+---
+
+## 📂 Folder Structure
+
+```text
+backend/
+├── main.py                   # FastAPI app entry point
+├── .env                      # Environment configuration file
+├── requirements.txt          # Dependency list
+├── api/                      # API endpoints (to be developed in Part 2)
+├── bots/
+│   ├── telegram_client.py    # Telegram multi-account session manager
+│   └── discord_client.py     # Discord multi-server client setup
+├── services/
+│   ├── session_manager.py    # Telegram/Discord session lifecycle management
+│   ├── queue_manager.py      # Redis queue setup and task processor
+│   └── feature_gating.py     # Subscription plan validation logic
+├── utils/
+│   ├── env_loader.py         # Load and validate environment variables
+│   └── logger.py             # Logging configuration
+├── database/
+│   ├── models.py             # SQLAlchemy database models
+│   ├── schemas.py            # Pydantic schemas
+│   ├── db.py                 # Database connection and session management
+│   └── migrations/           # Alembic migration files
+├── tasks/
+│   ├── celery_config.py      # Celery app and Redis queue configuration
+│   └── forwarding_tasks.py   # Task processing for forwarding messages
+├── celery_worker.py          # Celery worker entry point
+└── README.md                 # Backend documentation and tracking
+```
+
+---
+
+### ✅ Completion Checklist for Part 1:
+
+* [ ] FastAPI project structure configured and running.
+* [ ] PostgreSQL database connected and all tables created via Alembic.
+* [ ] Redis queue setup with Celery and tested.
+* [ ] Multi-account Telegram session manager working with Pyrogram/Telethon.
+* [ ] Discord bot connected to multiple servers using discord.py.
+* [ ] Queue priority and delay logic operational.
+* [ ] Automatic retry on queue failure functioning.
+* [ ] Feature gating and plan validation fully enforced.
+* [ ] Environment variables securely configured.
+* [ ] Logging system initialized for error tracking.
+
+---
+
+This part is **exclusively backend-focused.** No frontend or UI development should begin at this stage.
