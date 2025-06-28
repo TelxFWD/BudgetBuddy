@@ -1,0 +1,123 @@
+# User Dashboard Development Part 4: Real-Time Sync, Advanced Controls, API Management, Mobile Optimization
+
+This section focuses on completing the missing components of the User Dashboard. It covers real-time WebSocket integration, webhook/API key UI, advanced forwarding controls, detailed analytics, bulk pair operations, custom delay per pair, queue/session health monitoring, and mobile responsiveness.
+
+---
+
+## 📂 Step 14: WebSocket Integration for Real-Time Sync
+
+### WebSocket Setup
+
+* Implement WebSocket connections using Socket.IO or FastAPI WebSocket.
+* Enable real-time status updates for:
+
+  * Forwarding pair status changes (start, pause, resume)
+  * Telegram and Discord session health (connected, disconnected)
+  * Queue load and processing rate
+
+### UI Integration
+
+* Push real-time notifications to the dashboard without requiring page refresh.
+* Show live queue status with inline loading or progress indicators.
+
+---
+
+## 📂 Step 15: Webhook & API Key User Interface
+
+### API Key Management UI
+
+* Allow users to generate, view, and revoke API keys.
+* Display API key usage limits and current consumption per plan.
+
+### Webhook Configuration UI
+
+* Provide form to add, test, and update webhook URLs.
+* Show success/failure test results for webhook validation.
+* Display webhook trigger logs and error states.
+
+---
+
+## 📂 Step 16: Advanced Forwarding Controls
+
+### Visual Drag-and-Drop Pair Builder
+
+* Allow users to visually create forwarding chains using drag-and-drop interactions.
+* Example: Drag Source ➜ Drop on Destination ➜ Set delay ➜ Configure copy mode.
+
+### Bulk Pair Management
+
+* Add options to:
+
+  * Pause all pairs
+  * Resume all pairs
+  * Delete all pairs
+* Allow users to apply bulk changes to selected pairs via checkbox selection.
+
+### Custom Delay Per Pair
+
+* Provide advanced delay configuration UI to override default/global delays.
+* Allow per-pair and per-account delay customization with validation.
+
+---
+
+## 📂 Step 17: Detailed Analytics & Reporting
+
+### Analytics Dashboard
+
+* Show message forwarding volume by:
+
+  * Date range
+  * Telegram account
+  * Discord account
+  * Individual forwarding pairs
+
+### Real-Time Analytics Updates
+
+* WebSocket-based live charts for real-time message flow and queue processing.
+
+### Reporting Features
+
+* Export forwarding statistics as CSV or PDF.
+* Add report filtering options by user, account, platform, pair, or time period.
+
+---
+
+## 📂 Step 18: Queue & Session Health Monitoring
+
+### System Health Dashboard
+
+* Show queue backlog, retry count, and session connection status.
+* Visual indicators (green/yellow/red) for system health.
+* Live session reconnection alerts.
+
+### Admin Control UI (Optional)
+
+* Allow admin to restart sessions and clear queues directly from the dashboard.
+* Show critical system logs and error tracking.
+
+---
+
+## 📂 Step 19: Mobile Optimization
+
+### Mobile Responsive Design
+
+* Ensure all dashboard pages, pair builders, and analytics charts are fully responsive.
+* Implement mobile-friendly navigation menus and collapsible sidebars.
+* Use loading skeletons and optimized card layouts for smaller screens.
+
+---
+
+### ✅ Completion Checklist for Part 4
+
+* [ ] WebSocket-based real-time sync fully integrated.
+* [ ] Webhook and API key user interface developed.
+* [ ] Visual drag-and-drop forwarding pair builder completed.
+* [ ] Bulk forwarding pair operations implemented.
+* [ ] Custom per-pair delay UI functional.
+* [ ] Detailed analytics and reporting with export options operational.
+* [ ] Queue and session health monitoring dashboard live.
+* [ ] Mobile responsiveness fully tested and optimized.
+
+---
+
+This part completes the remaining User Dashboard features required for a production-ready, real-time, mobile-optimized, multi-platform forwarding system with premium user experience and admin-level monitoring.
