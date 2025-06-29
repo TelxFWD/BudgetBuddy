@@ -151,7 +151,7 @@ export default function BillingPage() {
           
           <div className="flex items-center gap-3">
             <Badge variant="outline" className={`${user?.plan === 'elite' ? 'text-neon-purple border-neon-purple' : user?.plan === 'pro' ? 'text-neon-blue border-neon-blue' : 'text-gray-400 border-gray-400'}`}>
-              Current: {user?.plan?.charAt(0).toUpperCase() + user?.plan?.slice(1) || 'Free'} Plan
+              Current: {user?.plan ? user.plan.charAt(0).toUpperCase() + user.plan.slice(1) : 'Free'} Plan
             </Badge>
           </div>
         </div>
