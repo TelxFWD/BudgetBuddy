@@ -41,7 +41,7 @@ class ErrorSeverity(str, Enum):
 # Base schemas
 class BaseSchema(BaseModel):
     class Config:
-        orm_mode = True
+        from_attributes = True
         use_enum_values = True
 
 # User schemas

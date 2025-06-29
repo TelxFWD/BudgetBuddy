@@ -21,6 +21,10 @@ args = "FastAPI Server"
 task = "workflow.run"
 args = "Redis Server"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Celery Worker"
+
 [[workflows.workflow]]
 name = "FastAPI Server"
 author = "agent"
@@ -51,6 +55,14 @@ args = "npx next build"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npx next start -p 5000"
+
+[[workflows.workflow]]
+name = "Celery Worker"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "celery -A tasks.celery_config:celery_app worker --loglevel=info"
 
 [[ports]]
 localPort = 3000

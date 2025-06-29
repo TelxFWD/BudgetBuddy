@@ -23,7 +23,6 @@ class User(Base):
     status = Column(String(20), default="active", nullable=False)  # active, suspended, banned
     last_login = Column(DateTime, nullable=True)
     plan_expires_at = Column(DateTime, nullable=True)
-    plan_expiry = Column(DateTime, nullable=True)
     max_pairs = Column(Integer, default=2, nullable=False)
     max_telegram_accounts = Column(Integer, default=1, nullable=False)
     max_discord_accounts = Column(Integer, default=1, nullable=False)
