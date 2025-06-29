@@ -140,6 +140,18 @@ export const authService = {
     return tokens?.refresh_token || null;
   },
 
+  // Simplified OTP methods for the new login interface
+  async sendOTP(phoneNumber: string): Promise<void> {
+    return this.sendTelegramOTP({ phone_number: phoneNumber });
+  },
+
+  async verifyOTP(phoneNumber: string, otpCode: string): Promise<{ access_token: string; refresh_token: string }> {
+    const result = await this.verifyTelegramOTP({ phone_number: phoneNumber, otp_code: otpCode });
+    return {
+      access_token: result.tokens.access_token,
+      refresh_token: result.tokens.refresh_token
+    };
+  },
 
 };
 
