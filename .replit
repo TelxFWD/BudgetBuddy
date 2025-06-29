@@ -1,9 +1,9 @@
-modules = ["nodejs-20", "python-3.11", "web", "postgresql-16"]
+modules = ["nodejs-20", "python-3.11", "web", "python3"]
 run = "node index.js"
 
 [nix]
 channel = "stable-24_05"
-packages = ["cargo", "libiconv", "libxcrypt", "rustc", "redis"]
+packages = ["cargo", "libiconv", "libxcrypt", "redis", "rustc"]
 
 [workflows]
 runButton = "Project"
