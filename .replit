@@ -64,6 +64,19 @@ author = "agent"
 task = "shell.exec"
 args = "npx next build"
 
+[[workflows.workflow]]
+name = "Frontend Production"
+author = 44402949
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx next build"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx next start -p 5000"
+
 [[ports]]
 localPort = 3000
 externalPort = 3000

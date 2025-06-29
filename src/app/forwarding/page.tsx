@@ -57,8 +57,8 @@ export default function ForwardingPage() {
   const handleTogglePair = async (pairId: number, isActive: boolean) => {
     try {
       await dispatch(updateForwardingPair({ 
-        id: pairId, 
-        data: { is_active: !isActive } 
+        pairId: pairId, 
+        updates: { is_active: !isActive } 
       }) as any).unwrap();
       toast.success(`Pair ${!isActive ? 'activated' : 'paused'} successfully`);
     } catch (error: any) {
