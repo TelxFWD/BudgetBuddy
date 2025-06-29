@@ -39,6 +39,30 @@ export const authService = {
     return { tokens, user };
   },
 
+  async register(credentials: { username: string; email: string; password: string }): Promise<{ tokens: AuthTokens; user: User }> {
+    const response = await api.post('/auth/register', credentials);
+    const { access_token, refresh_token, token_type, expires_in } = response.data;
+    
+    const tokens: AuthTokens = {
+      access_token,
+      refresh_token,
+      token_type,
+      expires_in,
+    };
+    
+    this.setTokens(tokens);
+    
+    // Get user info
+    const userResponse = await api.get('/auth/me', {
+      headers: { Authorization: `Bearer ${access_token}` }
+    });
+    
+    const user = userResponse.data;
+    this.setUser(user);
+    
+    return { tokens, user };
+  },
+
   async sendTelegramOTP(data: TelegramOTPRequest): Promise<void> {
     await api.post('/auth/telegram/send-otp', data);
   },

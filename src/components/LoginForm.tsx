@@ -3,47 +3,65 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { sendTelegramOTP, verifyTelegramOTP } from '@/store/slices/authSlice';
-import { MessageSquare, Loader2, ArrowLeft, Phone, Shield } from 'lucide-react';
+import { login, register } from '@/store/slices/authSlice';
+import { MessageSquare, Loader2, Mail, Lock, User } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 export default function LoginForm() {
   const dispatch = useDispatch();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [otpCode, setOtpCode] = useState('');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [formData, setFormData] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
 
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!phoneNumber.trim()) {
-      toast.error('Please enter your phone number');
-      return;
-    }
-    
-    const result = await dispatch(sendTelegramOTP({ phone_number: phoneNumber }) as any);
-    if (result.type === 'auth/sendTelegramOTP/fulfilled') {
-      setStep('otp');
-      toast.success('OTP sent successfully!');
-    }
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
   };
 
-  const handleOtpSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!otpCode.trim()) {
-      toast.error('Please enter the OTP code');
-      return;
-    }
-    
-    const result = await dispatch(verifyTelegramOTP({ 
-      phone_number: phoneNumber, 
-      otp_code: otpCode 
-    }) as any);
-    
-    if (result.type === 'auth/verifyTelegramOTP/fulfilled') {
-      toast.success('Login successful!');
+    if (mode === 'login') {
+      if (!formData.username.trim() || !formData.password) {
+        toast.error('Please enter both username and password');
+        return;
+      }
+      
+      const result = await dispatch(login({ 
+        username: formData.username, 
+        password: formData.password 
+      }) as any);
+      
+      if (result.type === 'auth/login/fulfilled') {
+        toast.success('Login successful!');
+      }
+    } else {
+      if (!formData.username.trim() || !formData.email.trim() || !formData.password) {
+        toast.error('Please fill in all fields');
+        return;
+      }
+      
+      if (formData.password !== formData.confirmPassword) {
+        toast.error('Passwords do not match');
+        return;
+      }
+      
+      const result = await dispatch(register({ 
+        username: formData.username,
+        email: formData.email,
+        password: formData.password 
+      }) as any);
+      
+      if (result.type === 'auth/register/fulfilled') {
+        toast.success('Registration successful! You are now logged in.');
+      }
     }
   };
 
@@ -75,12 +93,12 @@ export default function LoginForm() {
           {/* Header */}
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-white mb-2">
-              {step === 'phone' ? 'Welcome Back' : 'Verify Your Identity'}
+              {mode === 'login' ? 'Welcome Back' : 'Create Account'}
             </h2>
             <p className="text-gray-400 text-sm">
-              {step === 'phone' 
-                ? 'Enter your phone number to receive a verification code' 
-                : `We sent a verification code to ${phoneNumber}`
+              {mode === 'login' 
+                ? 'Sign in to your AutoForwardX account' 
+                : 'Join AutoForwardX to start forwarding messages'
               }
             </p>
           </div>
@@ -93,117 +111,127 @@ export default function LoginForm() {
             </div>
           )}
 
-          {step === 'phone' ? (
-            <form onSubmit={handlePhoneSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Username Field */}
+            <div>
+              <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-3">
+                Username
+              </label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <input
+                  id="username"
+                  name="username"
+                  type="text"
+                  required
+                  className="w-full pl-12 pr-4 py-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 text-lg"
+                  placeholder="Enter your username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                />
+              </div>
+            </div>
+
+            {/* Email Field (for registration only) */}
+            {mode === 'register' && (
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-3">
-                  Phone Number
+                <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-3">
+                  Email Address
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                   <input
-                    id="phone"
-                    name="phone"
-                    type="tel"
+                    id="email"
+                    name="email"
+                    type="email"
                     required
                     className="w-full pl-12 pr-4 py-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 text-lg"
-                    placeholder="e.g., +1 (555) 123-4567"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={handleInputChange}
                     disabled={isLoading}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  Include country code for international numbers
-                </p>
               </div>
+            )}
 
-              <button
-                type="submit"
-                disabled={isLoading || !phoneNumber.trim()}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:transform-none"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>Sending Code...</span>
-                  </>
-                ) : (
-                  <>
-                    <Shield className="w-5 h-5" />
-                    <span>Send Verification Code</span>
-                  </>
-                )}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={handleOtpSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="otp" className="block text-sm font-medium text-gray-300 mb-3">
-                  Verification Code
-                </label>
+            {/* Password Field */}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-3">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
-                  id="otp"
-                  name="otp"
-                  type="text"
+                  id="password"
+                  name="password"
+                  type="password"
                   required
-                  className="w-full px-4 py-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 text-center text-2xl tracking-widest font-mono"
-                  placeholder="000000"
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  className="w-full pl-12 pr-4 py-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 text-lg"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleInputChange}
                   disabled={isLoading}
-                  maxLength={6}
                 />
-                <p className="text-xs text-gray-500 mt-2 text-center">
-                  Enter the 6-digit code sent to your phone
-                </p>
               </div>
-
-              <div className="flex space-x-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setStep('phone')
-                    setOtpCode('')
-                  }}
-                  className="flex-1 bg-gray-700/50 hover:bg-gray-600/50 text-gray-300 font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 border border-gray-600/50 transform hover:scale-[1.02]"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  <span>Back</span>
-                </button>
-                <button
-                  type="submit"
-                  disabled={isLoading || otpCode.length !== 6}
-                  className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:transform-none"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>Verifying...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Shield className="w-5 h-5" />
-                      <span>Verify Code</span>
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          )}
-
-          {/* Security Notice */}
-          <div className="mt-8 pt-6 border-t border-gray-700/50">
-            <div className="flex items-center justify-center space-x-2 text-gray-500">
-              <Shield className="w-4 h-4" />
-              <p className="text-xs">
-                Your data is encrypted and secure
-              </p>
             </div>
+
+            {/* Confirm Password Field (for registration only) */}
+            {mode === 'register' && (
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-3">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    required
+                    className="w-full pl-12 pr-4 py-4 bg-gray-700/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all duration-200 text-lg"
+                    placeholder="Confirm your password"
+                    value={formData.confirmPassword}
+                    onChange={handleInputChange}
+                    disabled={isLoading}
+                  />
+                </div>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-200 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:scale-[1.02] disabled:transform-none"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>{mode === 'login' ? 'Signing In...' : 'Creating Account...'}</span>
+                </>
+              ) : (
+                <span>{mode === 'login' ? 'Sign In' : 'Create Account'}</span>
+              )}
+            </button>
+          </form>
+
+          {/* Toggle Mode */}
+          <div className="mt-6 text-center">
+            <p className="text-gray-400 text-sm">
+              {mode === 'login' ? "Don't have an account?" : "Already have an account?"}{' '}
+              <button
+                type="button"
+                onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+                className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+              >
+                {mode === 'login' ? 'Sign up' : 'Sign in'}
+              </button>
+            </p>
           </div>
 
           {/* Terms */}
-          <div className="mt-4">
+          <div className="mt-6">
             <p className="text-xs text-gray-500 text-center">
               By continuing, you agree to our{' '}
               <a href="#" className="text-blue-400 hover:text-blue-300 transition-colors">

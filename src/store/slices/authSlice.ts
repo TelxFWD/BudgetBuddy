@@ -46,6 +46,18 @@ export const verifyTelegramOTP = createAsyncThunk(
   }
 );
 
+export const register = createAsyncThunk(
+  'auth/register',
+  async (credentials: { username: string; email: string; password: string }, { rejectWithValue }) => {
+    try {
+      const response = await authService.register(credentials);
+      return response;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Registration failed');
+    }
+  }
+);
+
 export const getCurrentUser = createAsyncThunk(
   'auth/getCurrentUser',
   async (_, { rejectWithValue }) => {
@@ -88,6 +100,21 @@ const authSlice = createSlice({
         state.user = action.payload.user;
       })
       .addCase(login.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      
+      // Register
+      .addCase(register.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(register.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.tokens = action.payload.tokens;
+        state.user = action.payload.user;
+      })
+      .addCase(register.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       })
