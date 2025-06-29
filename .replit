@@ -15,28 +15,11 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
-args = "Frontend Dashboard"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
 args = "FastAPI Server"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "Redis Server"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Build Production"
-
-[[workflows.workflow]]
-name = "Frontend Dashboard"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npx next dev -p 5000"
-waitForPort = 5000
 
 [[workflows.workflow]]
 name = "FastAPI Server"
@@ -55,14 +38,6 @@ author = "agent"
 task = "shell.exec"
 args = "redis-server ./redis.conf"
 waitForPort = 6379
-
-[[workflows.workflow]]
-name = "Build Production"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "npx next build"
 
 [[workflows.workflow]]
 name = "Frontend Production"
