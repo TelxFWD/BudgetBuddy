@@ -1,0 +1,139 @@
+You are required to develop a fully functional, production-grade Telegram Bot that integrates seamlessly with the AutoForwardX backend system. The bot should support:
+
+User authentication via Telegram OTP
+
+Forwarding pair management
+
+Multi-account session management
+
+Real-time system notifications
+
+Full backend API integration
+
+📂 Core Telegram Bot Features:
+✅ Authentication
+/start: Welcome message with list of available commands.
+
+/login: Ask user for their phone number, send OTP, verify session via the backend API.
+
+/logout: Option to disconnect the current Telegram account session.
+
+✅ Forwarding Management
+/addpair: Allow users to:
+
+Select source and destination channels using inline buttons.
+
+Set custom delays per pair.
+
+Choose between copy mode or forward mode.
+
+/mypairs: Show list of all active forwarding pairs.
+
+Inline buttons to Start / Stop / Delete each pair.
+
+Allow bulk operations (Pause All, Resume All, Delete All) directly from the bot.
+
+✅ Multi-Account Support
+/accounts: List all linked Telegram accounts.
+
+Option to:
+
+Add new account (initiate phone number + OTP login)
+
+Switch active account
+
+Remove account
+
+✅ Real-Time Notifications
+Push real-time system alerts to the user via the bot:
+
+Session disconnections
+
+Redis queue failures
+
+Payment success or failure
+
+Rate-limit warnings
+
+Expired plans
+
+New feature announcements (optional promotional messages)
+
+✅ Plan Management
+/plans: Show current subscription (Free / Pro / Elite)
+
+Provide payment links for PayPal and NowPayments (Crypto)
+
+Push reminders when plan is near expiry.
+
+✅ Help Menu
+/help: Show a clean, categorized list of all available commands.
+
+Quick tips for how to use each feature.
+
+🔗 Backend Integration:
+Connect to FastAPI backend using REST API.
+
+Use user-specific JWT tokens for all API calls.
+
+Bot should:
+
+Send OTP requests to backend.
+
+Send add, update, delete forwarding pair requests.
+
+Send multi-account login and logout requests.
+
+Receive session health updates via webhook or polling.
+
+🔐 Session Handling:
+Sessions should persist across bot restarts.
+
+Sessions should be auto-recovered on bot restart.
+
+Each Telegram session should be correctly mapped to the user in PostgreSQL.
+
+Allow each user to manage multiple Telegram sessions from the same Telegram Bot account.
+
+🎨 Bot UX/UI Design:
+Use inline buttons for:
+
+Selecting source/destination channels
+
+Managing forwarding pairs
+
+Multi-account switching
+
+Use clean, short messages (avoid message spam)
+
+Provide loading indicators where needed
+
+Use callback queries for fast inline updates (no need to send a new message for every update)
+
+✅ Completion Checklist:
+ /start and /help working with correct command list
+
+ OTP login via /login fully working with backend
+
+ Multi-account management via /accounts fully working
+
+ Forwarding pair management via /addpair and /mypairs working with inline controls
+
+ Real-time notifications working for system events
+
+ Payment and plan management via /plans working
+
+ Inline buttons and fast inline UI fully functional
+
+ Full backend API integration with authentication
+
+ Proper error handling and success confirmations
+
+ Sessions persist across bot restarts
+
+🔧 Optional Enhancements:
+Use Telegram menus (/setcommands) for quick command selection.
+
+Use message editing for clean UI instead of sending multiple messages.
+
+Support automatic system health push alerts.

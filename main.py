@@ -81,7 +81,7 @@ app.add_middleware(
 )
 
 # Import and register API routers
-from api import auth, forwarding, analytics, admin, payments, realtime
+from api import auth, forwarding, analytics, admin, payments, realtime, telegram_auth
 
 app.include_router(auth.router)
 app.include_router(forwarding.router)
@@ -89,6 +89,7 @@ app.include_router(analytics.router)
 app.include_router(admin.router)
 app.include_router(payments.router)
 app.include_router(realtime.router)
+app.include_router(telegram_auth.router)
 
 @app.get("/")
 async def root():
@@ -105,7 +106,8 @@ async def health_check():
     try:
         # Check database connection
         from sqlalchemy import text
-        db = next(get_db())
+        db_gen = get_db()
+        db = next(db_gen)
         db.execute(text("SELECT 1"))
         db_status = "healthy"
     except Exception as e:
