@@ -474,7 +474,7 @@ export const APIKeyManager: React.FC = () => {
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6 w-full max-w-md"
+                className="bg-dark-card border border-dark-border rounded-lg p-6 w-full max-w-md"
               >
                 <h3 className="text-lg font-semibold text-dark-text mb-4">Create API Key</h3>
                 
@@ -702,7 +702,7 @@ export const APIKeyManager: React.FC = () => {
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
-                className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6 w-full max-w-md"
+                className="bg-dark-card border border-dark-border rounded-lg p-6 w-full max-w-md"
               >
                 <h3 className="text-lg font-semibold text-dark-text mb-4">Create Webhook</h3>
                 

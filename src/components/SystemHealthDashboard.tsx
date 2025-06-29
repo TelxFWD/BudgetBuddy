@@ -302,7 +302,7 @@ export const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className={`bg-[#1a1a1b] border-2 rounded-lg p-6 ${
+        className={`bg-dark-card border-2 rounded-lg p-6 ${
           healthData.overall_status === 'healthy' ? 'border-neon-green' :
           healthData.overall_status === 'degraded' ? 'border-yellow-500' :
           'border-red-500'
@@ -333,7 +333,7 @@ export const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-[#1a1a1b] border border-dark-border rounded-lg p-4"
+          className="bg-dark-card border border-dark-border rounded-lg p-4"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -348,7 +348,7 @@ export const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-[#1a1a1b] border border-dark-border rounded-lg p-4"
+          className="bg-dark-card border border-dark-border rounded-lg p-4"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -363,7 +363,7 @@ export const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-[#1a1a1b] border border-dark-border rounded-lg p-4"
+          className="bg-dark-card border border-dark-border rounded-lg p-4"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -384,7 +384,7 @@ export const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-[#1a1a1b] border border-dark-border rounded-lg p-4"
+          className="bg-dark-card border border-dark-border rounded-lg p-4"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -407,7 +407,7 @@ export const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
       {/* Component Status */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Database */}
-        <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
+        <div className="bg-dark-card border border-dark-border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-dark-text flex items-center gap-2">
               <Database size={20} />
@@ -439,7 +439,7 @@ export const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
         </div>
 
         {/* Queue */}
-        <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
+        <div className="bg-dark-card border border-dark-border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-dark-text flex items-center gap-2">
               <Activity size={20} />
@@ -482,7 +482,7 @@ export const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
         </div>
 
         {/* Sessions */}
-        <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
+        <div className="bg-dark-card border border-dark-border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-dark-text flex items-center gap-2">
               <Wifi size={20} />
@@ -530,7 +530,7 @@ export const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
         </div>
 
         {/* API */}
-        <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
+        <div className="bg-dark-card border border-dark-border rounded-lg p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold text-dark-text flex items-center gap-2">
               <Server size={20} />
@@ -562,7 +562,7 @@ export const SystemHealthDashboard: React.FC<SystemHealthDashboardProps> = ({
       </div>
 
       {/* Recent Alerts */}
-      <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
+      <div className="bg-dark-card border border-dark-border rounded-lg p-6">
         <h3 className="text-lg font-semibold text-dark-text mb-4 flex items-center gap-2">
           <Zap size={20} />
           Recent Alerts

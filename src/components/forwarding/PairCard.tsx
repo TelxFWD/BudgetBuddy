@@ -62,7 +62,7 @@ const PairCard: React.FC<PairCardProps> = ({
   };
 
   return (
-    <div className={`bg-[#1a1a1b] rounded-lg border transition-all ${
+    <div className={`bg-dark-card rounded-lg border transition-all ${
       isSelected ? 'border-neon-blue bg-neon-blue/5' : 'border-dark-border hover:border-dark-border/80'
     }`}>
       <div className="p-4">

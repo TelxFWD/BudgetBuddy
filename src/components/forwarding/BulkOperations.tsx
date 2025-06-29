@@ -138,7 +138,7 @@ export const BulkOperations: React.FC<BulkOperationsProps> = ({
 
   return (
     <motion.div 
-      className="bg-[#1a1a1b] border border-dark-border rounded-lg p-4 mb-6"
+      className="bg-dark-card border border-dark-border rounded-lg p-4 mb-6"
       initial={{ opacity: 0, y: -20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}

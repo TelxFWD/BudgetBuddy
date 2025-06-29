@@ -265,7 +265,7 @@ const ForwardingManagement: React.FC<ForwardingManagementProps> = ({ className =
       )}
 
       {/* Search and filters */}
-      <div className="flex items-center gap-4 p-4 bg-[#1a1a1b] rounded-lg border border-dark-border">
+      <div className="flex items-center gap-4 p-4 bg-dark-card rounded-lg border border-dark-border">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-dark-muted" />
           <input
@@ -307,7 +307,7 @@ const ForwardingManagement: React.FC<ForwardingManagementProps> = ({ className =
             <p className="text-dark-muted">Loading forwarding pairs...</p>
           </div>
         ) : filteredPairs.length === 0 ? (
-          <div className="text-center py-12 bg-[#1a1a1b] rounded-lg border border-dark-border">
+          <div className="text-center py-12 bg-dark-card rounded-lg border border-dark-border">
             <MessageSquare className="w-12 h-12 mx-auto mb-4 text-dark-muted" />
             <h3 className="text-lg font-medium text-dark-text mb-2">No forwarding pairs found</h3>
             <p className="text-dark-muted mb-4">
