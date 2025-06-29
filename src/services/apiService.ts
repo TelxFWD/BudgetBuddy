@@ -6,9 +6,7 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:8000/api' 
-        : '/api',
+      baseURL: '/api',
       timeout: 30000,
       headers: {
         'Content-Type': 'application/json',
@@ -41,7 +39,8 @@ class ApiService {
               });
               
               const { access_token, refresh_token: newRefreshToken } = response.data;
-              authService.setTokens(access_token, newRefreshToken);
+              const tokens = { access_token, refresh_token: newRefreshToken, token_type: 'bearer', expires_in: 3600 };
+              authService.setTokens(tokens);
               
               // Retry original request
               error.config.headers.Authorization = `Bearer ${access_token}`;

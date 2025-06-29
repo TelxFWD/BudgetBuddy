@@ -129,6 +129,18 @@ export const authService = {
     const tokens = this.getTokens();
     return !!tokens?.access_token;
   },
+
+  getAccessToken(): string | null {
+    const tokens = this.getTokens();
+    return tokens?.access_token || null;
+  },
+
+  getRefreshToken(): string | null {
+    const tokens = this.getTokens();
+    return tokens?.refresh_token || null;
+  },
+
+
 };
 
 // Setup request interceptor for auth token

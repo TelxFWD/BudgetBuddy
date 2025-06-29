@@ -358,13 +358,13 @@ export default function AnalyticsPage() {
           <CardContent>
             <Tabs defaultValue="overview" className="w-full">
               <TabsList className="grid w-full grid-cols-3 bg-dark-border">
-                <TabsTrigger value="overview" className="data-[state=active]:bg-dark-card">
+                <TabsTrigger value="overview" className="data-[state=active]:bg-dark-border">
                   Overview
                 </TabsTrigger>
-                <TabsTrigger value="performance" className="data-[state=active]:bg-dark-card">
+                <TabsTrigger value="performance" className="data-[state=active]:bg-dark-border">
                   Performance
                 </TabsTrigger>
-                <TabsTrigger value="errors" className="data-[state=active]:bg-dark-card">
+                <TabsTrigger value="errors" className="data-[state=active]:bg-dark-border">
                   Error Analysis
                 </TabsTrigger>
               </TabsList>

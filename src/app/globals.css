@@ -18,6 +18,10 @@
     @apply bg-dark-card bg-opacity-80 backdrop-blur-sm border border-dark-border;
   }
   
+  .bg-dark-card-95 {
+    background-color: rgba(26, 26, 27, 0.95);
+  }
+  
   .neon-glow {
     @apply transition-all duration-300 hover:shadow-lg hover:shadow-neon-blue/20;
   }

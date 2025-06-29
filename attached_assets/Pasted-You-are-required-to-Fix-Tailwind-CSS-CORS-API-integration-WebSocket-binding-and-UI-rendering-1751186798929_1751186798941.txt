@@ -1,0 +1,95 @@
+You are required to:
+
+✅ Fix Tailwind CSS, CORS, API integration, WebSocket binding, and UI rendering to fully connect the frontend and backend.
+
+🔧 Detailed Actions Required:
+1. Tailwind CSS Configuration
+Fix the bg-dark-card utility class:
+
+Option 1: Define dark-card as an RGB color in tailwind.config.js to support /80 opacity.
+
+Option 2: Use bg-opacity-80 with a custom CSS class.
+
+Recompile the project and confirm that the CSS error is fully resolved.
+
+2. CORS Configuration
+Add allowedDevOrigins in next.config.js:
+
+js
+Copy
+Edit
+const nextConfig = {
+  allowedDevOrigins: ['https://your-replit-url', 'http://localhost:5000']
+};
+
+module.exports = nextConfig;
+Confirm FastAPI CORS middleware allows frontend domain:
+
+python
+Copy
+Edit
+from fastapi.middleware.cors import CORSMiddleware
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Specify dev URLs in production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+3. API Integration Repair
+Ensure the frontend API service files point to the correct backend URL.
+
+Validate that all API endpoints (authentication, session, forwarding pairs, analytics) are connected and returning live data.
+
+Connect Redux or other state management to API responses to correctly populate UI components.
+
+4. WebSocket & Real-Time UI Binding
+Verify that the useWebSocket hook is correctly configured and actively subscribed to WebSocket events.
+
+Ensure that:
+
+Real-time forwarding statuses are updated in the dashboard.
+
+Queue load, session health, and analytics are rendered live.
+
+Add visual indicators (loading spinners, live status badges, success/error toasts) to confirm real-time updates.
+
+5. Complete UI Development
+Fully build and style:
+
+Login page (responsive, modern, properly aligned)
+
+Dashboard home with forwarding management
+
+API key management UI
+
+Real-time analytics with charts
+
+Queue and system health dashboards
+
+Implement loading states, toast notifications, and user feedback for all user interactions.
+
+6. Mobile Responsiveness
+Ensure the entire dashboard is mobile-optimized:
+
+Collapsible sidebars
+
+Responsive forms and buttons
+
+Touch-friendly drag-and-drop forwarding builder
+
+✅ Completion Checklist
+ Tailwind CSS errors fully resolved and pages render correctly.
+
+ CORS errors fully fixed, cross-origin requests pass without blocks.
+
+ Frontend services correctly fetching API data.
+
+ WebSocket is subscribed and UI updates in real-time.
+
+ Fully styled and functional login and dashboard UI.
+
+ All real-time features visible and operational.
+
+ Mobile responsiveness verified.

@@ -174,7 +174,7 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <Card className="bg-dark-card/95 backdrop-blur-sm border-dark-border shadow-2xl">
+        <Card className="bg-dark-card-95 backdrop-blur-sm border-dark-border shadow-2xl">
           <CardHeader className="space-y-1 pb-6">
             <CardTitle className="text-2xl font-semibold text-center text-dark-text">
               Welcome Back
@@ -189,14 +189,14 @@ export default function LoginPage() {
               <TabsList className="grid w-full grid-cols-2 bg-dark-border">
                 <TabsTrigger 
                   value="email" 
-                  className="flex items-center gap-2 data-[state=active]:bg-dark-card data-[state=active]:text-dark-text"
+                  className="flex items-center gap-2 data-[state=active]:bg-dark-border data-[state=active]:text-dark-text"
                 >
                   <Mail className="h-4 w-4" />
                   Email
                 </TabsTrigger>
                 <TabsTrigger 
                   value="telegram"
-                  className="flex items-center gap-2 data-[state=active]:bg-dark-card data-[state=active]:text-dark-text"
+                  className="flex items-center gap-2 data-[state=active]:bg-dark-border data-[state=active]:text-dark-text"
                 >
                   <Smartphone className="h-4 w-4" />
                   Telegram

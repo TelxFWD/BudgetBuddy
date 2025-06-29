@@ -73,11 +73,10 @@ class WebSocketService {
     this.isConnecting = true;
 
     try {
-      // Construct WebSocket URL
+      // Construct WebSocket URL using the same proxy setup as REST API
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname;
-      const port = '8000'; // FastAPI backend port
-      const wsUrl = `${protocol}//${host}:${port}/realtime/ws?user_id=${userId}`;
+      const host = window.location.host; // Include port from current location
+      const wsUrl = `${protocol}//${host}/api/realtime/ws?user_id=${userId}`;
 
       this.socket = new WebSocket(wsUrl);
 
