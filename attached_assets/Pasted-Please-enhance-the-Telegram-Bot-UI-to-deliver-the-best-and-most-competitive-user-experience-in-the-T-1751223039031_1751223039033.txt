@@ -1,0 +1,123 @@
+Please enhance the Telegram Bot UI to deliver the best and most competitive user experience in the Telegram auto-forwarding industry.
+
+Focus on creating a clean, intuitive, modern, and interactive bot interface that feels better than existing bots.
+
+✅ Key Telegram Bot UI Improvements Required:
+Use Clean Inline Buttons:
+
+Minimize text-based menu navigation.
+
+Use Telegram’s inline keyboards for all actions (add, delete, pause, resume, account switch).
+
+Group related buttons together to avoid clutter.
+
+Use emoji icons to make buttons visually attractive and easier to scan.
+
+Implement Fast Callback Queries:
+
+Always use callback queries to update the message in-place instead of sending new messages.
+
+Keep the chat clean by editing the previous message with new options or status.
+
+Use Interactive Pagination:
+
+For large channel lists or forwarding pairs, add Next / Previous buttons with pagination to avoid long message dumps.
+
+Progress Indicators:
+
+Show loading indicators (like "⏳ Processing...") while API requests are running.
+
+Confirm successful actions with visual cues like "✅ Pair Created Successfully."
+
+Use Real-Time Status Badges:
+
+Show session status using visual badges:
+
+🟢 Connected
+
+🔴 Disconnected
+
+🟡 Pending
+
+Inline Confirmation Dialogs:
+
+Before deleting a session or pair, show an inline confirmation like:
+
+❗ Are you sure you want to delete this pair?
+✅ Yes | ❌ No
+
+Plan-Based Visual Feedback:
+
+Show plan limits and usage like:
+
+Your Plan: Pro (3/5 pairs used)
+
+Use Quick-Access Menus:
+
+Create a compact main menu with the most important options:
+
+➕ Add Pair
+
+🔄 My Pairs
+
+👤 Accounts
+
+📊 Plan
+
+⚙️ Settings
+
+Push Real-Time System Notifications:
+
+Show system alerts like:
+
+🚨 Session disconnected
+
+🟢 Payment successful
+
+📦 Queue overload detected
+
+Session-Aware Context:
+
+If a user has multiple Telegram accounts, the bot should always clearly indicate which account is active and allow switching quickly:
+
+✏️ Current Account: @exampleuser
+🔄 Switch Account
+
+🎨 Visual and UX Goals:
+Make the bot feel fast, clean, and minimal.
+
+Avoid overwhelming the user with too many messages.
+
+Keep chat history tight by using message editing instead of message stacking.
+
+Make all controls accessible within two taps or less.
+
+✅ Must-Have UX Features:
+Inline buttons for all actions
+
+Callback query updates
+
+Pagination for long lists
+
+Visual icons for status and commands
+
+Quick-access main menu
+
+Inline confirmation prompts
+
+Plan and limit indicators
+
+📋 Completion Checklist:
+ Inline button menus implemented throughout
+
+ All messages updated via callback queries (not sent as new messages)
+
+ Pagination for large lists implemented
+
+ Loading indicators and real-time confirmations added
+
+ Real-time system alerts pushed to users
+
+ Visual plan usage feedback displayed
+
+ Multi-account status clearly shown with quick switch options
