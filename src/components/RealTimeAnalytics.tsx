@@ -287,7 +287,7 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-dark-card border border-dark-border rounded-lg p-4"
+          className="bg-[#1a1a1b] border border-dark-border rounded-lg p-4"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -302,7 +302,7 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-dark-card border border-dark-border rounded-lg p-4"
+          className="bg-[#1a1a1b] border border-dark-border rounded-lg p-4"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -317,7 +317,7 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-dark-card border border-dark-border rounded-lg p-4"
+          className="bg-[#1a1a1b] border border-dark-border rounded-lg p-4"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -330,7 +330,7 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="bg-dark-card border border-dark-border rounded-lg p-4"
+          className="bg-[#1a1a1b] border border-dark-border rounded-lg p-4"
         >
           <div className="flex items-center justify-between">
             <div>
@@ -347,7 +347,7 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
       {/* Charts Section */}
       <div ref={chartRef} className="space-y-6">
         {/* Message Volume Chart */}
-        <div className="bg-dark-card border border-dark-border rounded-lg p-6">
+        <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
           <h3 className="text-lg font-semibold text-dark-text mb-4">Message Volume Over Time</h3>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={data.messageVolume}>
@@ -386,7 +386,7 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
 
         {/* Platform Distribution */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-dark-card border border-dark-border rounded-lg p-6">
+          <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
             <h3 className="text-lg font-semibold text-dark-text mb-4">Platform Distribution</h3>
             <ResponsiveContainer width="100%" height={250}>
               <PieChart>
@@ -409,7 +409,7 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
           </div>
 
           {/* Top Performing Pairs */}
-          <div className="bg-dark-card border border-dark-border rounded-lg p-6">
+          <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
             <h3 className="text-lg font-semibold text-dark-text mb-4">Top Performing Pairs</h3>
             <div className="space-y-3">
               {data.topPairs.map((pair, index) => (
@@ -432,7 +432,7 @@ export const RealTimeAnalytics: React.FC<RealTimeAnalyticsProps> = ({
         </div>
 
         {/* Session Health Status */}
-        <div className="bg-dark-card border border-dark-border rounded-lg p-6">
+        <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
           <h3 className="text-lg font-semibold text-dark-text mb-4">Session Health Status</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.sessionHealth.map((session, index) => (

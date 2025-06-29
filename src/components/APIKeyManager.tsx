@@ -101,7 +101,7 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({
   // Check if user has access to API management
   if (userPlan !== 'elite') {
     return (
-      <div className="bg-dark-card border border-dark-border rounded-lg p-8 text-center">
+      <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-8 text-center">
         <Key className="mx-auto mb-4 text-gray-500" size={48} />
         <h3 className="text-xl font-semibold text-dark-text mb-2">API Key Management</h3>
         <p className="text-gray-400 mb-4">
@@ -277,7 +277,7 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({
       </div>
 
       {/* API Keys Section */}
-      <div className="bg-dark-card border border-dark-border rounded-lg p-6">
+      <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
         <h3 className="text-lg font-semibold text-dark-text mb-4">API Keys</h3>
         
         <div className="space-y-4">
@@ -373,7 +373,7 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({
       </div>
 
       {/* Webhooks Section */}
-      <div className="bg-dark-card border border-dark-border rounded-lg p-6">
+      <div className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6">
         <h3 className="text-lg font-semibold text-dark-text mb-4">Webhooks</h3>
         
         <div className="space-y-4">
@@ -472,7 +472,7 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-dark-card border border-dark-border rounded-lg p-6 w-full max-w-md"
+              className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6 w-full max-w-md"
               onClick={e => e.stopPropagation()}
             >
               <h3 className="text-lg font-semibold text-dark-text mb-4">Create New API Key</h3>
@@ -547,7 +547,7 @@ export const APIKeyManager: React.FC<APIKeyManagerProps> = ({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-dark-card border border-dark-border rounded-lg p-6 w-full max-w-md"
+              className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6 w-full max-w-md"
               onClick={e => e.stopPropagation()}
             >
               <h3 className="text-lg font-semibold text-dark-text mb-4">Add New Webhook</h3>

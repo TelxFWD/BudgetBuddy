@@ -52,7 +52,7 @@ const AccountManager: React.FC<AccountManagerProps> = ({
       {/* Account Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Telegram Accounts */}
-        <div className="bg-dark-card rounded-lg border border-dark-border p-4">
+        <div className="bg-[#1a1a1b] rounded-lg border border-dark-border p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <MessageCircle className="w-5 h-5 text-neon-blue" />
@@ -119,7 +119,7 @@ const AccountManager: React.FC<AccountManagerProps> = ({
         </div>
 
         {/* Discord Accounts */}
-        <div className="bg-dark-card rounded-lg border border-dark-border p-4">
+        <div className="bg-[#1a1a1b] rounded-lg border border-dark-border p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Bot className="w-5 h-5 text-neon-purple" />

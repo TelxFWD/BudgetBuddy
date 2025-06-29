@@ -203,7 +203,7 @@ export const DragDropPairBuilder: React.FC<PairBuilderProps> = ({ onSave, initia
                               initial={{ opacity: 0, y: 20 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -20 }}
-                              className={`bg-dark-card border rounded-lg p-4 cursor-pointer transition-all ${
+                              className={`bg-[#1a1a1b] border rounded-lg p-4 cursor-pointer transition-all ${
                                 selectedPair === pair.id
                                   ? 'border-neon-green shadow-lg'
                                   : 'border-dark-border hover:border-dark-muted'

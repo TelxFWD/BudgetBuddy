@@ -34,7 +34,7 @@ const QueueStatus: React.FC<QueueStatusProps> = ({ status, sessionHealth }) => {
   };
 
   return (
-    <div className="bg-dark-card rounded-lg border border-dark-border p-4">
+    <div className="bg-[#1a1a1b] rounded-lg border border-dark-border p-4">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Activity className="w-5 h-5 text-neon-blue" />

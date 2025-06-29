@@ -22,6 +22,10 @@
     background-color: rgba(26, 26, 27, 0.95);
   }
   
+  .bg-dark-card {
+    @apply bg-[#1a1a1b];
+  }
+  
   .neon-glow {
     @apply transition-all duration-300 hover:shadow-lg hover:shadow-neon-blue/20;
   }

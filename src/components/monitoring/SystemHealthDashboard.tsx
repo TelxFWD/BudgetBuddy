@@ -235,7 +235,7 @@ export const SystemHealthDashboard: React.FC = () => {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-dark-card border border-dark-border rounded-lg p-6"
+        className="bg-[#1a1a1b] border border-dark-border rounded-lg p-6"
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">

@@ -28,7 +28,7 @@ module.exports = {
         'neon-green': '#00ff88',
         'neon-pink': '#ff006e',
         'dark-bg': 'rgb(10 10 11)',
-        'dark-card': 'rgb(26 26 27)',
+        'dark-card': '#1a1a1b',
         'dark-border': 'rgb(45 45 48)',
         'dark-text': 'rgb(228 228 231)',
         'dark-muted': 'rgb(113 113 122)',

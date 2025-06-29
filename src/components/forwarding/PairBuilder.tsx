@@ -319,7 +319,7 @@ const PairBuilder: React.FC<PairBuilderProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-dark-card rounded-lg border border-dark-border w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-[#1a1a1b] rounded-lg border border-dark-border w-full max-w-4xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-dark-border">
           <h2 className="text-xl font-semibold text-dark-text">

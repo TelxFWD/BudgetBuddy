@@ -15,9 +15,7 @@ const nextConfig = {
       },
     ]
   },
-  experimental: {
-    serverComponentsExternalPackages: [],
-  },
+  serverExternalPackages: [],
 }
 
 module.exports = nextConfig
