@@ -1,6 +1,5 @@
-import React from 'react'
-import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import React, { useState } from 'react'
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { 
   Home, 
   ArrowRightLeft, 
@@ -9,142 +8,173 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X
+  X,
+  Plus,
+  Crown
 } from 'lucide-react'
-import { cn } from '../utils/cn'
-
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Add Pair', href: '/dashboard/pairs/new', icon: ArrowRightLeft },
-  { name: 'Account Manager', href: '/dashboard/accounts', icon: Users },
-  { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
-]
+import { useAuth } from '../context/AuthContext'
 
 const DashboardLayout: React.FC = () => {
-  const { user, logout } = useAuth()
   const location = useLocation()
-  const [sidebarOpen, setSidebarOpen] = React.useState(false)
+  const navigate = useNavigate()
+  const { logout, user } = useAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
+    navigate('/login')
   }
 
+  const navigationItems = [
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Add Pair', href: '/dashboard/pairs', icon: Plus },
+    { name: 'Account Manager', href: '/dashboard/accounts', icon: Users },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+    { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+  ]
+
   return (
-    <div className="min-h-screen bg-dark-bg">
-      {/* Mobile sidebar */}
-      <div className={cn(
-        'fixed inset-0 z-50 lg:hidden',
-        sidebarOpen ? 'block' : 'hidden'
-      )}>
-        <div className="fixed inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-        <div className="fixed left-0 top-0 h-full w-64 bg-dark-card border-r border-dark-border">
-          <div className="flex items-center justify-between p-4">
-            <h1 className="text-xl font-bold text-white">AutoForwardX</h1>
+    <div className="min-h-screen bg-gray-900 font-inter">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        >
+          <div className="fixed inset-0 bg-black bg-opacity-50" />
+        </div>
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 z-50 h-full w-64 transform bg-gray-800 border-r border-gray-700 transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
+        <div className="flex h-full flex-col">
+          {/* Logo */}
+          <div className="flex h-16 items-center justify-between px-6 border-b border-gray-700">
+            <div className="flex items-center">
+              <div className="mr-3 h-10 w-10 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg">
+                <ArrowRightLeft className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xl font-bold text-white">AutoForwardX</span>
+            </div>
             <button
+              className="lg:hidden"
               onClick={() => setSidebarOpen(false)}
-              className="text-gray-400 hover:text-white"
             >
-              <X className="h-6 w-6" />
+              <X className="h-6 w-6 text-gray-400" />
             </button>
           </div>
-          <SidebarContent currentPath={location.pathname} onLogout={handleLogout} user={user} />
-        </div>
-      </div>
 
-      {/* Desktop sidebar */}
-      <div className="hidden lg:fixed lg:left-0 lg:top-0 lg:h-full lg:w-64 lg:bg-dark-card lg:border-r lg:border-dark-border lg:block">
-        <div className="p-4">
-          <h1 className="text-xl font-bold text-white">AutoForwardX</h1>
-          <p className="text-sm text-gray-400 mt-1">Message Forwarding</p>
-        </div>
-        <SidebarContent currentPath={location.pathname} onLogout={handleLogout} user={user} />
-      </div>
+          {/* Navigation */}
+          <nav className="flex-1 space-y-1 px-4 py-6">
+            {navigationItems.map((item) => {
+              const isActive = location.pathname === item.href || 
+                (item.href === '/dashboard' && location.pathname === '/dashboard/')
+              
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white shadow-md'
+                      : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <item.icon
+                    className={`mr-3 h-5 w-5 ${
+                      isActive ? 'text-white' : 'text-gray-400'
+                    }`}
+                  />
+                  {item.name}
+                </Link>
+              )
+            })}
+          </nav>
 
-      {/* Main content */}
-      <div className="lg:ml-64">
-        {/* Top bar */}
-        <div className="bg-dark-card border-b border-dark-border px-4 py-3">
-          <div className="flex items-center justify-between">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="text-gray-400 hover:text-white lg:hidden"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="text-sm font-medium text-white">{user?.username}</p>
-                <p className="text-xs text-gray-400 capitalize">{user?.plan} Plan</p>
+          {/* Current Plan */}
+          <div className="px-4 pb-6">
+            <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-300">Current Plan</span>
+                <Crown className="h-4 w-4 text-yellow-400" />
               </div>
-              <div className="h-8 w-8 bg-indigo-600 rounded-full flex items-center justify-center">
-                <span className="text-sm font-medium text-white">
-                  {user?.username?.charAt(0).toUpperCase()}
-                </span>
+              <span className="text-lg font-bold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">
+                Pro Plan
+              </span>
+              <p className="text-xs text-gray-400 mt-1">5 of 10 pairs used</p>
+            </div>
+          </div>
+
+          {/* User info and logout */}
+          <div className="border-t border-gray-700 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="h-10 w-10 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center">
+                  <span className="text-sm font-bold text-white">
+                    {user?.username?.[0]?.toUpperCase() || 'U'}
+                  </span>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm font-medium text-white">
+                    {user?.username || 'User'}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    {user?.email || 'user@example.com'}
+                  </p>
+                </div>
               </div>
+              <button
+                onClick={handleLogout}
+                className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                title="Logout"
+              >
+                <LogOut className="h-5 w-5" />
+              </button>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Main content */}
+      <div className="lg:pl-64">
+        {/* Mobile header */}
+        <div className="flex h-16 items-center justify-between bg-gray-800 border-b border-gray-700 px-4 lg:hidden">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-400 hover:text-white"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <span className="text-lg font-bold text-white">AutoForwardX</span>
+          <div className="w-6" />
+        </div>
 
         {/* Page content */}
-        <main className="p-6">
+        <main className="flex-1 min-h-screen bg-gray-900">
           <Outlet />
+          
+          {/* Footer */}
+          <footer className="mt-16 border-t border-gray-700 bg-gray-800/50 backdrop-blur-sm">
+            <div className="px-6 py-4">
+              <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 text-indigo-300">
+                  Modern UI
+                </span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 text-green-300">
+                  Production Ready
+                </span>
+                <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 text-blue-300">
+                  Fully Responsive
+                </span>
+              </div>
+            </div>
+          </footer>
         </main>
-      </div>
-    </div>
-  )
-}
-
-interface SidebarContentProps {
-  currentPath: string
-  onLogout: () => void
-  user: any
-}
-
-const SidebarContent: React.FC<SidebarContentProps> = ({ currentPath, onLogout, user }) => {
-  return (
-    <div className="flex flex-col h-full">
-      <nav className="flex-1 px-4 space-y-2">
-        {navigation.map((item) => {
-          const isActive = currentPath === item.href
-          return (
-            <NavLink
-              key={item.name}
-              to={item.href}
-              className={cn(
-                'flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                isActive
-                  ? 'bg-indigo-600 text-white'
-                  : 'text-gray-300 hover:bg-dark-border hover:text-white'
-              )}
-            >
-              <item.icon className="mr-3 h-5 w-5" />
-              {item.name}
-            </NavLink>
-          )
-        })}
-      </nav>
-
-      {/* User info and logout */}
-      <div className="border-t border-dark-border p-4">
-        <div className="mb-3">
-          <div className={cn(
-            'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-            user?.plan === 'elite' ? 'bg-purple-900/50 text-purple-400 border border-purple-800' :
-            user?.plan === 'pro' ? 'bg-blue-900/50 text-blue-400 border border-blue-800' :
-            'bg-gray-900/50 text-gray-400 border border-gray-800'
-          )}>
-            {user?.plan?.toUpperCase()} Plan
-          </div>
-        </div>
-        <button
-          onClick={onLogout}
-          className="flex items-center w-full px-3 py-2 text-sm font-medium text-gray-300 hover:bg-red-900/20 hover:text-red-400 rounded-lg transition-colors"
-        >
-          <LogOut className="mr-3 h-5 w-5" />
-          Sign Out
-        </button>
       </div>
     </div>
   )

@@ -1,294 +1,363 @@
-import React, { useState } from 'react'
-import { Plus, ArrowRight, Activity, CheckCircle, AlertTriangle, Pause, Edit, Trash2, Zap } from 'lucide-react'
-import axiosInstance from '../api/axiosInstance'
+import React, { useState, useEffect } from 'react'
+import { 
+  Server, 
+  Database, 
+  Zap, 
+  Plus, 
+  Edit, 
+  Pause, 
+  Trash2, 
+  Play,
+  TrendingUp,
+  MessageCircle,
+  CheckCircle,
+  Activity,
+  ArrowRight,
+  Link2
+} from 'lucide-react'
 
-interface ForwardingPair {
-  id: string
-  source: string
-  destination: string
-  delay: string
-  status: 'active' | 'paused'
-  type: 'telegram-telegram' | 'telegram-discord' | 'discord-telegram'
-}
+// Component for System Status Panel
+const SystemStatusPanel: React.FC = () => {
+  const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking')
 
-interface SystemStatus {
-  fastapi_backend: 'healthy' | 'warning' | 'error'
-  redis_queue: 'healthy' | 'warning' | 'error'
-  celery_workers: 'healthy' | 'warning' | 'error'
-}
-
-const DashboardHome: React.FC = () => {
-  const [systemStatus, setSystemStatus] = useState<SystemStatus>({
-    fastapi_backend: 'warning',
-    redis_queue: 'healthy',
-    celery_workers: 'healthy'
-  })
-  const [isTestingConnection, setIsTestingConnection] = useState(false)
-  const [forwardingPairs] = useState<ForwardingPair[]>([
-    { id: '1', source: '@channel1', destination: '@channel2', delay: '24h', status: 'active', type: 'telegram-telegram' },
-    { id: '2', source: '@source_group', destination: 'Discord Server', delay: '5m', status: 'active', type: 'telegram-discord' },
-    { id: '3', source: 'Discord #general', destination: '@telegram_chat', delay: '1h', status: 'paused', type: 'discord-telegram' }
-  ])
-
-  const testBackendConnection = async () => {
-    setIsTestingConnection(true)
+  const testConnection = async () => {
+    setBackendStatus('checking')
     try {
-      const response = await axiosInstance.get('/health')
-      if (response.status === 200) {
-        setSystemStatus(prev => ({ ...prev, fastapi_backend: 'healthy' }))
+      const response = await fetch('/api/health')
+      if (response.ok) {
+        setBackendStatus('online')
+      } else {
+        setBackendStatus('offline')
       }
     } catch (error) {
-      setSystemStatus(prev => ({ ...prev, fastapi_backend: 'error' }))
-    } finally {
-      setIsTestingConnection(false)
+      setBackendStatus('offline')
     }
   }
+
+  useEffect(() => {
+    testConnection()
+  }, [])
+
+  const services = [
+    {
+      name: 'FastAPI Backend',
+      status: backendStatus,
+      icon: Server,
+      description: 'REST API Server'
+    },
+    {
+      name: 'Redis Queue',
+      status: 'online' as const,
+      icon: Database,
+      description: 'Message Queue'
+    },
+    {
+      name: 'Celery Workers',
+      status: 'online' as const,
+      icon: Zap,
+      description: 'Background Tasks'
+    }
+  ]
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'healthy': return 'bg-green-500'
-      case 'warning': return 'bg-yellow-500'
-      case 'error': return 'bg-red-500'
-      default: return 'bg-gray-500'
+      case 'online': return 'text-green-400'
+      case 'offline': return 'text-red-400'
+      default: return 'text-yellow-400'
     }
   }
 
-  const getStatusText = (status: string) => {
+  const getStatusBg = (status: string) => {
     switch (status) {
-      case 'healthy': return 'Healthy'
-      case 'warning': return 'Warning'
-      case 'error': return 'Error'
-      default: return 'Unknown'
+      case 'online': return 'bg-green-500/20 border-green-500/30'
+      case 'offline': return 'bg-red-500/20 border-red-500/30'
+      default: return 'bg-yellow-500/20 border-yellow-500/30'
     }
-  }
-
-  const getPlatformIcon = (type: string) => {
-    if (type.includes('telegram')) return '📱'
-    if (type.includes('discord')) return '💬'
-    return '🔗'
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center">
-        <div className="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Zap className="h-8 w-8 text-white" />
-        </div>
-        <h1 className="text-4xl font-bold text-white mb-2">AutoForwardX Dashboard</h1>
-        <p className="text-gray-400 text-lg">Seamlessly automate message forwarding across Telegram and Discord</p>
+    <div className="bg-gray-800 rounded-xl p-6 shadow-md border border-gray-700">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-white">System Status</h2>
+        <button
+          onClick={testConnection}
+          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all duration-200"
+        >
+          Test Backend Connection
+        </button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {services.map((service) => (
+          <div key={service.name} className={`p-4 rounded-lg border ${getStatusBg(service.status)}`}>
+            <div className="flex items-center justify-between mb-2">
+              <service.icon className="h-6 w-6 text-gray-300" />
+              <div className={`w-3 h-3 rounded-full ${
+                service.status === 'online' ? 'bg-green-400' : 
+                service.status === 'offline' ? 'bg-red-400' : 'bg-yellow-400'
+              }`} />
+            </div>
+            <h3 className="font-medium text-white mb-1">{service.name}</h3>
+            <p className="text-sm text-gray-400 mb-2">{service.description}</p>
+            <span className={`text-sm font-medium ${getStatusColor(service.status)}`}>
+              {service.status === 'checking' ? 'Checking...' : service.status.toUpperCase()}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Component for Forwarding Pairs Manager
+const ForwardingPairsPanel: React.FC = () => {
+  const [pairs] = useState([
+    {
+      id: 1,
+      type: 'Telegram → Discord',
+      source: '@techNews',
+      destination: '#general',
+      delay: '5m',
+      status: 'active',
+      messages: 156
+    },
+    {
+      id: 2,
+      type: 'Discord → Telegram',
+      source: '#announcements',
+      destination: '@myChannel',
+      delay: '1h',
+      status: 'paused',
+      messages: 89
+    },
+    {
+      id: 3,
+      type: 'Telegram → Telegram',
+      source: '@sourceChat',
+      destination: '@targetChat',
+      delay: '30m',
+      status: 'active',
+      messages: 234
+    }
+  ])
+
+  return (
+    <div className="bg-gray-800 rounded-xl p-6 shadow-md border border-gray-700">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-white">Forwarding Pairs</h2>
+        <button className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all duration-200 flex items-center">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Pair
+        </button>
       </div>
 
-      {/* System Status Panel */}
-      <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-        <h2 className="text-2xl font-semibold text-white mb-6">System Status</h2>
+      <div className="space-y-3">
+        {pairs.map((pair) => (
+          <div key={pair.id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <div className="flex items-center mb-2">
+                  <span className="text-white font-medium">{pair.type}</span>
+                  <span className="ml-2 px-2 py-1 text-xs rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                    {pair.delay}
+                  </span>
+                  <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                    pair.status === 'active' 
+                      ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                      : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+                  }`}>
+                    {pair.status}
+                  </span>
+                </div>
+                <div className="flex items-center text-sm text-gray-400">
+                  <span>{pair.source}</span>
+                  <ArrowRight className="h-4 w-4 mx-2" />
+                  <span>{pair.destination}</span>
+                  <span className="ml-4 flex items-center">
+                    <MessageCircle className="h-4 w-4 mr-1" />
+                    {pair.messages} messages
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors">
+                  <Edit className="h-4 w-4" />
+                </button>
+                <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors">
+                  {pair.status === 'active' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                </button>
+                <button className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-colors">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// Component for Analytics Panel
+const AnalyticsPanel: React.FC = () => {
+  const stats = {
+    totalMessages: 2847,
+    successRate: 98.5,
+    todayMessages: 156
+  }
+
+  return (
+    <div className="bg-gray-800 rounded-xl p-6 shadow-md border border-gray-700">
+      <h2 className="text-xl font-semibold text-white mb-6">Analytics Overview</h2>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-300 text-sm font-medium">Total Messages</p>
+              <p className="text-2xl font-bold text-white">{stats.totalMessages.toLocaleString()}</p>
+            </div>
+            <MessageCircle className="h-8 w-8 text-blue-400" />
+          </div>
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-          {/* FastAPI Backend */}
-          <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 text-center">
-            <div className="flex items-center justify-center mb-3">
-              <div className={`w-3 h-3 rounded-full ${getStatusColor(systemStatus.fastapi_backend)} mr-2`} />
-              <span className="text-white font-medium">FastAPI Backend</span>
+        <div className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-300 text-sm font-medium">Success Rate</p>
+              <p className="text-2xl font-bold text-white">{stats.successRate}%</p>
             </div>
-            <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-              systemStatus.fastapi_backend === 'healthy' ? 'bg-green-900/50 text-green-400' :
-              systemStatus.fastapi_backend === 'warning' ? 'bg-yellow-900/50 text-yellow-400' : 
-              'bg-red-900/50 text-red-400'
-            }`}>
-              {getStatusText(systemStatus.fastapi_backend)}
-            </span>
-          </div>
-
-          {/* Redis Queue */}
-          <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 text-center">
-            <div className="flex items-center justify-center mb-3">
-              <div className={`w-3 h-3 rounded-full ${getStatusColor(systemStatus.redis_queue)} mr-2`} />
-              <span className="text-white font-medium">Redis Queue</span>
-            </div>
-            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-900/50 text-green-400">
-              Active
-            </span>
-          </div>
-
-          {/* Celery Workers */}
-          <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 text-center">
-            <div className="flex items-center justify-center mb-3">
-              <div className={`w-3 h-3 rounded-full ${getStatusColor(systemStatus.celery_workers)} mr-2`} />
-              <span className="text-white font-medium">Celery Workers</span>
-            </div>
-            <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-900/50 text-green-400">
-              Running
-            </span>
+            <CheckCircle className="h-8 w-8 text-green-400" />
           </div>
         </div>
-
-        <div className="text-center">
-          <button
-            onClick={testBackendConnection}
-            disabled={isTestingConnection}
-            className="bg-indigo-600 text-white rounded-xl px-6 py-3 hover:bg-indigo-700 disabled:opacity-50 font-medium transition-colors"
-          >
-            {isTestingConnection ? 'Testing...' : 'Test Backend Connection'}
-          </button>
+        
+        <div className="bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-violet-300 text-sm font-medium">Today</p>
+              <p className="text-2xl font-bold text-white">{stats.todayMessages}</p>
+            </div>
+            <TrendingUp className="h-8 w-8 text-violet-400" />
+          </div>
         </div>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Forwarding Pairs */}
-        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-semibold text-white">Forwarding Pairs</h3>
-            <button className="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700 font-medium flex items-center transition-colors">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Pair
-            </button>
-          </div>
-          
-          <div className="space-y-4">
-            {forwardingPairs.map((pair) => (
-              <div key={pair.id} className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 hover:border-gray-600 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-2xl">{getPlatformIcon(pair.type)}</span>
-                    <div>
-                      <div className="flex items-center text-white font-medium">
-                        <span>{pair.source}</span>
-                        <ArrowRight className="h-4 w-4 mx-2 text-gray-400" />
-                        <span>{pair.destination}</span>
-                      </div>
-                      <div className="flex items-center space-x-4 mt-1">
-                        <span className="text-sm text-gray-400">Delay: {pair.delay}</span>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          pair.status === 'active' ? 'bg-green-900/50 text-green-400' : 'bg-yellow-900/50 text-yellow-400'
-                        }`}>
-                          {pair.status}
-                        </span>
-                      </div>
-                    </div>
+      {/* Simple Chart Preview */}
+      <div className="bg-gray-700/50 rounded-lg p-4">
+        <h3 className="text-white font-medium mb-4">Weekly Activity</h3>
+        <div className="flex items-end justify-between h-24 space-x-2">
+          {[40, 65, 45, 80, 60, 90, 75].map((height, index) => (
+            <div key={index} className="flex-1 bg-gradient-to-t from-indigo-500 to-violet-500 rounded-t-sm opacity-80" style={{ height: `${height}%` }} />
+          ))}
+        </div>
+        <div className="flex justify-between text-xs text-gray-400 mt-2">
+          {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+            <span key={day}>{day}</span>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Component for Account Manager
+const AccountManagerPanel: React.FC = () => {
+  const [accounts] = useState([
+    {
+      id: 1,
+      platform: 'Telegram',
+      username: '@myAccount',
+      status: 'connected',
+      sessions: 3,
+      lastActive: '2 minutes ago'
+    },
+    {
+      id: 2,
+      platform: 'Discord',
+      username: 'MyBot#1234',
+      status: 'connected',
+      sessions: 1,
+      lastActive: '5 minutes ago'
+    },
+    {
+      id: 3,
+      platform: 'Telegram',
+      username: '@backupAccount',
+      status: 'disconnected',
+      sessions: 0,
+      lastActive: '2 hours ago'
+    }
+  ])
+
+  return (
+    <div className="bg-gray-800 rounded-xl p-6 shadow-md border border-gray-700">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-white">Account Manager</h2>
+        <button className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all duration-200 flex items-center">
+          <Plus className="h-4 w-4 mr-2" />
+          Add Telegram Account
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {accounts.map((account) => (
+          <div key={account.id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className={`w-3 h-3 rounded-full mr-3 ${
+                  account.status === 'connected' ? 'bg-green-400' : 'bg-red-400'
+                }`} />
+                <div>
+                  <div className="flex items-center">
+                    <span className="text-white font-medium">{account.platform}</span>
+                    <span className="ml-2 text-gray-400">{account.username}</span>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <button className="p-2 text-gray-400 hover:text-yellow-400 transition-colors">
-                      <Pause className="h-4 w-4" />
-                    </button>
-                    <button className="p-2 text-gray-400 hover:text-blue-400 transition-colors">
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button className="p-2 text-gray-400 hover:text-red-400 transition-colors">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                  <div className="flex items-center text-sm text-gray-400 mt-1">
+                    <Activity className="h-4 w-4 mr-1" />
+                    <span>{account.sessions} sessions</span>
+                    <span className="ml-4">Last: {account.lastActive}</span>
                   </div>
                 </div>
               </div>
-            ))}
+              <div className="flex items-center space-x-2">
+                <button className="px-3 py-1 text-sm text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 rounded-lg hover:bg-indigo-500/30 transition-colors">
+                  Reconnect
+                </button>
+                <button className="px-3 py-1 text-sm text-gray-300 bg-gray-600/50 border border-gray-500/30 rounded-lg hover:bg-gray-600 transition-colors">
+                  Switch
+                </button>
+                <button className="px-3 py-1 text-sm text-red-300 bg-red-500/20 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors">
+                  Remove
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        ))}
+      </div>
+    </div>
+  )
+}
 
-        {/* Analytics Panel */}
-        <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-          <h3 className="text-xl font-semibold text-white mb-6">Analytics Overview</h3>
-          
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-white">345</div>
-              <div className="text-sm text-gray-400">Total Messages Forwarded</div>
-            </div>
-            <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">99.9%</div>
-              <div className="text-sm text-gray-400">Success Rate</div>
-            </div>
-          </div>
-
-          <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4">
-            <div className="flex items-center justify-center h-32 text-gray-500">
-              <Activity className="h-8 w-8 mr-2" />
-              <span>Graph Preview (Bar + Pie Charts)</span>
-            </div>
-          </div>
-        </div>
+// Main Dashboard Home Component
+const DashboardHome: React.FC = () => {
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
+        <p className="text-gray-400">Monitor and manage your message forwarding system</p>
       </div>
 
-      {/* Account Manager */}
-      <div className="bg-gray-800/50 border border-gray-700 rounded-xl p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-semibold text-white">Telegram & Discord Sessions</h3>
-          <button className="bg-indigo-600 text-white rounded-lg px-4 py-2 hover:bg-indigo-700 font-medium flex items-center transition-colors">
-            <Plus className="h-4 w-4 mr-2" />
-            Add New Telegram Account
-          </button>
-        </div>
+      {/* System Status */}
+      <SystemStatusPanel />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Telegram Account */}
-          <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <span className="text-xl">📱</span>
-                <span className="text-white font-medium">@username1</span>
-              </div>
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-            </div>
-            <div className="flex space-x-2">
-              <button className="flex-1 text-xs bg-blue-600 text-white rounded px-2 py-1 hover:bg-blue-700 transition-colors">
-                Reconnect
-              </button>
-              <button className="flex-1 text-xs bg-gray-600 text-white rounded px-2 py-1 hover:bg-gray-700 transition-colors">
-                Switch
-              </button>
-              <button className="flex-1 text-xs bg-red-600 text-white rounded px-2 py-1 hover:bg-red-700 transition-colors">
-                Remove
-              </button>
-            </div>
-          </div>
+      {/* Forwarding Pairs */}
+      <ForwardingPairsPanel />
 
-          {/* Discord Account */}
-          <div className="bg-gray-900/50 border border-gray-700 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-2">
-                <span className="text-xl">💬</span>
-                <span className="text-white font-medium">Discord Bot</span>
-              </div>
-              <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-            </div>
-            <div className="flex space-x-2">
-              <button className="flex-1 text-xs bg-blue-600 text-white rounded px-2 py-1 hover:bg-blue-700 transition-colors">
-                Reconnect
-              </button>
-              <button className="flex-1 text-xs bg-gray-600 text-white rounded px-2 py-1 hover:bg-gray-700 transition-colors">
-                Switch
-              </button>
-              <button className="flex-1 text-xs bg-red-600 text-white rounded px-2 py-1 hover:bg-red-700 transition-colors">
-                Remove
-              </button>
-            </div>
-          </div>
-
-          {/* Add Account Placeholder */}
-          <div className="bg-gray-900/50 border border-gray-700 border-dashed rounded-lg p-4 flex items-center justify-center">
-            <div className="text-center">
-              <Plus className="h-8 w-8 text-gray-500 mx-auto mb-2" />
-              <span className="text-gray-500 text-sm">Add Account</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-4">
-        <div className="flex items-center justify-center space-x-6 text-sm text-gray-400">
-          <span className="flex items-center">
-            <CheckCircle className="h-4 w-4 mr-1 text-green-400" />
-            Fully Responsive
-          </span>
-          <span className="flex items-center">
-            <CheckCircle className="h-4 w-4 mr-1 text-green-400" />
-            Modern UI
-          </span>
-          <span className="flex items-center">
-            <CheckCircle className="h-4 w-4 mr-1 text-green-400" />
-            Production Ready
-          </span>
-        </div>
+      {/* Analytics and Account Manager in Grid */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        <AnalyticsPanel />
+        <AccountManagerPanel />
       </div>
     </div>
   )
