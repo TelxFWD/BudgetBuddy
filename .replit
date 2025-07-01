@@ -93,6 +93,19 @@ task = "shell.exec"
 args = "npx next dev -p 3000"
 waitForPort = 3000
 
+[[workflows.workflow]]
+name = "Frontend Development"
+author = 44471615
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx next dev -p 3000"
+
 [[ports]]
 localPort = 3000
 externalPort = 3000

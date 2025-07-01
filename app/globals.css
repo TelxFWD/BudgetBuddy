@@ -4,11 +4,12 @@
 
 @layer base {
   html {
-    @apply bg-dark-bg text-dark-text;
+    @apply dark;
   }
   
   body {
-    @apply bg-dark-bg text-dark-text min-h-screen;
+    @apply bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900;
+    @apply text-white min-h-screen;
   }
 }
 
