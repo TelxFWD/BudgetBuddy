@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const axiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://0.0.0.0:5000',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -37,10 +37,10 @@ axiosInstance.interceptors.response.use(
           const response = await axios.post('/api/auth/refresh', {
             refresh_token: refreshToken
           })
-          
+
           const { access_token } = response.data
           localStorage.setItem('access_token', access_token)
-          
+
           originalRequest.headers.Authorization = `Bearer ${access_token}`
           return axiosInstance(originalRequest)
         }
