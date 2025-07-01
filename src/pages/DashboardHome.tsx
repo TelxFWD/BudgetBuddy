@@ -67,7 +67,10 @@ const DashboardHome: React.FC = () => {
           <h1 className="text-3xl font-bold text-white">Welcome back, {user?.username}!</h1>
           <p className="text-gray-400 mt-1">Here's what's happening with your message forwarding</p>
         </div>
-        <button className="btn-primary flex items-center">
+        <button 
+          onClick={() => window.location.href = '/forwarding'}
+          className="btn-primary flex items-center"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add Forwarding Pair
         </button>

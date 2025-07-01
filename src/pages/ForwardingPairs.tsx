@@ -15,6 +15,7 @@ import axiosInstance from '../api/axiosInstance'
 import { API_ENDPOINTS } from '../api/endpoints'
 import { ForwardingPair } from '../types'
 import LoadingSpinner from '../components/LoadingSpinner'
+import AddPairModal from '../components/AddPairModal'
 
 const ForwardingPairs: React.FC = () => {
   const [pairs, setPairs] = useState<ForwardingPair[]>([])
@@ -23,6 +24,7 @@ const ForwardingPairs: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'paused'>('all')
   const [selectedPairs, setSelectedPairs] = useState<number[]>([])
   const [showBulkActions, setShowBulkActions] = useState(false)
+  const [showAddModal, setShowAddModal] = useState(false)
 
   useEffect(() => {
     loadForwardingPairs()
@@ -107,7 +109,10 @@ const ForwardingPairs: React.FC = () => {
           <h1 className="text-3xl font-bold text-white">Forwarding Pairs</h1>
           <p className="text-gray-400 mt-1">Manage your message forwarding configurations</p>
         </div>
-        <button className="btn-primary flex items-center">
+        <button 
+          onClick={() => setShowAddModal(true)}
+          className="btn-primary flex items-center"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Add New Pair
         </button>
@@ -286,12 +291,22 @@ const ForwardingPairs: React.FC = () => {
                 : 'Get started by creating your first forwarding pair'
               }
             </p>
-            <button className="btn-primary">
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="btn-primary"
+            >
               Create Forwarding Pair
             </button>
           </div>
         )}
       </div>
+
+      {/* Add Pair Modal */}
+      <AddPairModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        onSuccess={loadForwardingPairs}
+      />
     </div>
   )
 }
