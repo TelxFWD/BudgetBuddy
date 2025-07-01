@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     host: '0.0.0.0',
     port: 3000,
-    allowedHosts: ['all'], // Allow all dynamic Replit hosts
+    allowedHosts: true, // Allow all dynamic Replit hosts
     proxy: {
       '/api': {
         target: 'http://0.0.0.0:5000',
