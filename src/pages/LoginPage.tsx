@@ -9,7 +9,7 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const { login, verifyOTP } = useAuth()
+  const { login, verifyOTP, demoLogin } = useAuth()
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,6 +36,20 @@ const LoginPage: React.FC = () => {
       // Navigation will be handled by AuthContext
     } catch (err) {
       setError('Invalid OTP. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDemoLogin = async () => {
+    setLoading(true)
+    setError('')
+
+    try {
+      await demoLogin()
+      // Navigation will be handled by AuthContext
+    } catch (err) {
+      setError('Demo login failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -166,6 +180,17 @@ const LoginPage: React.FC = () => {
               </div>
             </form>
           )}
+        </div>
+
+        {/* Demo Login for Testing */}
+        <div className="text-center">
+          <button
+            onClick={handleDemoLogin}
+            disabled={loading}
+            className="w-full py-2 px-4 border border-yellow-600 rounded-xl text-sm font-medium text-yellow-400 bg-yellow-600/10 hover:bg-yellow-600/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 mb-4"
+          >
+            {loading ? 'Connecting...' : '🚀 Demo Login (Testing)'}
+          </button>
         </div>
 
         {/* Footer */}
