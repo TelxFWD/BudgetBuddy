@@ -113,7 +113,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "npx vite --host 0.0.0.0 --port 3000"
+args = "npx vite --config vite.replit.config.ts --host 0.0.0.0 --port 3000"
 waitForPort = 3000
 
 [[ports]]
