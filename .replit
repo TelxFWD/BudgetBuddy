@@ -1,4 +1,4 @@
-modules = ["python-3.11", "nodejs-20"]
+modules = ["python-3.11", "nodejs-20", "web", "python3"]
 run = "node index.js"
 
 [nix]
@@ -24,10 +24,6 @@ args = "Redis Server"
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "Celery Worker"
-
-[[workflows.workflow.tasks]]
-task = "workflow.run"
-args = "Enhanced Telegram Bot"
 
 [[workflows.workflow.tasks]]
 task = "workflow.run"
@@ -75,14 +71,6 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "celery -A tasks.celery_config:celery_app worker --loglevel=info"
-
-[[workflows.workflow]]
-name = "Enhanced Telegram Bot"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python telegram_bot_enhanced.py"
 
 [[workflows.workflow]]
 name = "Next.js Frontend"
