@@ -26,6 +26,17 @@ try:
 except ImportError:
     TELEGRAM_AVAILABLE = False
     logger.warning("python-telegram-bot not properly installed")
+    # Define dummy classes for when telegram is not available
+    class Update: pass
+    class InlineKeyboardButton: pass
+    class InlineKeyboardMarkup: pass
+    class BotCommand: pass
+    class ContextTypes:
+        DEFAULT_TYPE = None
+
+if not TELEGRAM_AVAILABLE:
+    logger.error("Cannot start bot without python-telegram-bot. Exiting.")
+    exit(1)
 
 class AutoForwardXBot:
     def __init__(self, bot_token: str, backend_url: str):

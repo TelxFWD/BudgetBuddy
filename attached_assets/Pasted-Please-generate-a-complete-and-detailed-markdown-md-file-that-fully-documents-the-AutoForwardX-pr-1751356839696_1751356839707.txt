@@ -1,0 +1,72 @@
+Please generate a complete and detailed markdown (.md) file that fully documents the AutoForwardX project.
+
+The documentation should cover the following sections in depth:
+
+# AutoForwardX Full Project Documentation
+
+## 1. Project Overview
+- Describe the core purpose of AutoForwardX.
+- Summarize the key platforms it supports (Telegram to Telegram, Telegram to Discord, Discord to Telegram).
+- Outline the main benefits and features provided to users.
+
+## 2. Core Features List
+- Provide a detailed list of all system features:
+   - Message forwarding
+   - Multi-account management
+   - Telegram to Discord integration
+   - Real-time queue and session management
+   - User dashboard controls
+   - Telegram bot controls
+   - Payment integration (PayPal, NowPayments)
+
+## 3. System Architecture
+- Describe the full tech stack:
+   - Backend: FastAPI, Redis, PostgreSQL
+   - Frontend: Next.js, Tailwind CSS
+   - Telegram bot: Pyrogram, python-telegram-bot
+- Explain how each component connects:
+   - Frontend to Backend (via REST API)
+   - Bot to Backend (via REST API)
+   - Redis queue management
+   - WebSocket real-time updates
+
+## 4. Backend Details
+- List all backend services, API endpoints, and queues.
+- Describe the Telegram and Discord session management logic.
+- Detail how forwarding pairs are stored and processed.
+- List all key database tables and their purpose.
+
+## 5. Frontend Details
+- Summarize all frontend pages and components.
+- List available user controls (add pair, manage accounts, view analytics).
+- Explain WebSocket real-time update integration.
+
+## 6. Telegram Bot Details
+- List all bot commands and their purpose.
+- Detail inline button flows and UI structure.
+- Explain multi-account support and session management.
+- Describe real-time system notifications and plan management via the bot.
+
+## 7. Plans and Pricing
+- Summarize available plans (Free, Pro, Elite) and their respective feature limits.
+
+## 8. Current System Status
+- Detail which components are fully built.
+- Identify which features are in progress.
+- Note any known issues (UI errors, CORS problems, session handling bugs).
+
+## 9. Outstanding Issues (if any)
+- List current technical blockers, UI errors, or broken workflows.
+
+## 10. Suggested Improvements
+- Based on the system review, suggest:
+   - UI/UX improvements
+   - Performance upgrades
+   - Error handling enhancements
+   - Potential feature additions to beat competitors
+
+---
+
+### 📋 Deliverable:
+Provide the **complete AutoForwardX project documentation in a single `.md` file** covering all points above. The documentation should allow a developer or project manager to fully understand the system, current progress, pending work, and improvement opportunities.
+
