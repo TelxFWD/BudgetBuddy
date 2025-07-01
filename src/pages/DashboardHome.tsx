@@ -12,8 +12,7 @@ import {
   MessageCircle,
   CheckCircle,
   Activity,
-  ArrowRight,
-  Link2
+  ArrowRight
 } from 'lucide-react'
 
 // Component for System Status Panel

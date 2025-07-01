@@ -1,24 +1,35 @@
 import React, { useState, useEffect } from 'react'
-import { 
-  Plus, 
-  Smartphone, 
-  Bot,
-  CheckCircle,
-  AlertCircle,
-  XCircle,
-  MoreHorizontal,
-  Trash2,
-  RefreshCw
-} from 'lucide-react'
-import axiosInstance from '../api/axiosInstance'
-import { API_ENDPOINTS } from '../api/endpoints'
-import { TelegramAccount, DiscordAccount } from '../types'
-import LoadingSpinner from '../components/LoadingSpinner'
+import { Plus, MessageSquare, Hash, Zap, RefreshCw, Trash2, Users, Crown } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { accountsAPI } from '../api/endpoints'
+
+interface Account {
+  id: number
+  platform: 'telegram' | 'discord'
+  username: string
+  status: 'connected' | 'disconnected' | 'error'
+  sessions: number
+  last_active: string
+  is_primary: boolean
+}
 
 const AccountsPage: React.FC = () => {
-  const [telegramAccounts, setTelegramAccounts] = useState<TelegramAccount[]>([])
-  const [discordAccounts, setDiscordAccounts] = useState<DiscordAccount[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { user } = useAuth()
+  const [activeTab, setActiveTab] = useState<'telegram' | 'discord'>('telegram')
+  const [telegramAccounts, setTelegramAccounts] = useState<Account[]>([])
+  const [discordAccounts, setDiscordAccounts] = useState<Account[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const planLimits = {
+    Free: { telegram: 1, discord: 0 },
+    Pro: { telegram: 2, discord: 1 },
+    Elite: { telegram: 3, discord: 3 }
+  }
+
+  const currentLimits = planLimits[user?.plan || 'Free']
+  const currentAccounts = activeTab === 'telegram' ? telegramAccounts : discordAccounts
+  const currentLimit = currentLimits[activeTab]
+  const canAddMore = currentAccounts.length < currentLimit
 
   useEffect(() => {
     loadAccounts()
@@ -26,229 +37,279 @@ const AccountsPage: React.FC = () => {
 
   const loadAccounts = async () => {
     try {
-      setIsLoading(true)
-      const response = await axiosInstance.get(API_ENDPOINTS.AUTH.LINKED_ACCOUNTS)
-      setTelegramAccounts(response.data.telegram_accounts || [])
-      setDiscordAccounts(response.data.discord_accounts || [])
+      setLoading(true)
+      const [telegramResponse, discordResponse] = await Promise.all([
+        accountsAPI.getTelegramAccounts(),
+        accountsAPI.getDiscordAccounts()
+      ])
+      setTelegramAccounts(telegramResponse.data)
+      setDiscordAccounts(discordResponse.data)
     } catch (error) {
       console.error('Failed to load accounts:', error)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const getStatusIcon = (isActive: boolean, lastSeen?: string) => {
-    if (!isActive) {
-      return <XCircle className="h-5 w-5 text-red-400" />
-    }
-    
-    if (lastSeen) {
-      const lastSeenDate = new Date(lastSeen)
-      const now = new Date()
-      const diffMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60)
-      
-      if (diffMinutes < 5) {
-        return <CheckCircle className="h-5 w-5 text-green-400" />
-      } else if (diffMinutes < 30) {
-        return <AlertCircle className="h-5 w-5 text-yellow-400" />
+  const handleAccountAction = async (accountId: number, action: 'reconnect' | 'switch' | 'remove') => {
+    try {
+      switch (action) {
+        case 'reconnect':
+          await accountsAPI.reconnectAccount(activeTab, accountId)
+          break
+        case 'switch':
+          await accountsAPI.switchAccount(activeTab, accountId)
+          break
+        case 'remove':
+          if (window.confirm('Are you sure you want to remove this account?')) {
+            await accountsAPI.removeAccount(activeTab, accountId)
+          } else {
+            return
+          }
+          break
       }
+      loadAccounts() // Refresh the list
+    } catch (error) {
+      console.error(`Failed to ${action} account:`, error)
     }
-    
-    return <XCircle className="h-5 w-5 text-red-400" />
   }
 
-  const getStatusText = (isActive: boolean, lastSeen?: string) => {
-    if (!isActive) return 'Inactive'
-    
-    if (lastSeen) {
-      const lastSeenDate = new Date(lastSeen)
-      const now = new Date()
-      const diffMinutes = (now.getTime() - lastSeenDate.getTime()) / (1000 * 60)
-      
-      if (diffMinutes < 5) return 'Online'
-      if (diffMinutes < 30) return 'Recently Active'
-      if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'connected': return 'status-online'
+      case 'disconnected': return 'status-offline'
+      case 'error': return 'status-warning'
+      default: return 'bg-gray-500'
     }
-    
-    return 'Offline'
   }
 
-  if (isLoading) {
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'connected': return 'Connected'
+      case 'disconnected': return 'Disconnected'
+      case 'error': return 'Error'
+      default: return 'Unknown'
+    }
+  }
+
+  const getPlatformIcon = (platform: string) => {
+    return platform === 'telegram' ? MessageSquare : Hash
+  }
+
+  const getPlatformColor = (platform: string) => {
+    return platform === 'telegram' ? 'text-blue-400' : 'text-purple-400'
+  }
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" />
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-700 rounded w-1/4"></div>
+          <div className="h-12 bg-gray-700 rounded w-1/2"></div>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-24 bg-gray-700 rounded"></div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-white">Connected Accounts</h1>
-        <p className="text-gray-400 mt-1">Manage your Telegram and Discord accounts for message forwarding</p>
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Account Manager</h1>
+          <p className="text-gray-400">
+            Manage your Telegram and Discord account connections
+          </p>
+        </div>
+        <button
+          disabled={!canAddMore}
+          className={`flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+            canAddMore
+              ? 'bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white'
+              : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add {activeTab === 'telegram' ? 'Telegram' : 'Discord'} Account
+          {!canAddMore && ' (Limit Reached)'}
+        </button>
       </div>
 
-      {/* Telegram Accounts */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <Smartphone className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-white">Telegram Accounts</h3>
-              <p className="text-gray-400 text-sm">Connect your Telegram accounts for message forwarding</p>
-            </div>
+      {/* Plan Information */}
+      <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-xl p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <Crown className="h-5 w-5 text-yellow-400 mr-2" />
+            <span className="text-white font-medium">{user?.plan} Plan</span>
           </div>
-          <button className="btn-primary flex items-center">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Telegram
-          </button>
+          <div className="text-sm text-gray-300">
+            Telegram: {telegramAccounts.length}/{currentLimits.telegram} • 
+            Discord: {discordAccounts.length}/{currentLimits.discord}
+          </div>
         </div>
+        {user?.plan === 'Free' && (
+          <p className="text-sm text-gray-400 mt-2">
+            Upgrade to Pro for Discord support and additional Telegram accounts
+          </p>
+        )}
+      </div>
 
-        {telegramAccounts.length > 0 ? (
-          <div className="space-y-3">
-            {telegramAccounts.map((account) => (
-              <div key={account.id} className="flex items-center justify-between p-4 bg-dark-bg rounded-lg border border-dark-border">
+      {/* Tabs */}
+      <div className="flex space-x-1 bg-gray-800 p-1 rounded-xl">
+        <button
+          onClick={() => setActiveTab('telegram')}
+          className={`flex-1 flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+            activeTab === 'telegram'
+              ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <MessageSquare className="h-4 w-4 mr-2" />
+          Telegram Sessions ({telegramAccounts.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('discord')}
+          disabled={user?.plan === 'Free'}
+          className={`flex-1 flex items-center justify-center px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+            activeTab === 'discord'
+              ? 'bg-gradient-to-r from-indigo-500 to-violet-500 text-white'
+              : user?.plan === 'Free' 
+                ? 'text-gray-600 cursor-not-allowed'
+                : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <Hash className="h-4 w-4 mr-2" />
+          Discord Sessions ({discordAccounts.length})
+          {user?.plan === 'Free' && (
+            <span className="ml-1 text-xs bg-yellow-500/20 text-yellow-400 px-1 rounded">Pro+</span>
+          )}
+        </button>
+      </div>
+
+      {/* Accounts List */}
+      {currentAccounts.length === 0 ? (
+        <div className="bg-gray-800 rounded-xl p-12 text-center border border-gray-700">
+          <div className="mx-auto h-12 w-12 bg-gray-700 rounded-xl flex items-center justify-center mb-4">
+            {React.createElement(getPlatformIcon(activeTab), { 
+              className: `h-6 w-6 ${getPlatformColor(activeTab)}` 
+            })}
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">
+            No {activeTab} accounts connected
+          </h3>
+          <p className="text-gray-400 mb-6">
+            {activeTab === 'telegram' 
+              ? "Connect your Telegram account to start forwarding messages"
+              : user?.plan === 'Free'
+                ? "Discord support requires Pro or Elite plan"
+                : "Connect your Discord bot to enable cross-platform forwarding"
+            }
+          </p>
+          {canAddMore && (
+            <button
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white rounded-xl text-sm font-medium transition-all duration-200"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Connect {activeTab === 'telegram' ? 'Telegram' : 'Discord'} Account
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {currentAccounts.map((account) => (
+            <div
+              key={account.id}
+              className="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover"
+            >
+              <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  {getStatusIcon(account.is_active, account.last_seen)}
-                  <div>
-                    <div className="flex items-center space-x-2">
-                      <p className="text-white font-medium">
-                        {account.first_name} {account.last_name}
-                      </p>
-                      {account.username && (
-                        <span className="text-gray-400">@{account.username}</span>
+                  {/* Status Indicator */}
+                  <div className="relative">
+                    {React.createElement(getPlatformIcon(account.platform), { 
+                      className: `h-10 w-10 ${getPlatformColor(account.platform)} p-2 bg-gray-700 rounded-xl` 
+                    })}
+                    <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full ${getStatusColor(account.status)}`}></div>
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h3 className="text-lg font-medium text-white">{account.username}</h3>
+                      {account.is_primary && (
+                        <span className="px-2 py-1 text-xs bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-full">
+                          Primary
+                        </span>
                       )}
+                      <span className={`px-2 py-1 text-xs rounded-full border ${
+                        account.status === 'connected' 
+                          ? 'bg-green-500/20 text-green-300 border-green-500/30'
+                          : account.status === 'disconnected'
+                            ? 'bg-red-500/20 text-red-300 border-red-500/30'
+                            : 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+                      }`}>
+                        {getStatusText(account.status)}
+                      </span>
                     </div>
-                    <p className="text-gray-400 text-sm">{account.phone_number}</p>
-                    <p className="text-gray-500 text-xs">
-                      Status: {getStatusText(account.is_active, account.last_seen)}
-                    </p>
+                    <div className="flex items-center space-x-4 text-sm text-gray-400">
+                      <span className="flex items-center">
+                        <Users className="h-4 w-4 mr-1" />
+                        {account.sessions} active sessions
+                      </span>
+                      <span>
+                        Last active: {new Date(account.last_active).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
+
                 <div className="flex items-center space-x-2">
                   <button
-                    className="text-gray-400 hover:text-white"
-                    title="Refresh Session"
+                    onClick={() => handleAccountAction(account.id, 'reconnect')}
+                    className="px-3 py-2 text-sm text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 rounded-lg hover:bg-indigo-500/30 transition-colors flex items-center"
                   >
-                    <RefreshCw className="h-4 w-4" />
+                    <RefreshCw className="h-4 w-4 mr-1" />
+                    Reconnect
                   </button>
+                  {!account.is_primary && (
+                    <button
+                      onClick={() => handleAccountAction(account.id, 'switch')}
+                      className="px-3 py-2 text-sm text-gray-300 bg-gray-600/50 border border-gray-500/30 rounded-lg hover:bg-gray-600 transition-colors flex items-center"
+                    >
+                      <Zap className="h-4 w-4 mr-1" />
+                      Make Primary
+                    </button>
+                  )}
                   <button
-                    className="text-red-400 hover:text-red-300"
-                    title="Remove Account"
+                    onClick={() => handleAccountAction(account.id, 'remove')}
+                    className="px-3 py-2 text-sm text-red-300 bg-red-500/20 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors flex items-center"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Remove
                   </button>
                 </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <Smartphone className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-400 mb-4">No Telegram accounts connected</p>
-            <button className="btn-primary">Connect Your First Account</button>
-          </div>
-        )}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {/* Discord Accounts */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="bg-indigo-600 p-2 rounded-lg">
-              <Bot className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-white">Discord Bots</h3>
-              <p className="text-gray-400 text-sm">Connect Discord bots for cross-platform forwarding</p>
-            </div>
-          </div>
-          <button className="btn-primary flex items-center">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Discord Bot
+      {/* Upgrade Prompt for Free Users */}
+      {user?.plan === 'Free' && activeTab === 'discord' && (
+        <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 rounded-xl p-6 text-center">
+          <Crown className="h-8 w-8 text-yellow-400 mx-auto mb-3" />
+          <h3 className="text-lg font-medium text-white mb-2">Upgrade Required</h3>
+          <p className="text-gray-400 mb-4">
+            Discord integration is available with Pro and Elite plans. Unlock cross-platform forwarding and advanced features.
+          </p>
+          <button className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white rounded-xl font-medium transition-all duration-200">
+            Upgrade to Pro Plan
           </button>
         </div>
-
-        {discordAccounts.length > 0 ? (
-          <div className="space-y-3">
-            {discordAccounts.map((account) => (
-              <div key={account.id} className="flex items-center justify-between p-4 bg-dark-bg rounded-lg border border-dark-border">
-                <div className="flex items-center space-x-4">
-                  {getStatusIcon(account.is_active, account.last_seen)}
-                  <div>
-                    <p className="text-white font-medium">
-                      {account.bot_username || 'Discord Bot'}
-                    </p>
-                    <p className="text-gray-400 text-sm">
-                      {account.guilds_count} servers • Token ends with ...{account.bot_token.slice(-4)}
-                    </p>
-                    <p className="text-gray-500 text-xs">
-                      Status: {getStatusText(account.is_active, account.last_seen)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    className="text-gray-400 hover:text-white"
-                    title="Refresh Connection"
-                  >
-                    <RefreshCw className="h-4 w-4" />
-                  </button>
-                  <button
-                    className="text-red-400 hover:text-red-300"
-                    title="Remove Bot"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8">
-            <Bot className="h-12 w-12 text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-400 mb-4">No Discord bots connected</p>
-            <button className="btn-primary">Add Your First Bot</button>
-          </div>
-        )}
-      </div>
-
-      {/* Account Limits */}
-      <div className="card">
-        <h3 className="text-lg font-semibold text-white mb-4">Account Limits</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-300">Telegram Accounts</span>
-              <span className="text-white font-medium">{telegramAccounts.length}/5</span>
-            </div>
-            <div className="w-full bg-dark-bg rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full" 
-                style={{ width: `${(telegramAccounts.length / 5) * 100}%` }}
-              />
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-gray-300">Discord Bots</span>
-              <span className="text-white font-medium">{discordAccounts.length}/3</span>
-            </div>
-            <div className="w-full bg-dark-bg rounded-full h-2">
-              <div 
-                className="bg-indigo-600 h-2 rounded-full" 
-                style={{ width: `${(discordAccounts.length / 3) * 100}%` }}
-              />
-            </div>
-          </div>
-        </div>
-        <p className="text-gray-500 text-sm mt-4">
-          Upgrade to Pro plan for unlimited accounts and advanced features
-        </p>
-      </div>
+      )}
     </div>
   )
 }

@@ -1,0 +1,84 @@
+You are building a professional, production-ready dashboard UI called AutoForwardX Dashboard using React, Vite, and Tailwind CSS. Your job is to generate all pages, components, and layouts based on the complete .md guide titled “User Dashboard Fix Guide”.
+
+⚙️ Tech:
+- React + Vite + TypeScript
+- Tailwind CSS (dark mode first)
+- Framer Motion (optional for transitions)
+- Recharts (for analytics)
+- Axios (for API calls)
+- JWT for auth
+
+📂 Required Folder Structure:
+
+src/
+├── App.tsx
+├── index.tsx
+├── pages/
+│   ├── DashboardHome.tsx
+│   ├── ForwardingPairs.tsx
+│   ├── AccountsPage.tsx
+│   ├── AnalyticsPage.tsx
+│   └── SettingsPage.tsx
+├── components/
+│   ├── PairCard.tsx
+│   ├── AddPairModal.tsx
+│   ├── SystemStatus.tsx
+│   ├── SessionCard.tsx
+│   ├── Navbar.tsx
+│   └── Sidebar.tsx
+├── context/
+│   └── AuthContext.tsx
+├── api/
+│   ├── axiosInstance.ts
+│   └── endpoints.ts
+├── hooks/
+│   └── useAuth.ts
+├── layouts/
+│   └── DashboardLayout.tsx
+└── styles/
+    └── index.css
+
+📄 Pages:
+1. `/dashboard` - Grid summary cards + Add Pair trigger
+2. `/forwarding` - List pairs + bulk action buttons
+3. `/accounts` - Session cards + add/remove logic
+4. `/analytics` - Charts + export buttons
+5. `/settings` - Dark mode toggle + delete account
+
+🧩 Components:
+- AddPairModal: contains platform selectors, source/target IDs, delay, submit
+- PairCard: shows status, pair details, edit/delete
+- SessionCard: shows Telegram/Discord account + actions
+- SystemStatus: live Redis/Celery/DB status via `/ws`
+
+🔐 Auth:
+- Phone input → `/telegram/send-otp`
+- OTP modal → `/telegram/verify-otp`
+- Store JWT in localStorage
+- Redirect to `/dashboard`
+
+🎨 UI:
+- Buttons: indigo theme `rounded-xl`
+- Cards: `bg-gray-800 shadow-md`
+- Typography: `text-gray-300` + `text-white`
+- Icons: Lucide
+- Theme: Dark mode with `Switch`
+
+🧠 Logic:
+- Feature access based on plan (Free/Pro/Elite)
+- Disable buttons or show “Upgrade” prompt if limits reached
+- WebSocket status badges: 🟢, 🟡, 🔴
+- Responsive layout (mobile & desktop)
+
+🧪 Testing:
+- AddPairModal works
+- Auth is protected
+- All routes render content
+- JWT is verified and user context is respected
+
+📦 Build:
+- Run `npm run dev` to test
+- `npm run build` for production
+- `npm run preview` to simulate final UI
+
+Use the provided markdown as blueprint. Build the dashboard layout, components, and all logic accordingly. Do not ignore layout structure or button visibility rules.

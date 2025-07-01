@@ -1,9 +1,7 @@
 import React, { useState } from 'react'
-import { X, Plus, ArrowRight, Settings } from 'lucide-react'
+import { X, MessageSquare, Hash, Clock, Zap } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import axiosInstance from '../api/axiosInstance'
-import { API_ENDPOINTS } from '../api/endpoints'
-import LoadingSpinner from './LoadingSpinner'
+import { forwardingAPI } from '../api/endpoints'
 
 interface AddPairModalProps {
   isOpen: boolean
@@ -11,290 +9,317 @@ interface AddPairModalProps {
   onSuccess: () => void
 }
 
-type PlatformType = 'telegram' | 'discord'
-type PairMode = 'telegram-telegram' | 'telegram-discord' | 'discord-telegram'
+interface FormData {
+  sourcePlatform: 'telegram' | 'discord'
+  targetPlatform: 'telegram' | 'discord'
+  sourceId: string
+  targetId: string
+  delay: number
+  delayUnit: 'minutes' | 'hours'
+}
 
 const AddPairModal: React.FC<AddPairModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const { user } = useAuth()
-  const [pairMode, setPairMode] = useState<PairMode>('telegram-telegram')
-  const [sourceId, setSourceId] = useState('')
-  const [destinationId, setDestinationId] = useState('')
-  const [delay, setDelay] = useState(0)
-  const [isLoading, setIsLoading] = useState(false)
+  const [formData, setFormData] = useState<FormData>({
+    sourcePlatform: 'telegram',
+    targetPlatform: 'telegram',
+    sourceId: '',
+    targetId: '',
+    delay: 5,
+    delayUnit: 'minutes'
+  })
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [step, setStep] = useState<'select' | 'configure'>('select')
 
-  if (!isOpen) return null
+  const planLimits = {
+    Free: { maxPairs: 1, crossPlatform: false },
+    Pro: { maxPairs: 10, crossPlatform: true },
+    Elite: { maxPairs: 50, crossPlatform: true }
+  }
 
-  const resetForm = () => {
-    setPairMode('telegram-telegram')
-    setSourceId('')
-    setDestinationId('')
-    setDelay(0)
+  const currentPlanLimits = planLimits[user?.plan || 'Free']
+
+  const handleInputChange = (field: keyof FormData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
     setError('')
-    setStep('select')
   }
 
-  const handleClose = () => {
-    resetForm()
-    onClose()
-  }
+  const validateForm = () => {
+    // Check cross-platform restriction for Free plan
+    if (user?.plan === 'Free' && formData.sourcePlatform !== formData.targetPlatform) {
+      setError('Cross-platform forwarding requires Pro or Elite plan')
+      return false
+    }
 
-  const handleModeSelect = (mode: PairMode) => {
-    setPairMode(mode)
-    setStep('configure')
+    // Validate source and target IDs
+    if (!formData.sourceId.trim() || !formData.targetId.trim()) {
+      setError('Please fill in both source and target IDs')
+      return false
+    }
+
+    // Validate Telegram format (should start with @)
+    if (formData.sourcePlatform === 'telegram' && !formData.sourceId.startsWith('@')) {
+      setError('Telegram channels/groups should start with @')
+      return false
+    }
+
+    if (formData.targetPlatform === 'telegram' && !formData.targetId.startsWith('@')) {
+      setError('Telegram channels/groups should start with @')
+      return false
+    }
+
+    // Validate Discord format (should be numeric for channel IDs)
+    if (formData.sourcePlatform === 'discord' && !/^\d+$/.test(formData.sourceId)) {
+      setError('Discord channel ID should be numeric')
+      return false
+    }
+
+    if (formData.targetPlatform === 'discord' && !/^\d+$/.test(formData.targetId)) {
+      setError('Discord channel ID should be numeric')
+      return false
+    }
+
+    return true
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!validateForm()) return
+
+    setLoading(true)
     setError('')
-    setIsLoading(true)
 
     try {
-      // Check plan limits first
-      if (user?.plan === 'free' && pairMode !== 'telegram-telegram') {
-        setError('Upgrade to Pro or Elite plan to use cross-platform forwarding')
-        setIsLoading(false)
-        return
-      }
+      const delayInMinutes = formData.delayUnit === 'hours' 
+        ? formData.delay * 60 
+        : formData.delay
 
-      const [sourceType, destinationType] = pairMode.split('-') as [PlatformType, PlatformType]
-      
-      const pairData = {
-        source_type: sourceType,
-        source_id: sourceId,
-        destination_type: destinationType,
-        destination_id: destinationId,
-        delay_seconds: delay,
-        is_active: true
-      }
+      await forwardingAPI.createPair({
+        source_platform: formData.sourcePlatform,
+        target_platform: formData.targetPlatform,
+        source_id: formData.sourceId.trim(),
+        target_id: formData.targetId.trim(),
+        delay_minutes: delayInMinutes
+      })
 
-      await axiosInstance.post(API_ENDPOINTS.PAIRS.CREATE, pairData)
       onSuccess()
-      handleClose()
+      onClose()
+      
+      // Reset form
+      setFormData({
+        sourcePlatform: 'telegram',
+        targetPlatform: 'telegram',
+        sourceId: '',
+        targetId: '',
+        delay: 5,
+        delayUnit: 'minutes'
+      })
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to create forwarding pair')
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const pairModes = [
-    {
-      mode: 'telegram-telegram' as PairMode,
-      title: 'Telegram → Telegram',
-      description: 'Forward messages between Telegram chats',
-      icon: '📱',
-      available: true
-    },
-    {
-      mode: 'telegram-discord' as PairMode,
-      title: 'Telegram → Discord',
-      description: 'Forward from Telegram to Discord channels',
-      icon: '📱➡️🎮',
-      available: user?.plan !== 'free'
-    },
-    {
-      mode: 'discord-telegram' as PairMode,
-      title: 'Discord → Telegram',
-      description: 'Forward from Discord to Telegram chats',
-      icon: '🎮➡️📱',
-      available: user?.plan !== 'free'
-    }
-  ]
-
-  const getSourcePlaceholder = () => {
-    const sourceType = pairMode.split('-')[0]
-    return sourceType === 'telegram' ? 'Telegram chat/channel ID or @username' : 'Discord channel ID'
-  }
-
-  const getDestinationPlaceholder = () => {
-    const destinationType = pairMode.split('-')[1]
-    return destinationType === 'telegram' ? 'Telegram chat/channel ID or @username' : 'Discord channel ID'
-  }
+  if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-dark-card border border-dark-border rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-dark-border">
-          <h2 className="text-xl font-bold text-white">Add Forwarding Pair</h2>
-          <button
-            onClick={handleClose}
-            className="text-gray-400 hover:text-white"
-          >
-            <X className="h-5 w-5" />
-          </button>
+    <div className="fixed inset-0 z-50 overflow-y-auto modal-backdrop">
+      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed inset-0 transition-opacity" onClick={onClose}>
+          <div className="absolute inset-0 bg-black opacity-50"></div>
         </div>
 
-        <div className="p-6">
-          {error && (
-            <div className="bg-red-900/50 border border-red-800 text-red-400 px-4 py-3 rounded-lg mb-6">
-              {error}
+        <div className="inline-block align-bottom bg-gray-800 rounded-xl px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 border border-gray-700">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-white">
+              Add Forwarding Pair
+            </h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          {/* Plan restriction warning */}
+          {user?.plan === 'Free' && (
+            <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+              <p className="text-yellow-400 text-sm">
+                Free plan: Limited to Telegram → Telegram forwarding only. 
+                <span className="font-medium"> Upgrade to Pro</span> for cross-platform support.
+              </p>
             </div>
           )}
 
-          {step === 'select' ? (
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4">Choose Forwarding Type</h3>
-              <div className="space-y-3">
-                {pairModes.map((mode) => (
-                  <button
-                    key={mode.mode}
-                    onClick={() => mode.available ? handleModeSelect(mode.mode) : null}
-                    disabled={!mode.available}
-                    className={`w-full p-4 rounded-xl border text-left transition-all ${
-                      mode.available
-                        ? 'border-dark-border hover:border-indigo-600 hover:bg-dark-bg cursor-pointer'
-                        : 'border-gray-700 bg-gray-900/50 cursor-not-allowed opacity-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <span className="text-2xl">{mode.icon}</span>
-                        <div>
-                          <h4 className="font-semibold text-white">{mode.title}</h4>
-                          <p className="text-gray-400 text-sm">{mode.description}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {!mode.available && (
-                          <span className="text-xs bg-yellow-900/50 text-yellow-400 px-2 py-1 rounded">
-                            Pro Plan
-                          </span>
-                        )}
-                        <ArrowRight className="h-4 w-4 text-gray-400" />
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Selected Mode */}
-              <div className="bg-dark-bg p-4 rounded-lg border border-dark-border">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="text-xl">
-                      {pairModes.find(m => m.mode === pairMode)?.icon}
-                    </span>
-                    <div>
-                      <h4 className="font-semibold text-white">
-                        {pairModes.find(m => m.mode === pairMode)?.title}
-                      </h4>
-                      <p className="text-gray-400 text-sm">
-                        {pairModes.find(m => m.mode === pairMode)?.description}
-                      </p>
-                    </div>
-                  </div>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Platform Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Source Platform
+                </label>
+                <div className="space-y-2">
                   <button
                     type="button"
-                    onClick={() => setStep('select')}
-                    className="text-indigo-400 hover:text-indigo-300 text-sm"
+                    onClick={() => handleInputChange('sourcePlatform', 'telegram')}
+                    className={`w-full p-3 rounded-xl border-2 transition-all ${
+                      formData.sourcePlatform === 'telegram'
+                        ? 'border-indigo-500 bg-indigo-500/10'
+                        : 'border-gray-600 bg-gray-700 hover:border-gray-500'
+                    }`}
                   >
-                    Change
+                    <div className="flex items-center">
+                      <MessageSquare className="h-5 w-5 mr-2 text-blue-400" />
+                      <span className="text-white font-medium">Telegram</span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('sourcePlatform', 'discord')}
+                    disabled={user?.plan === 'Free'}
+                    className={`w-full p-3 rounded-xl border-2 transition-all ${
+                      formData.sourcePlatform === 'discord'
+                        ? 'border-indigo-500 bg-indigo-500/10'
+                        : 'border-gray-600 bg-gray-700 hover:border-gray-500'
+                    } ${user?.plan === 'Free' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <div className="flex items-center">
+                      <Hash className="h-5 w-5 mr-2 text-purple-400" />
+                      <span className="text-white font-medium">Discord</span>
+                    </div>
                   </button>
                 </div>
               </div>
 
-              {/* Source Configuration */}
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Source {pairMode.split('-')[0] === 'telegram' ? 'Telegram' : 'Discord'}
+                  Target Platform
                 </label>
-                <input
-                  type="text"
-                  value={sourceId}
-                  onChange={(e) => setSourceId(e.target.value)}
-                  placeholder={getSourcePlaceholder()}
-                  className="input-field w-full"
-                  required
-                  disabled={isLoading}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {pairMode.split('-')[0] === 'telegram' 
-                    ? 'Use @username, chat invite link, or numeric ID'
-                    : 'Discord channel ID (right-click channel → Copy ID)'
-                  }
-                </p>
-              </div>
-
-              {/* Destination Configuration */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Destination {pairMode.split('-')[1] === 'telegram' ? 'Telegram' : 'Discord'}
-                </label>
-                <input
-                  type="text"
-                  value={destinationId}
-                  onChange={(e) => setDestinationId(e.target.value)}
-                  placeholder={getDestinationPlaceholder()}
-                  className="input-field w-full"
-                  required
-                  disabled={isLoading}
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  {pairMode.split('-')[1] === 'telegram'
-                    ? 'Use @username, chat invite link, or numeric ID'
-                    : 'Discord channel ID (right-click channel → Copy ID)'
-                  }
-                </p>
-              </div>
-
-              {/* Delay Configuration */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Forwarding Delay: {delay} seconds
-                </label>
-                <input
-                  type="range"
-                  min="0"
-                  max="300"
-                  value={delay}
-                  onChange={(e) => setDelay(Number(e.target.value))}
-                  className="w-full h-2 bg-dark-bg rounded-lg appearance-none cursor-pointer slider"
-                  disabled={isLoading}
-                />
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>Instant</span>
-                  <span>5 minutes</span>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('targetPlatform', 'telegram')}
+                    className={`w-full p-3 rounded-xl border-2 transition-all ${
+                      formData.targetPlatform === 'telegram'
+                        ? 'border-indigo-500 bg-indigo-500/10'
+                        : 'border-gray-600 bg-gray-700 hover:border-gray-500'
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <MessageSquare className="h-5 w-5 mr-2 text-blue-400" />
+                      <span className="text-white font-medium">Telegram</span>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleInputChange('targetPlatform', 'discord')}
+                    disabled={user?.plan === 'Free'}
+                    className={`w-full p-3 rounded-xl border-2 transition-all ${
+                      formData.targetPlatform === 'discord'
+                        ? 'border-indigo-500 bg-indigo-500/10'
+                        : 'border-gray-600 bg-gray-700 hover:border-gray-500'
+                    } ${user?.plan === 'Free' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <div className="flex items-center">
+                      <Hash className="h-5 w-5 mr-2 text-purple-400" />
+                      <span className="text-white font-medium">Discord</span>
+                    </div>
+                  </button>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Delay before forwarding messages (0 = instant)
-                </p>
               </div>
+            </div>
 
-              {/* Actions */}
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="btn-secondary flex-1"
-                  disabled={isLoading}
+            {/* Source ID */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Source {formData.sourcePlatform === 'telegram' ? 'Channel/Group' : 'Channel ID'}
+              </label>
+              <input
+                type="text"
+                value={formData.sourceId}
+                onChange={(e) => handleInputChange('sourceId', e.target.value)}
+                placeholder={formData.sourcePlatform === 'telegram' ? '@channelname' : '123456789'}
+                className="w-full px-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Target ID */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Target {formData.targetPlatform === 'telegram' ? 'Channel/Group' : 'Channel ID'}
+              </label>
+              <input
+                type="text"
+                value={formData.targetId}
+                onChange={(e) => handleInputChange('targetId', e.target.value)}
+                placeholder={formData.targetPlatform === 'telegram' ? '@targetchannel' : '987654321'}
+                className="w-full px-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Delay Configuration */}
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                <Clock className="inline h-4 w-4 mr-1" />
+                Forwarding Delay
+              </label>
+              <div className="flex space-x-2">
+                <input
+                  type="number"
+                  min="1"
+                  max={formData.delayUnit === 'hours' ? 24 : 1440}
+                  value={formData.delay}
+                  onChange={(e) => handleInputChange('delay', parseInt(e.target.value))}
+                  className="flex-1 px-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+                <select
+                  value={formData.delayUnit}
+                  onChange={(e) => handleInputChange('delayUnit', e.target.value)}
+                  className="px-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-indigo-600 text-white rounded-xl px-4 py-2 hover:bg-indigo-700 flex-1 flex items-center justify-center"
-                  disabled={isLoading || !sourceId || !destinationId}
-                >
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner size="sm" className="mr-2" />
-                      Creating...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Pair
-                    </>
-                  )}
-                </button>
+                  <option value="minutes">Minutes</option>
+                  <option value="hours">Hours</option>
+                </select>
               </div>
-            </form>
-          )}
+              <p className="mt-1 text-xs text-gray-400">
+                {formData.delay === 0 && <><Zap className="inline h-3 w-3 mr-1" />Real-time forwarding</>}
+                {formData.delay > 0 && `Messages will be forwarded after ${formData.delay} ${formData.delayUnit}`}
+              </p>
+            </div>
+
+            {/* Error message */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                <p className="text-red-400 text-sm">{error}</p>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-3 px-4 border border-gray-600 rounded-xl text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="flex-1 flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  'Create Pair'
+                )}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

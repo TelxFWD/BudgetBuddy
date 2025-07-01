@@ -86,15 +86,6 @@ task = "shell.exec"
 args = "npx next dev -p 3000"
 
 [[workflows.workflow]]
-name = "React Dashboard"
-author = "agent"
-
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "python serve_dashboard.py"
-waitForPort = 3000
-
-[[workflows.workflow]]
 name = "Complete Dashboard"
 author = 44488805
 mode = "sequential"
@@ -115,6 +106,15 @@ args = "npm install"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "npm run dev"
+
+[[workflows.workflow]]
+name = "React Dashboard"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx vite --host 0.0.0.0 --port 3000"
+waitForPort = 3000
 
 [[ports]]
 localPort = 3000

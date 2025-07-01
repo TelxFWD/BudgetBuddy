@@ -1,44 +1,67 @@
-// API endpoints configuration
-export const API_ENDPOINTS = {
-  // Authentication
-  AUTH: {
-    SEND_OTP: '/telegram/send-otp',
-    VERIFY_OTP: '/telegram/verify-otp',
-    REFRESH_TOKEN: '/auth/refresh',
-    USER_INFO: '/auth/me',
-    LINKED_ACCOUNTS: '/auth/linked-accounts',
-  },
-  
-  // Forwarding Pairs
-  PAIRS: {
-    LIST: '/pairs',
-    CREATE: '/pairs',
-    UPDATE: (id: number) => `/pairs/${id}`,
-    DELETE: (id: number) => `/pairs/${id}`,
-    TOGGLE: (id: number) => `/pairs/${id}/toggle`,
-    BULK_ACTION: '/pairs/bulk',
-  },
-  
-  // Analytics
-  ANALYTICS: {
-    USER_STATS: '/analytics/user-stats',
-    SYSTEM_STATS: '/analytics/system-stats',
-    PAIR_STATS: '/analytics/forwarding-pairs',
-    MESSAGE_VOLUME: '/analytics/message-volume',
-    ERROR_SUMMARY: '/analytics/errors',
-    SESSION_HEALTH: '/analytics/session-health',
-  },
-  
-  // System
-  SYSTEM: {
-    HEALTH: '/health',
-    STATS: '/stats',
-  },
-  
-  // Admin (if applicable)
-  ADMIN: {
-    USERS: '/admin/users',
-    SYSTEM_HEALTH: '/admin/system-health',
-    BULK_ACTIONS: '/admin/bulk-actions',
-  }
-} as const
+import axiosInstance from './axiosInstance'
+
+// Auth endpoints
+export const authAPI = {
+  sendOTP: (phone: string) => axiosInstance.post('/telegram/send-otp', { phone }),
+  verifyOTP: (phone: string, otp: string) => axiosInstance.post('/telegram/verify-otp', { phone, otp }),
+  refreshToken: (refresh_token: string) => axiosInstance.post('/auth/refresh', { refresh_token }),
+  getMe: () => axiosInstance.get('/auth/me'),
+  logout: () => axiosInstance.post('/auth/logout'),
+}
+
+// Forwarding pairs endpoints
+export const forwardingAPI = {
+  getPairs: () => axiosInstance.get('/forwarding/pairs'),
+  createPair: (data: any) => axiosInstance.post('/forwarding/pairs', data),
+  updatePair: (id: number, data: any) => axiosInstance.put(`/forwarding/pairs/${id}`, data),
+  deletePair: (id: number) => axiosInstance.delete(`/forwarding/pairs/${id}`),
+  pausePair: (id: number) => axiosInstance.post(`/forwarding/pairs/${id}/pause`),
+  resumePair: (id: number) => axiosInstance.post(`/forwarding/pairs/${id}/resume`),
+  bulkAction: (action: string, pairIds: number[]) => 
+    axiosInstance.post('/forwarding/pairs/bulk', { action, pair_ids: pairIds }),
+}
+
+// Accounts endpoints
+export const accountsAPI = {
+  getTelegramAccounts: () => axiosInstance.get('/accounts/telegram'),
+  getDiscordAccounts: () => axiosInstance.get('/accounts/discord'),
+  addTelegramAccount: (data: any) => axiosInstance.post('/accounts/telegram', data),
+  addDiscordAccount: (data: any) => axiosInstance.post('/accounts/discord', data),
+  removeAccount: (platform: string, id: number) => 
+    axiosInstance.delete(`/accounts/${platform}/${id}`),
+  switchAccount: (platform: string, id: number) => 
+    axiosInstance.post(`/accounts/${platform}/${id}/switch`),
+  reconnectAccount: (platform: string, id: number) => 
+    axiosInstance.post(`/accounts/${platform}/${id}/reconnect`),
+}
+
+// Analytics endpoints
+export const analyticsAPI = {
+  getUserStats: () => axiosInstance.get('/analytics/user-stats'),
+  getSystemStats: () => axiosInstance.get('/analytics/system-stats'),
+  getForwardingStats: (days: number = 7) => 
+    axiosInstance.get(`/analytics/forwarding-pairs?days=${days}`),
+  getMessageVolume: (days: number = 30) => 
+    axiosInstance.get(`/analytics/message-volume?days=${days}`),
+  getErrorSummary: (days: number = 7) => 
+    axiosInstance.get(`/analytics/error-summary?days=${days}`),
+  exportData: (format: 'csv' | 'pdf', type: string) => 
+    axiosInstance.get(`/analytics/export?format=${format}&type=${type}`, { 
+      responseType: 'blob' 
+    }),
+}
+
+// System endpoints
+export const systemAPI = {
+  getHealth: () => axiosInstance.get('/health'),
+  getSessionHealth: () => axiosInstance.get('/analytics/session-health'),
+  testConnection: () => axiosInstance.get('/health'),
+}
+
+// Settings endpoints
+export const settingsAPI = {
+  updateProfile: (data: any) => axiosInstance.put('/settings/profile', data),
+  updateNotifications: (data: any) => axiosInstance.put('/settings/notifications', data),
+  deleteAccount: () => axiosInstance.delete('/settings/account'),
+  upgradeUser: (plan: string) => axiosInstance.post('/settings/upgrade', { plan }),
+}

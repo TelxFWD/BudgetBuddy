@@ -1,59 +1,84 @@
 import React, { useState, useEffect } from 'react'
-import { 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreHorizontal,
-  Play,
-  Pause,
-  Trash2,
-  Edit,
-  CheckSquare,
-  Square
-} from 'lucide-react'
-import axiosInstance from '../api/axiosInstance'
-import { API_ENDPOINTS } from '../api/endpoints'
-import { ForwardingPair } from '../types'
-import LoadingSpinner from '../components/LoadingSpinner'
+import { Plus, Search, Play, Pause, Edit, Trash2, ArrowRight, MessageCircle, Clock } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { forwardingAPI } from '../api/endpoints'
 import AddPairModal from '../components/AddPairModal'
 
+interface ForwardingPair {
+  id: number
+  source_platform: string
+  target_platform: string
+  source_id: string
+  target_id: string
+  status: 'active' | 'paused' | 'error'
+  delay_minutes: number
+  messages_forwarded: number
+  created_at: string
+  last_forwarded: string | null
+}
+
 const ForwardingPairs: React.FC = () => {
+  const { user } = useAuth()
   const [pairs, setPairs] = useState<ForwardingPair[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'paused'>('all')
-  const [selectedPairs, setSelectedPairs] = useState<number[]>([])
-  const [showBulkActions, setShowBulkActions] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [selectedPairs, setSelectedPairs] = useState<number[]>([])
 
   useEffect(() => {
-    loadForwardingPairs()
+    loadPairs()
   }, [])
 
-  useEffect(() => {
-    setShowBulkActions(selectedPairs.length > 0)
-  }, [selectedPairs])
-
-  const loadForwardingPairs = async () => {
+  const loadPairs = async () => {
     try {
-      setIsLoading(true)
-      const response = await axiosInstance.get(API_ENDPOINTS.PAIRS.LIST)
-      setPairs(response.data.items || [])
+      setLoading(true)
+      const response = await forwardingAPI.getPairs()
+      setPairs(response.data)
     } catch (error) {
-      console.error('Failed to load forwarding pairs:', error)
+      console.error('Failed to load pairs:', error)
     } finally {
-      setIsLoading(false)
+      setLoading(false)
     }
   }
 
-  const filteredPairs = pairs.filter(pair => {
-    const matchesSearch = pair.source_chat_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         pair.destination_chat_name?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesFilter = filterStatus === 'all' || 
-                         (filterStatus === 'active' && pair.is_active) ||
-                         (filterStatus === 'paused' && !pair.is_active)
-    return matchesSearch && matchesFilter
-  })
+  const handlePairAction = async (pairId: number, action: 'pause' | 'resume' | 'delete') => {
+    try {
+      switch (action) {
+        case 'pause':
+          await forwardingAPI.pausePair(pairId)
+          break
+        case 'resume':
+          await forwardingAPI.resumePair(pairId)
+          break
+        case 'delete':
+          if (window.confirm('Are you sure you want to delete this pair?')) {
+            await forwardingAPI.deletePair(pairId)
+          } else {
+            return
+          }
+          break
+      }
+      loadPairs() // Refresh the list
+    } catch (error) {
+      console.error(`Failed to ${action} pair:`, error)
+    }
+  }
+
+  const handleBulkAction = async (action: 'pause' | 'resume' | 'delete') => {
+    if (selectedPairs.length === 0) return
+
+    if (action === 'delete' && !window.confirm(`Are you sure you want to delete ${selectedPairs.length} pairs?`)) {
+      return
+    }
+
+    try {
+      await forwardingAPI.bulkAction(action, selectedPairs)
+      setSelectedPairs([])
+      loadPairs()
+    } catch (error) {
+      console.error(`Failed to ${action} pairs:`, error)
+    }
+  }
 
   const togglePairSelection = (pairId: number) => {
     setSelectedPairs(prev => 
@@ -63,249 +88,230 @@ const ForwardingPairs: React.FC = () => {
     )
   }
 
-  const toggleAllPairs = () => {
-    setSelectedPairs(
-      selectedPairs.length === filteredPairs.length 
-        ? [] 
-        : filteredPairs.map(pair => pair.id)
-    )
+  const formatDelay = (minutes: number) => {
+    if (minutes === 0) return 'Real-time'
+    if (minutes < 60) return `${minutes}m`
+    const hours = Math.floor(minutes / 60)
+    const remainingMinutes = minutes % 60
+    if (remainingMinutes === 0) return `${hours}h`
+    return `${hours}h ${remainingMinutes}m`
   }
 
-  const handleBulkAction = async (action: 'pause' | 'resume' | 'delete') => {
-    try {
-      await axiosInstance.post(API_ENDPOINTS.PAIRS.BULK_ACTION, {
-        pair_ids: selectedPairs,
-        action
-      })
-      await loadForwardingPairs()
-      setSelectedPairs([])
-    } catch (error) {
-      console.error('Bulk action failed:', error)
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-500/20 text-green-300 border-green-500/30'
+      case 'paused': return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30'
+      case 'error': return 'bg-red-500/20 text-red-300 border-red-500/30'
+      default: return 'bg-gray-500/20 text-gray-300 border-gray-500/30'
     }
   }
 
-  const togglePairStatus = async (pairId: number) => {
-    try {
-      await axiosInstance.post(API_ENDPOINTS.PAIRS.TOGGLE(pairId))
-      await loadForwardingPairs()
-    } catch (error) {
-      console.error('Failed to toggle pair status:', error)
-    }
+  const getPlatformIcon = (platform: string) => {
+    return platform === 'telegram' ? '📱' : '💬'
   }
 
-  if (isLoading) {
+  const filteredPairs = pairs.filter(pair =>
+    pair.source_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    pair.target_id.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+
+  const planLimits = {
+    Free: 1,
+    Pro: 10,
+    Elite: 50
+  }
+
+  const currentLimit = planLimits[user?.plan || 'Free']
+  const canAddMore = pairs.length < currentLimit
+
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" />
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-700 rounded w-1/4"></div>
+          <div className="h-16 bg-gray-700 rounded"></div>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-20 bg-gray-700 rounded"></div>
+            ))}
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-white">Forwarding Pairs</h1>
-          <p className="text-gray-400 mt-1">Manage your message forwarding configurations</p>
+          <p className="text-gray-400">
+            Manage your message forwarding configurations ({pairs.length}/{currentLimit} used)
+          </p>
         </div>
-        <button 
+        <button
           onClick={() => setShowAddModal(true)}
-          className="btn-primary flex items-center"
+          disabled={!canAddMore}
+          className={`flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+            canAddMore
+              ? 'bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white'
+              : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+          }`}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Add New Pair
+          Add Pair
+          {!canAddMore && ' (Limit Reached)'}
         </button>
       </div>
 
-      {/* Filters and Search */}
-      <div className="card">
-        <div className="flex flex-col md:flex-row md:items-center justify-between space-y-4 md:space-y-0">
-          <div className="flex items-center space-x-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search pairs..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input-field pl-10 w-64"
-              />
-            </div>
-
-            {/* Filter */}
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value as any)}
-              className="input-field"
-            >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-            </select>
-          </div>
-
-          {/* Bulk Actions */}
-          {showBulkActions && (
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-400">
-                {selectedPairs.length} selected
-              </span>
-              <button
-                onClick={() => handleBulkAction('resume')}
-                className="btn-secondary text-sm"
-              >
-                Resume All
-              </button>
-              <button
-                onClick={() => handleBulkAction('pause')}
-                className="btn-secondary text-sm"
-              >
-                Pause All
-              </button>
-              <button
-                onClick={() => handleBulkAction('delete')}
-                className="btn-danger text-sm"
-              >
-                Delete Selected
-              </button>
-            </div>
-          )}
+      {/* Search and Bulk Actions */}
+      <div className="flex flex-col md:flex-row md:items-center gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search pairs by source or target..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+          />
         </div>
-      </div>
-
-      {/* Pairs Table */}
-      <div className="card overflow-hidden">
-        {filteredPairs.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-dark-border">
-                  <th className="text-left py-3 px-4">
-                    <button
-                      onClick={toggleAllPairs}
-                      className="text-gray-400 hover:text-white"
-                    >
-                      {selectedPairs.length === filteredPairs.length ? (
-                        <CheckSquare className="h-4 w-4" />
-                      ) : (
-                        <Square className="h-4 w-4" />
-                      )}
-                    </button>
-                  </th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Source</th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Destination</th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Status</th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Messages</th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Delay</th>
-                  <th className="text-left py-3 px-4 text-gray-300 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPairs.map((pair) => (
-                  <tr key={pair.id} className="border-b border-dark-border hover:bg-dark-bg">
-                    <td className="py-3 px-4">
-                      <button
-                        onClick={() => togglePairSelection(pair.id)}
-                        className="text-gray-400 hover:text-white"
-                      >
-                        {selectedPairs.includes(pair.id) ? (
-                          <CheckSquare className="h-4 w-4" />
-                        ) : (
-                          <Square className="h-4 w-4" />
-                        )}
-                      </button>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div>
-                        <p className="text-white font-medium">
-                          {pair.source_chat_name || 'Unknown Chat'}
-                        </p>
-                        <p className="text-gray-400 text-sm capitalize">
-                          {pair.source_type}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div>
-                        <p className="text-white font-medium">
-                          {pair.destination_chat_name || 'Unknown Chat'}
-                        </p>
-                        <p className="text-gray-400 text-sm capitalize">
-                          {pair.destination_type}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className={`status-badge ${pair.is_active ? 'status-active' : 'status-paused'}`}>
-                        {pair.is_active ? 'Active' : 'Paused'}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <p className="text-white">{pair.messages_forwarded}</p>
-                      <p className="text-gray-400 text-sm">
-                        {pair.last_forwarded ? new Date(pair.last_forwarded).toLocaleDateString() : 'Never'}
-                      </p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <p className="text-white">{pair.delay_seconds}s</p>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => togglePairStatus(pair.id)}
-                          className={pair.is_active ? 'text-yellow-400 hover:text-yellow-300' : 'text-green-400 hover:text-green-300'}
-                          title={pair.is_active ? 'Pause' : 'Resume'}
-                        >
-                          {pair.is_active ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                        </button>
-                        <button
-                          className="text-gray-400 hover:text-white"
-                          title="Edit"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          className="text-red-400 hover:text-red-300"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <div className="bg-dark-bg w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Plus className="h-8 w-8 text-gray-600" />
-            </div>
-            <h3 className="text-lg font-medium text-white mb-2">No forwarding pairs found</h3>
-            <p className="text-gray-400 mb-4">
-              {searchTerm || filterStatus !== 'all' 
-                ? 'Try adjusting your search or filter criteria'
-                : 'Get started by creating your first forwarding pair'
-              }
-            </p>
-            <button 
-              onClick={() => setShowAddModal(true)}
-              className="btn-primary"
+        
+        {selectedPairs.length > 0 && (
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-gray-400">
+              {selectedPairs.length} selected
+            </span>
+            <button
+              onClick={() => handleBulkAction('pause')}
+              className="px-3 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-lg text-sm font-medium transition-colors"
             >
-              Create Forwarding Pair
+              Pause All
+            </button>
+            <button
+              onClick={() => handleBulkAction('resume')}
+              className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Resume All
+            </button>
+            <button
+              onClick={() => handleBulkAction('delete')}
+              className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+            >
+              Delete All
             </button>
           </div>
         )}
       </div>
 
+      {/* Pairs List */}
+      {filteredPairs.length === 0 ? (
+        <div className="bg-gray-800 rounded-xl p-12 text-center border border-gray-700">
+          <div className="mx-auto h-12 w-12 bg-gray-700 rounded-xl flex items-center justify-center mb-4">
+            <ArrowRight className="h-6 w-6 text-gray-400" />
+          </div>
+          <h3 className="text-lg font-medium text-white mb-2">No forwarding pairs</h3>
+          <p className="text-gray-400 mb-6">
+            {pairs.length === 0 
+              ? "Get started by creating your first forwarding pair"
+              : "No pairs match your search criteria"
+            }
+          </p>
+          {pairs.length === 0 && canAddMore && (
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 text-white rounded-xl text-sm font-medium transition-all duration-200"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create Your First Pair
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredPairs.map((pair) => (
+            <div
+              key={pair.id}
+              className="bg-gray-800 rounded-xl p-6 border border-gray-700 card-hover"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedPairs.includes(pair.id)}
+                    onChange={() => togglePairSelection(pair.id)}
+                    className="w-4 h-4 text-indigo-600 bg-gray-700 border-gray-600 rounded focus:ring-indigo-500"
+                  />
+                  
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <span className="text-lg font-medium text-white">
+                        {getPlatformIcon(pair.source_platform)} {pair.source_id}
+                      </span>
+                      <ArrowRight className="h-4 w-4 text-gray-400" />
+                      <span className="text-lg font-medium text-white">
+                        {getPlatformIcon(pair.target_platform)} {pair.target_id}
+                      </span>
+                      <span className={`px-2 py-1 text-xs rounded-full border ${getStatusColor(pair.status)}`}>
+                        {pair.status}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center space-x-6 text-sm text-gray-400">
+                      <span className="flex items-center">
+                        <Clock className="h-4 w-4 mr-1" />
+                        Delay: {formatDelay(pair.delay_minutes)}
+                      </span>
+                      <span className="flex items-center">
+                        <MessageCircle className="h-4 w-4 mr-1" />
+                        {pair.messages_forwarded} messages
+                      </span>
+                      <span>
+                        Created: {new Date(pair.created_at).toLocaleDateString()}
+                      </span>
+                      {pair.last_forwarded && (
+                        <span>
+                          Last: {new Date(pair.last_forwarded).toLocaleString()}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handlePairAction(pair.id, pair.status === 'active' ? 'pause' : 'resume')}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                    title={pair.status === 'active' ? 'Pause' : 'Resume'}
+                  >
+                    {pair.status === 'active' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  </button>
+                  <button
+                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                    title="Edit"
+                  >
+                    <Edit className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handlePairAction(pair.id, 'delete')}
+                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Add Pair Modal */}
       <AddPairModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onSuccess={loadForwardingPairs}
+        onSuccess={loadPairs}
       />
     </div>
   )

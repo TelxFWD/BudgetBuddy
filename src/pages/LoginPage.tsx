@@ -1,210 +1,178 @@
 import React, { useState } from 'react'
+import { ArrowRightLeft, Phone, Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { Phone, Smartphone, Shield, Zap } from 'lucide-react'
-import LoadingSpinner from '../components/LoadingSpinner'
 
 const LoginPage: React.FC = () => {
-  const { sendOTP, login, isLoading } = useAuth()
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
   const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
 
-  const handleSendOTP = async (e: React.FormEvent) => {
+  const { login, verifyOTP } = useAuth()
+
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
     setError('')
-    setSuccess('')
 
     try {
-      await sendOTP(phone)
-      setSuccess('OTP sent to your Telegram account!')
+      await login(phone)
       setStep('otp')
-    } catch (err: any) {
-      setError(err.message)
+    } catch (err) {
+      setError('Failed to send OTP. Please check your phone number.')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleVerifyOTP = async (e: React.FormEvent) => {
+  const handleOTPSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setLoading(true)
     setError('')
 
     try {
-      await login(phone, otp)
-      // Login successful, AuthContext will handle redirect
-    } catch (err: any) {
-      setError(err.message)
+      await verifyOTP(phone, otp)
+      // Navigation will be handled by AuthContext
+    } catch (err) {
+      setError('Invalid OTP. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const features = [
-    {
-      icon: Zap,
-      title: 'Lightning Fast',
-      description: 'Forward messages instantly with minimal delay'
-    },
-    {
-      icon: Shield,
-      title: 'Secure & Private',
-      description: 'Your data is encrypted and protected'
-    },
-    {
-      icon: Smartphone,
-      title: 'Multi-Platform',
-      description: 'Works with Telegram and Discord seamlessly'
+  const formatPhoneNumber = (value: string) => {
+    const cleaned = value.replace(/\D/g, '')
+    if (cleaned.startsWith('1')) {
+      return '+1 ' + cleaned.slice(1).replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')
     }
-  ]
+    return '+' + cleaned
+  }
 
   return (
-    <div className="min-h-screen bg-dark-bg flex items-center justify-center px-4">
-      <div className="max-w-6xl w-full grid lg:grid-cols-2 gap-8 items-center">
-        {/* Left side - Features */}
-        <div className="hidden lg:block">
-          <h1 className="text-4xl font-bold text-white mb-6">
-            Welcome to AutoForwardX
-          </h1>
-          <p className="text-xl text-gray-300 mb-8">
-            The most advanced message forwarding platform for power users
-          </p>
-          
-          <div className="space-y-6">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-start space-x-4">
-                <div className="bg-indigo-600 p-3 rounded-lg">
-                  <feature.icon className="h-6 w-6 text-white" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1">
-                    {feature.title}
-                  </h3>
-                  <p className="text-gray-400">{feature.description}</p>
-                </div>
-              </div>
-            ))}
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        {/* Header */}
+        <div className="text-center">
+          <div className="mx-auto h-16 w-16 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg">
+            <ArrowRightLeft className="h-8 w-8 text-white" />
           </div>
+          <h2 className="mt-6 text-3xl font-bold text-white">
+            AutoForwardX
+          </h2>
+          <p className="mt-2 text-sm text-gray-400">
+            Sign in to your message forwarding dashboard
+          </p>
         </div>
 
-        {/* Right side - Login Form */}
-        <div className="w-full max-w-md mx-auto">
-          <div className="card">
-            <div className="text-center mb-8">
-              <div className="bg-indigo-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Phone className="h-8 w-8 text-white" />
-              </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Sign In</h2>
-              <p className="text-gray-400">
-                {step === 'phone' 
-                  ? 'Enter your phone number to receive an OTP'
-                  : 'Enter the OTP sent to your Telegram'
-                }
-              </p>
-            </div>
-
-            {error && (
-              <div className="bg-red-900/50 border border-red-800 text-red-400 px-4 py-3 rounded-lg mb-6">
-                {error}
-              </div>
-            )}
-
-            {success && (
-              <div className="bg-green-900/50 border border-green-800 text-green-400 px-4 py-3 rounded-lg mb-6">
-                {success}
-              </div>
-            )}
-
-            {step === 'phone' ? (
-              <form onSubmit={handleSendOTP} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Phone Number
-                  </label>
+        {/* Login Form */}
+        <div className="bg-gray-800 rounded-xl shadow-md border border-gray-700 p-8">
+          {step === 'phone' ? (
+            <form onSubmit={handlePhoneSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-2">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="h-5 w-5 text-gray-400" />
+                  </div>
                   <input
+                    id="phone"
+                    name="phone"
                     type="tel"
+                    required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+1234567890"
-                    className="input-field w-full"
-                    required
-                    disabled={isLoading}
+                    placeholder="+1 234-567-8900"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Include country code (e.g., +1 for US)
-                  </p>
                 </div>
+                <p className="mt-2 text-xs text-gray-400">
+                  We'll send you a verification code via Telegram
+                </p>
+              </div>
 
-                <button
-                  type="submit"
-                  disabled={isLoading || !phone}
-                  className="btn-primary w-full flex items-center justify-center"
-                >
-                  {isLoading ? (
-                    <>
-                      <LoadingSpinner size="sm" className="mr-2" />
-                      Sending OTP...
-                    </>
-                  ) : (
-                    'Send OTP'
-                  )}
-                </button>
-              </form>
-            ) : (
-              <form onSubmit={handleVerifyOTP} className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    OTP Code
-                  </label>
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={loading || !phone}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  'Send Verification Code'
+                )}
+              </button>
+            </form>
+          ) : (
+            <form onSubmit={handleOTPSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="otp" className="block text-sm font-medium text-gray-300 mb-2">
+                  Verification Code
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Shield className="h-5 w-5 text-gray-400" />
+                  </div>
                   <input
+                    id="otp"
+                    name="otp"
                     type="text"
+                    required
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    placeholder="123456"
-                    className="input-field w-full text-center text-lg tracking-widest"
+                    placeholder="Enter 6-digit code"
                     maxLength={6}
-                    required
-                    disabled={isLoading}
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center text-lg tracking-widest"
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Check your Telegram for the verification code
-                  </p>
                 </div>
+                <p className="mt-2 text-xs text-gray-400">
+                  Check your Telegram for the verification code sent to {formatPhoneNumber(phone)}
+                </p>
+              </div>
 
-                <div className="flex space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setStep('phone')
-                      setOtp('')
-                      setError('')
-                    }}
-                    className="btn-secondary flex-1"
-                    disabled={isLoading}
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isLoading || !otp}
-                    className="btn-primary flex-1 flex items-center justify-center"
-                  >
-                    {isLoading ? (
-                      <>
-                        <LoadingSpinner size="sm" className="mr-2" />
-                        Verifying...
-                      </>
-                    ) : (
-                      'Verify & Sign In'
-                    )}
-                  </button>
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                  <p className="text-red-400 text-sm">{error}</p>
                 </div>
-              </form>
-            )}
-          </div>
+              )}
 
-          <div className="text-center mt-6">
-            <p className="text-gray-500 text-sm">
-              New to AutoForwardX? Contact support for account setup
-            </p>
-          </div>
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={() => setStep('phone')}
+                  className="flex-1 py-3 px-4 border border-gray-600 rounded-xl text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={loading || otp.length !== 6}
+                  className="flex-1 flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    'Verify & Sign In'
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="text-center">
+          <p className="text-xs text-gray-400">
+            By signing in, you agree to our Terms of Service and Privacy Policy
+          </p>
         </div>
       </div>
     </div>
