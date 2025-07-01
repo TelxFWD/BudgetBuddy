@@ -4,7 +4,7 @@
 
 @layer base {
   html {
-    @apply dark;
+    @apply bg-dark-bg text-dark-text;
   }
   
   body {
