@@ -108,7 +108,7 @@ export default function LoginPage() {
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ delay: 0.2 }}
-            className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4"
+            className="w-16 h-16 bg-gradient-to-r from-primary to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4"
           >
             <ShieldCheckIcon className="w-8 h-8 text-white" />
           </motion.div>
@@ -121,25 +121,25 @@ export default function LoginPage() {
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.3 }}
-          className="bg-white/10 backdrop-blur-lg border border-white/20 rounded-2xl p-8 shadow-2xl"
+          className="bg-dark-card backdrop-blur-lg border border-dark-border rounded-2xl p-8 shadow-2xl"
         >
           {step === 'phone' ? (
             <form onSubmit={handleSendOTP} className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold text-white mb-2">Sign In</h2>
-                <p className="text-slate-400 text-sm">
+                <p className="text-dark-text-secondary text-sm">
                   Enter your phone number to receive an OTP code
                 </p>
               </div>
 
               <div className="relative">
-                <PhoneIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+                <PhoneIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-dark-text-secondary" />
                 <input
                   type="tel"
                   placeholder="+1234567890"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-12 pr-4 py-3 bg-dark-bg border border-dark-border rounded-xl text-dark-text placeholder-dark-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   disabled={isLoading}
                 />
               </div>
@@ -148,7 +148,7 @@ export default function LoginPage() {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-red-500/20 border border-red-500/50 rounded-xl p-3 text-red-300 text-sm"
+                  className="bg-error/20 border border-error/50 rounded-xl p-3 text-error text-sm"
                 >
                   {error}
                 </motion.div>
@@ -157,7 +157,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                className="w-full bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
               >
                 {isLoading ? (
                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -173,7 +173,7 @@ export default function LoginPage() {
             <form onSubmit={handleVerifyOTP} className="space-y-6">
               <div>
                 <h2 className="text-xl font-semibold text-white mb-2">Verify OTP</h2>
-                <p className="text-slate-400 text-sm">
+                <p className="text-dark-text-secondary text-sm">
                   Enter the 6-digit code sent to {phoneNumber}
                 </p>
               </div>
@@ -184,7 +184,7 @@ export default function LoginPage() {
                   placeholder="000000"
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white text-center text-2xl font-mono tracking-widest placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full px-4 py-3 bg-dark-bg border border-dark-border rounded-xl text-dark-text text-center text-2xl font-mono tracking-widest placeholder-dark-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   disabled={isLoading}
                   maxLength={6}
                 />
@@ -194,7 +194,7 @@ export default function LoginPage() {
                 <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-red-500/20 border border-red-500/50 rounded-xl p-3 text-red-300 text-sm"
+                  className="bg-error/20 border border-error/50 rounded-xl p-3 text-error text-sm"
                 >
                   {error}
                 </motion.div>
@@ -204,7 +204,7 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setStep('phone')}
-                  className="flex-1 bg-white/10 hover:bg-white/20 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                  className="flex-1 bg-dark-border hover:bg-dark-bg text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
                   disabled={isLoading}
                 >
                   Back
@@ -212,7 +212,7 @@ export default function LoginPage() {
                 <button
                   type="submit"
                   disabled={isLoading || otpCode.length !== 6}
-                  className="flex-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
+                  className="flex-2 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -227,7 +227,7 @@ export default function LoginPage() {
 
               <div className="text-center">
                 {countdown > 0 ? (
-                  <p className="text-slate-400 text-sm">
+                  <p className="text-dark-text-secondary text-sm">
                     Resend OTP in {countdown}s
                   </p>
                 ) : (
@@ -235,7 +235,7 @@ export default function LoginPage() {
                     type="button"
                     onClick={handleResendOTP}
                     disabled={isLoading}
-                    className="text-blue-400 hover:text-blue-300 text-sm font-medium transition-colors"
+                    className="text-primary hover:text-primary-dark text-sm font-medium transition-colors"
                   >
                     Resend OTP
                   </button>
