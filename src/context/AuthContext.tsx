@@ -43,15 +43,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       axiosInstance.get('/auth/me')
         .then(response => {
           setUser(response.data)
-          setIsLoading(false)
         })
         .catch(() => {
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
+        })
+        .finally(() => {
           setIsLoading(false)
         })
     } else {
-      setIsLoading(false)
+      // Auto-login for development testing
+      if (process.env.NODE_ENV === 'development' && !localStorage.getItem('skip_auto_login')) {
+        demoLogin().catch(() => {
+          setIsLoading(false)
+        })
+      } else {
+        setIsLoading(false)
+      }
     }
   }, [])
 
