@@ -6,7 +6,7 @@ channel = "stable-24_05"
 packages = ["cargo", "libiconv", "libxcrypt", "redis", "rustc"]
 
 [workflows]
-runButton = "Vite Dashboard"
+runButton = "Project"
 
 [[workflows.workflow]]
 name = "Project"
@@ -91,7 +91,7 @@ author = "agent"
 
 [[workflows.workflow.tasks]]
 task = "shell.exec"
-args = "node simple_server.js"
+args = "npx vite --host 0.0.0.0 --port 3000"
 waitForPort = 3000
 
 [[workflows.workflow]]
