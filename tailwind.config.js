@@ -1,10 +1,10 @@
-import { Config } from 'tailwindcss';
-
-export default {
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  darkMode: 'class',
   theme: {
     extend: {
       fontFamily: {
@@ -31,4 +31,5 @@ export default {
       },
     },
   },
-} satisfies Config;
+  plugins: [],
+}
