@@ -6,7 +6,7 @@ channel = "stable-24_05"
 packages = ["cargo", "libiconv", "libxcrypt", "redis", "rustc"]
 
 [workflows]
-runButton = "Project"
+runButton = "Vite Dashboard"
 
 [[workflows.workflow]]
 name = "Project"
@@ -93,6 +93,28 @@ author = "agent"
 task = "shell.exec"
 args = "node simple_server.js"
 waitForPort = 3000
+
+[[workflows.workflow]]
+name = "Complete Dashboard"
+author = 44488805
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd src && npm install && npm run dev"
+
+[[workflows.workflow]]
+name = "Vite Dashboard"
+author = 44488805
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm install"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
 
 [[ports]]
 localPort = 3000
