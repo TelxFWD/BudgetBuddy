@@ -4,7 +4,7 @@
 
 @layer base {
   * {
-    @apply border-dark-border;
+    @apply border-slate-700;
   }
   
   body {
