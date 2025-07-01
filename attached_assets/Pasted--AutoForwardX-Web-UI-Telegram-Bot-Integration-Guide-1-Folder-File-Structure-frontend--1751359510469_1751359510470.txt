@@ -1,0 +1,101 @@
+
+# AutoForwardX Web UI & Telegram Bot Integration Guide
+
+## 1. Folder & File Structure
+frontend/
+├── app/
+│ ├── layout.tsx
+│ ├── page.tsx # login/signup
+│ ├── dashboard/
+│ │ ├── page.tsx # main dashboard
+│ │ ├── forwarding/ # forwarding pair screens
+│ │ ├── accounts/ # session management
+│ │ ├── analytics/ # charts & exports
+│ │ └── settings/ # plan & billing
+├── components/ # reusable UI components
+├── services/ # API client functions
+├── store/ # state management (Redux Toolkit)
+└── styles/ # Tailwind globals
+
+markdown
+Copy
+Edit
+
+## 2. Login & Signup Page (`app/page.tsx`)
+- **Dark theme** with Tailwind (bg-dark-bg, text-white).
+- **Phone number input** → call `POST /telegram/send-otp`.
+- **OTP input** → call `POST /telegram/verify-otp` → returns JWT.
+- **Persist JWT** in HttpOnly cookie and localStorage (for API/websocket).
+- **On success** redirect to `/dashboard`.
+- **Error handling**: show inline alerts for invalid OTP or phone.
+
+## 3. Session Storage & Management
+- **Upon OTP verification**:
+  - Store JWT token in **HttpOnly cookie** for API calls.
+  - Store session metadata (user ID, plan) in **Redux store**.
+  - Open WebSocket to `/ws?token=<JWT>` for real-time updates.
+- **Auto‑refresh tokens** using `GET /auth/refresh` before expiry.
+- **On logout** (`POST /auth/logout`):
+  - Clear cookie, Redux store, and WebSocket.
+
+## 4. User Dashboard (`/dashboard/page.tsx`)
+### 4.1 Layout & Navigation
+- **Sidebar**: Dashboard home, Forwarding, Accounts, Analytics, Billing, Settings.
+- **Header**: Show current user plan & usage, logout button.
+
+### 4.2 Plan-Based Feature Gating
+- Fetch user plan from `GET /auth/me`.
+- In Redux, store `plan` and `limits`.
+- **Components** check plan in props:
+  - If Free, disable Pro/Elite UI controls with a “Upgrade to Pro” CTA.
+  - If Pro, disable Elite-only features (Copy Mode, API Keys).
+- Show usage counters (e.g. “Pairs: 2/1 used” for Free).
+
+### 4.3 Forwarding Management
+- **List pairs**: `GET /forwarding/pairs`
+- **Add pair**: interactive form → `POST /forwarding/pairs`
+- **Edit/pause/resume/delete**: inline buttons → `PUT`/`POST toggle`/`DELETE`
+- **Custom delay** dropdown per pair (if plan permits).
+
+### 4.4 Multi‑Account Support
+- **Accounts screen**: `GET /auth/accounts`
+- **Add Telegram session**: trigger the same OTP flow in-app (reuse `/telegram/send-otp`).
+- **List sessions**: show status (Connected/Disconnected).
+- **Switch session context**: select active account → backend persists in JWT.
+- **Remove session**: `DELETE /auth/accounts/{id}`.
+
+### 4.5 Analytics & Reporting
+- **Charts**: fetch `GET /analytics/dashboard` → display line/bar charts.
+- **Export CSV/PDF**: `GET /analytics/export?format=csv|pdf`.
+- **Filters**: by date, account, pair.
+- **Real‑time updates**: subscribe to WebSocket events for live metrics.
+
+### 4.6 Billing & Settings
+- **Current plan**: fetched from `GET /payments/plans` & `GET /auth/me`.
+- **Upgrade**: open PayPal or NowPayments widget (backend endpoints provide URLs).
+- **Payment history**: `GET /payments/history` → table of transactions.
+- **API Keys** (Elite only): generate/revoke via `POST`/`DELETE api_keys`.
+
+## 5. WebSocket Integration
+- **Connect** to `ws://<host>/ws?token=<JWT>`.
+- **Listen** for events:
+  - `session_update`, `queue_update`, `pair_status`, `analytics_update`.
+- **Dispatch** Redux actions to update UI in real-time.
+
+## 6. Telegram Bot ↔ Web Dashboard Synchronization
+- **Shared Auth**: same JWT issued for web also valid for bot.
+- **Bot commands** and **dashboard** both call the same REST API.
+- **Session continuity**: if user logs in on web, bot sees active sessions in `GET /auth/accounts`.
+- **Manage pairs** interchangeably: changes via bot immediately reflected in dashboard via WebSocket.
+
+## 7. Detailed Developer Checklist
+- [ ] Implement login/signup pages with OTP flows.
+- [ ] Persist JWT in HttpOnly cookie & Redux.
+- [ ] Build dashboard routes and layout.
+- [ ] Implement each API call in `services/` with error handling.
+- [ ] Integrate WebSocket client in React hook (`useWebSocket`).
+- [ ] Enforce plan gating in UI components.
+- [ ] Build multi-account UI and neuron manage sessions.
+- [ ] Develop charts & export functionality.
+- [ ] Add billing integration components.
+- [ ] Test end-to-end: login → add session → add pair → view analytics → logout.

@@ -1,4 +1,4 @@
-modules = ["python-3.11"]
+modules = ["python-3.11", "nodejs-20"]
 run = "node index.js"
 
 [nix]
@@ -28,6 +28,10 @@ args = "Celery Worker"
 [[workflows.workflow.tasks]]
 task = "workflow.run"
 args = "Enhanced Telegram Bot"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Next.js Frontend"
 
 [[workflows.workflow]]
 name = "FastAPI Server"
@@ -75,6 +79,15 @@ author = "agent"
 [[workflows.workflow.tasks]]
 task = "shell.exec"
 args = "python telegram_bot_enhanced.py"
+
+[[workflows.workflow]]
+name = "Next.js Frontend"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx next dev -p 3000"
+waitForPort = 3000
 
 [[ports]]
 localPort = 3000
