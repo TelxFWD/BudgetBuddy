@@ -18,14 +18,20 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 import httpx
+
 try:
+    # First check if we have python-telegram-bot installed
+    import telegram
+    logger.info(f"Found telegram module: {telegram}")
+    
     from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, BotCommand
     from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
     from telegram.constants import ParseMode
     TELEGRAM_AVAILABLE = True
-except ImportError:
+    logger.info("Successfully imported python-telegram-bot components")
+except ImportError as e:
     TELEGRAM_AVAILABLE = False
-    logger.warning("python-telegram-bot not properly installed")
+    logger.error(f"Failed to import python-telegram-bot: {e}")
     # Define dummy classes for when telegram is not available
     class Update: pass
     class InlineKeyboardButton: pass
@@ -33,10 +39,6 @@ except ImportError:
     class BotCommand: pass
     class ContextTypes:
         DEFAULT_TYPE = None
-
-if not TELEGRAM_AVAILABLE:
-    logger.error("Cannot start bot without python-telegram-bot. Exiting.")
-    exit(1)
 
 class AutoForwardXBot:
     def __init__(self, bot_token: str, backend_url: str):
