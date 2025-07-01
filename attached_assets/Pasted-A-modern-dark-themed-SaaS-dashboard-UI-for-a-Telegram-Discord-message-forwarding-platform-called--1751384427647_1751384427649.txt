@@ -1,0 +1,64 @@
+A modern, dark-themed SaaS dashboard UI for a Telegram & Discord message forwarding platform called AutoForwardX. The layout should include the following sections:
+
+1. **Top Header**
+   - Logo + Project Name: “AutoForwardX Dashboard”
+   - Subheadline: “Seamlessly automate message forwarding across Telegram and Discord”
+
+2. **Sidebar Navigation**
+   - Vertical sidebar on the left with icons and text labels:
+     - Dashboard
+     - Add Pair
+     - Account Manager
+     - Analytics
+     - Settings
+     - Footer with current plan badge (e.g., Free/Pro/Elite)
+
+3. **Main Content Sections**
+
+   a. **System Status Panel**
+      - Three status cards:
+        - FastAPI Backend [Warning/Healthy]
+        - Redis Queue [Active]
+        - Celery Workers [Running]
+      - Status lights (🟢🟡🔴) and a button: “Test Backend Connection”
+
+   b. **Forwarding Pairs**
+      - Title: “Forwarding Pairs”
+      - Button: “+ Add Pair”
+      - List of pairs:
+        - Telegram to Telegram
+        - Telegram to Discord
+        - Discord to Telegram
+        - Each pair shows:
+          - Source → Destination
+          - Delay (e.g., 24h)
+          - Buttons: Pause, Edit, Delete
+      - Clean card or table layout with hover effects
+
+   c. **Analytics Panel**
+      - Title: “Analytics Overview”
+      - Stats:
+        - Total Messages Forwarded: 345
+        - Success Rate: 99.9%
+      - Graph preview (bar + pie)
+
+   d. **Account Manager**
+      - Title: “Telegram & Discord Sessions”
+      - Button: “+ Add New Telegram Account”
+      - Account cards with:
+        - @username
+        - Status: Reconnect, Switch, Remove buttons
+
+4. **Footer**
+   - Tags: “Fully Responsive”, “Modern UI”, “Production Ready”
+   - Grey footer strip with small text
+
+Style:
+- Font: Inter or DM Sans
+- Color Scheme: Indigo/Violet accents on a navy/black background
+- Use soft shadows, rounded corners, minimalist spacing
+- Use icons (Telegram, Discord, gears) and Framer-style animation hints
+- Visual hierarchy with section dividers
+
+Resolution: High-definition layout, suitable for desktop dashboard UX inspiration
+
