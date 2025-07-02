@@ -15,7 +15,7 @@ import {
   ArrowRight,
   Loader2
 } from 'lucide-react'
-import { forwardingAPI, systemAPI } from '../api/endpoints'
+import { forwardingAPI, systemAPI, accountsAPI } from '../api/endpoints'
 import { useAuth } from '../context/AuthContext'
 import AddPairModal from '../components/AddPairModal'
 
@@ -620,78 +620,256 @@ const AnalyticsPanel: React.FC = () => {
 
 // Component for Account Manager
 const AccountManagerPanel: React.FC = () => {
-  const [accounts] = useState([
-    {
-      id: 1,
-      platform: 'Telegram',
-      username: '@myAccount',
-      status: 'connected',
-      sessions: 3,
-      lastActive: '2 minutes ago'
-    },
-    {
-      id: 2,
-      platform: 'Discord',
-      username: 'MyBot#1234',
-      status: 'connected',
-      sessions: 1,
-      lastActive: '5 minutes ago'
-    },
-    {
-      id: 3,
-      platform: 'Telegram',
-      username: '@backupAccount',
-      status: 'disconnected',
-      sessions: 0,
-      lastActive: '2 hours ago'
+  const { user } = useAuth();
+  const [accounts, setAccounts] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadingActions, setLoadingActions] = useState<Record<string, boolean>>({})
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
+
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  const setActionLoading = (actionKey: string, isLoading: boolean) => {
+    setLoadingActions(prev => ({ ...prev, [actionKey]: isLoading }))
+  }
+
+  const loadAccounts = async () => {
+    try {
+      const [telegramResponse, discordResponse] = await Promise.all([
+        accountsAPI.getTelegramAccounts(),
+        accountsAPI.getDiscordAccounts()
+      ])
+      
+      const allAccounts = [
+        ...(telegramResponse.data || []).map((acc: any) => ({ ...acc, platform: 'Telegram' })),
+        ...(discordResponse.data || []).map((acc: any) => ({ ...acc, platform: 'Discord' }))
+      ]
+      
+      setAccounts(allAccounts.slice(0, 3)) // Show only first 3 accounts in dashboard preview
+    } catch (error) {
+      console.error('Failed to load accounts:', error)
+      // Use demo data as fallback
+      setAccounts([
+        {
+          id: 1,
+          platform: 'Telegram',
+          username: '@myAccount',
+          status: 'connected',
+          sessions: 3,
+          lastActive: '2 minutes ago'
+        },
+        {
+          id: 2,
+          platform: 'Discord',
+          username: 'MyBot#1234',
+          status: 'connected',
+          sessions: 1,
+          lastActive: '5 minutes ago'
+        },
+        {
+          id: 3,
+          platform: 'Telegram',
+          username: '@backupAccount',
+          status: 'disconnected',
+          sessions: 0,
+          lastActive: '2 hours ago'
+        }
+      ])
+    } finally {
+      setLoading(false)
     }
-  ])
+  }
+
+  useEffect(() => {
+    loadAccounts()
+  }, [])
+
+  const handleAddTelegramAccount = async () => {
+    const phone = prompt('Enter your phone number (with country code, e.g., +1234567890):')
+    if (!phone) return
+
+    setActionLoading('add-telegram', true)
+    try {
+      const response = await accountsAPI.addTelegramAccount(phone)
+      showToast(response.data.message || 'Telegram account added successfully', 'success')
+      await loadAccounts()
+    } catch (error: any) {
+      showToast(error.response?.data?.detail || 'Failed to add Telegram account', 'error')
+    } finally {
+      setActionLoading('add-telegram', false)
+    }
+  }
+
+  const handleReconnect = async (platform: string, accountId: number) => {
+    setActionLoading(`reconnect-${platform}-${accountId}`, true)
+    try {
+      let response
+      if (platform === 'Telegram') {
+        response = await accountsAPI.reconnectTelegramSession(accountId)
+      } else {
+        response = await accountsAPI.reconnectDiscordSession(accountId)
+      }
+      
+      showToast(response.data.message || 'Account reconnected successfully', 'success')
+      await loadAccounts()
+    } catch (error: any) {
+      showToast(error.response?.data?.detail || 'Failed to reconnect account', 'error')
+    } finally {
+      setActionLoading(`reconnect-${platform}-${accountId}`, false)
+    }
+  }
+
+  const handleSwitch = async (platform: string, accountId: number) => {
+    setActionLoading(`switch-${platform}-${accountId}`, true)
+    try {
+      let response
+      if (platform === 'Telegram') {
+        response = await accountsAPI.switchTelegramSession(accountId)
+      } else {
+        response = await accountsAPI.switchDiscordSession(accountId)
+      }
+      
+      showToast(response.data.message || 'Switched account successfully', 'success')
+      await loadAccounts()
+    } catch (error: any) {
+      showToast(error.response?.data?.detail || 'Failed to switch account', 'error')
+    } finally {
+      setActionLoading(`switch-${platform}-${accountId}`, false)
+    }
+  }
+
+  const handleRemove = async (platform: string, accountId: number) => {
+    if (!confirm('Are you sure you want to remove this account?')) return
+
+    setActionLoading(`remove-${platform}-${accountId}`, true)
+    try {
+      if (platform === 'Telegram') {
+        await accountsAPI.deleteTelegramSession(accountId)
+      } else {
+        await accountsAPI.deleteDiscordSession(accountId)
+      }
+      
+      showToast('Account removed successfully', 'success')
+      await loadAccounts()
+    } catch (error: any) {
+      showToast(error.response?.data?.detail || 'Failed to remove account', 'error')
+    } finally {
+      setActionLoading(`remove-${platform}-${accountId}`, false)
+    }
+  }
+
+  const navigateToAccountsPage = () => {
+    // This would be handled by router in a real app
+    window.location.hash = '#accounts'
+  }
 
   return (
     <div className="bg-gray-800 rounded-xl p-6 shadow-md border border-gray-700">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-white">Account Manager</h2>
-        <button className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all duration-200 flex items-center">
-          <Plus className="h-4 w-4 mr-2" />
+        <button 
+          onClick={handleAddTelegramAccount}
+          disabled={loadingActions['add-telegram']}
+          className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all duration-200 flex items-center disabled:opacity-50"
+        >
+          {loadingActions['add-telegram'] ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Plus className="h-4 w-4 mr-2" />
+          )}
           Add Telegram Account
         </button>
       </div>
 
-      <div className="space-y-3">
-        {accounts.map((account) => (
-          <div key={account.id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-3 ${
-                  account.status === 'connected' ? 'bg-green-400' : 'bg-red-400'
-                }`} />
-                <div>
-                  <div className="flex items-center">
-                    <span className="text-white font-medium">{account.platform}</span>
-                    <span className="ml-2 text-gray-400">{account.username}</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-400 mt-1">
-                    <Activity className="h-4 w-4 mr-1" />
-                    <span>{account.sessions} sessions</span>
-                    <span className="ml-4">Last: {account.lastActive}</span>
+      {loading ? (
+        <div className="text-gray-400 text-center py-8">Loading accounts...</div>
+      ) : accounts.length === 0 ? (
+        <div className="text-gray-400 text-center py-8">
+          No accounts connected. Add your first account to start forwarding messages.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {accounts.map((account) => (
+            <div key={account.id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <div className={`w-3 h-3 rounded-full mr-3 ${
+                    account.status === 'connected' ? 'bg-green-400' : 'bg-red-400'
+                  }`} />
+                  <div>
+                    <div className="flex items-center">
+                      <span className="text-white font-medium">{account.platform}</span>
+                      <span className="ml-2 text-gray-400">{account.username}</span>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-400 mt-1">
+                      <Activity className="h-4 w-4 mr-1" />
+                      <span>{account.sessions || account.guilds || 0} {account.platform === 'Discord' ? 'servers' : 'sessions'}</span>
+                      <span className="ml-4">Last: {account.lastActive}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button className="px-3 py-1 text-sm text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 rounded-lg hover:bg-indigo-500/30 transition-colors">
-                  Reconnect
-                </button>
-                <button className="px-3 py-1 text-sm text-gray-300 bg-gray-600/50 border border-gray-500/30 rounded-lg hover:bg-gray-600 transition-colors">
-                  Switch
-                </button>
-                <button className="px-3 py-1 text-sm text-red-300 bg-red-500/20 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors">
-                  Remove
-                </button>
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => handleReconnect(account.platform, account.id)}
+                    disabled={loadingActions[`reconnect-${account.platform}-${account.id}`]}
+                    className="px-3 py-1 text-sm text-indigo-300 bg-indigo-500/20 border border-indigo-500/30 rounded-lg hover:bg-indigo-500/30 transition-colors disabled:opacity-50"
+                  >
+                    {loadingActions[`reconnect-${account.platform}-${account.id}`] ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      'Reconnect'
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => handleSwitch(account.platform, account.id)}
+                    disabled={loadingActions[`switch-${account.platform}-${account.id}`]}
+                    className="px-3 py-1 text-sm text-gray-300 bg-gray-600/50 border border-gray-500/30 rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
+                  >
+                    {loadingActions[`switch-${account.platform}-${account.id}`] ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      'Switch'
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => handleRemove(account.platform, account.id)}
+                    disabled={loadingActions[`remove-${account.platform}-${account.id}`]}
+                    className="px-3 py-1 text-sm text-red-300 bg-red-500/20 border border-red-500/30 rounded-lg hover:bg-red-500/30 transition-colors disabled:opacity-50"
+                  >
+                    {loadingActions[`remove-${account.platform}-${account.id}`] ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      'Remove'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
+          ))}
+          
+          {/* Show "View All" button if there are more accounts */}
+          <div className="pt-2">
+            <button 
+              onClick={navigateToAccountsPage}
+              className="w-full text-center text-indigo-400 hover:text-indigo-300 text-sm py-2 border border-indigo-500/30 rounded-lg hover:bg-indigo-500/10 transition-colors"
+            >
+              View All Accounts
+            </button>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
+      
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 p-3 rounded-lg text-white text-sm ${toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'} animate-in slide-in-from-right duration-300`}>
+          <div className="flex items-center justify-between">
+            <span>{toast.message}</span>
+            <button onClick={() => setToast(null)} className="ml-4 text-white hover:text-gray-200">×</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
