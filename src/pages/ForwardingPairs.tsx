@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Search, Play, Pause, Edit, Trash2, ArrowRight, MessageCircle, Clock } from 'lucide-react'
+import { Plus, Search, Play, Pause, Edit, Trash2, ArrowRight, MessageCircle, Clock, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { forwardingAPI } from '../api/endpoints'
 import AddPairModalSimple from '../components/AddPairModalSimple'
@@ -15,6 +15,7 @@ interface ForwardingPair {
   messages_forwarded: number
   created_at: string
   last_forwarded: string | null
+  copy_mode?: boolean
 }
 
 const ForwardingPairs: React.FC = () => {
@@ -86,6 +87,27 @@ const ForwardingPairs: React.FC = () => {
         ? prev.filter(id => id !== pairId)
         : [...prev, pairId]
     )
+  }
+
+  const toggleCopyMode = async (pairId: number) => {
+    const pair = pairs.find(p => p.id === pairId)
+    if (!pair) return
+
+    try {
+      const newCopyMode = !pair.copy_mode
+      await forwardingAPI.updatePairSettings(pairId, { copy_mode: newCopyMode })
+      
+      // Update local state
+      setPairs(prevPairs => 
+        prevPairs.map(p => 
+          p.id === pairId 
+            ? { ...p, copy_mode: newCopyMode }
+            : p
+        )
+      )
+    } catch (error) {
+      console.error('Failed to toggle copy mode:', error)
+    }
   }
 
   const formatDelay = (minutes: number) => {
@@ -284,27 +306,46 @@ const ForwardingPairs: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => handlePairAction(pair.id, pair.status === 'active' ? 'pause' : 'resume')}
-                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-                    title={pair.status === 'active' ? 'Pause' : 'Resume'}
-                  >
-                    {pair.status === 'active' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                  </button>
-                  <button
-                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
-                    title="Edit"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handlePairAction(pair.id, 'delete')}
-                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                <div className="flex items-center space-x-4">
+                  {/* Copy Mode Toggle */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-gray-400">Copy Mode</label>
+                    <button
+                      onClick={() => toggleCopyMode(pair.id)}
+                      className="p-1 transition-colors"
+                      title={pair.copy_mode ? 'Disable Copy Mode' : 'Enable Copy Mode'}
+                    >
+                      {pair.copy_mode ? (
+                        <ToggleRight className="h-5 w-5 text-indigo-500" />
+                      ) : (
+                        <ToggleLeft className="h-5 w-5 text-gray-400" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => handlePairAction(pair.id, pair.status === 'active' ? 'pause' : 'resume')}
+                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                      title={pair.status === 'active' ? 'Pause' : 'Resume'}
+                    >
+                      {pair.status === 'active' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    </button>
+                    <button
+                      className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+                      title="Edit"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => handlePairAction(pair.id, 'delete')}
+                      className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-700 rounded-lg transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

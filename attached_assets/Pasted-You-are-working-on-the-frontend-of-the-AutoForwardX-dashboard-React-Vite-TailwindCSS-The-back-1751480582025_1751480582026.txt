@@ -1,0 +1,106 @@
+You are working on the frontend of the AutoForwardX dashboard (React + Vite + TailwindCSS). The backend APIs for filtering and copy mode already exist, but the following frontend components are missing or incomplete.
+
+---
+
+## ✅ 1. Add Missing “Block Manager” Page
+
+Create: `src/pages/BlockManager.tsx`
+
+Purpose:
+- Let users block image/text messages
+- Let users create search/replace rules per forwarding pair
+
+Layout:
+Header: “Block Manager”
+Dropdown: Select Forwarding Pair
+
+[ Toggle ] Block Text Messages
+[ Toggle ] Block Image Messages
+
+Section: Replace Text Rules
+[ Add Rule ] button → opens modal
+
+Search For	Replace With	Actions
+“@admin”	“support”	[✏] [🗑]
+
+markdown
+Copy
+Edit
+
+Backend APIs:
+- `GET /forwarding/pairs` → to populate dropdown
+- `PATCH /forwarding/pairs/:id/settings` → save toggles
+- `GET /filters/replace/:pairId` → load rules
+- `POST /filters/replace` → create new rule
+- `DELETE /filters/replace/:id`
+- `PUT /filters/replace/:id`
+
+Components to create:
+- `<PairSelector />` → dropdown for selecting pair
+- `<BlockOptions />` → toggle block text/image
+- `<ReplaceRulesTable />` → list of replace rules
+- `<AddRuleModal />` → modal for adding/editing rules
+
+Use `axios` and `useState/useEffect` to load and update data.
+Use toasts/snackbars for success/failure messages.
+
+---
+
+## ✅ 2. Add Copy Mode Toggle (to PairCard)
+
+Location: `src/components/PairCard.tsx`
+
+Add the following JSX near Pause/Delete buttons:
+
+```tsx
+<div className="flex items-center gap-2">
+  <label className="text-xs text-gray-400">Copy Mode</label>
+  <Switch
+    checked={pair.copyMode}
+    onCheckedChange={() => toggleCopyMode(pair.id)}
+  />
+</div>
+Functionality:
+
+Calls PATCH /forwarding/pairs/:id/settings with { copy_mode: true | false }
+
+Update local pair state after success
+
+✅ 3. Wire Everything to Backend
+Use axios with JWT auth header
+
+On /block-manager page:
+
+Load pair list on mount
+
+Update toggles on change
+
+Load rules when pair selected
+
+Add/Edit/Delete rules via modals or inline buttons
+
+On /forwarding page:
+
+Ensure Copy Mode toggle is synced with backend
+
+No feature gating logic yet
+
+🎨 Styling
+Dark mode: bg-gray-900, text-white
+
+Cards: rounded-xl bg-gray-800 p-4 shadow
+
+Buttons: Indigo theme bg-indigo-600 hover:bg-indigo-700
+
+Switches: Use Radix or ShadCN
+
+✅ Final Objective
+You must create:
+
+A working /block-manager page with filters + rule editor
+
+A working Copy Mode toggle in each PairCard
+
+Ensure backend-connected via Axios
+
+Clean, modern Tailwind UI
