@@ -156,11 +156,13 @@ const DashboardLayout: React.FC = () => {
 
         {/* Page content */}
         <main className="flex-1 min-h-screen bg-gray-900">
-          <Outlet />
+          <div className="max-w-7xl mx-auto">
+            <Outlet />
+          </div>
           
           {/* Footer */}
           <footer className="mt-16 border-t border-gray-700 bg-gray-800/50 backdrop-blur-sm">
-            <div className="px-6 py-4">
+            <div className="max-w-7xl mx-auto px-6 py-4">
               <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
                 <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 text-indigo-300">
                   Modern UI
