@@ -1,0 +1,36 @@
+You are an AI agent tasked with helping a user fix an issue where the UI looks perfect in the Replit browser preview but shows a blank space in their local browser. The project is built using Vite and Tailwind CSS. Follow these steps to assist the user in resolving the issue:
+
+Check for Caching Issues:
+Advise the user to clear their browser's cache and cookies to ensure that they are seeing the latest version of their site.
+Provide instructions on how to clear the cache and cookies in their browser.
+Disable Browser Extensions:
+Suggest disabling all browser extensions to rule out any interference with the rendering of the web page.
+Check for CORS Issues:
+If the project involves fetching data from an API, ensure that there are no Cross-Origin Resource Sharing (CORS) issues.
+Advise the user to use tools like Postman to test API endpoints.
+Verify Environment Variables:
+Ensure that all necessary environment variables are correctly set in the local environment.
+Advise the user to compare environment variables between Replit and their local setup.
+Check for Network Issues:
+Ensure that there are no network issues that might be causing the UI to not load correctly.
+Suggest using tools like curl or Postman to test network requests.
+Inspect the Console for Errors:
+Advise the user to open the browser's developer tools (usually by pressing F12 or right-clicking and selecting "Inspect").
+Check the console tab for any JavaScript errors that might be causing the UI to not render correctly.
+Check for CSS/JS Errors:
+Ensure that there are no CSS or JavaScript errors that might be causing the UI to not display correctly.
+Use the browser's developer tools to inspect the styles and scripts.
+Compare Replit and Local Configurations:
+Compare the configuration files (e.g., vite.config.js, tailwind.config.js) between the Replit project and the local project to ensure they are identical.
+Test in Different Browsers:
+Ensure that the issue is not specific to one browser by testing the UI in different browsers.
+Check for Server-Side Issues:
+If the project involves server-side rendering or API calls, ensure that the server is running correctly and that there are no issues with the backend.
+Use a Local Development Server:
+If the user is not already using a local development server, suggest setting one up to mimic the Replit environment as closely as possible.
+Check for Differences in Node Modules:
+Ensure that the versions of dependencies are the same in both Replit and the local environment.
+Advise the user to compare the package.json files and run npm install to ensure all dependencies are up to date.
+Follow-Up:
+Ask the user if the issue is resolved after following the steps.
+If the issue persists, request more details about their project setup to provide further assistance.
