@@ -1,0 +1,73 @@
+You’re working on the `/accounts` page of the AutoForwardX dashboard (React + Vite + Tailwind CSS + FastAPI backend). The UI is present, but none of the buttons are functional.
+
+✅ Your job is to FIX all button behaviors and connect them to the backend via Axios.
+
+---
+
+### 🔘 Buttons to Fix:
+
+1. **Add Telegram Account**
+   - Action: Initiate Telegram login session
+   - API: `POST /telegram/session/initiate`
+   - After success: reload session list with `GET /telegram/session`
+
+2. **Add Discord Bot**
+   - Action: Open Discord Bot Authorization flow
+   - API: `GET /discord/auth-url`
+   - On click: open returned URL in new tab or iframe
+   - After success: update session list
+
+3. **Reconnect**
+   - Action: Reconnect an inactive Telegram or Discord session
+   - API: `POST /telegram/session/reconnect` or `POST /discord/session/reconnect`
+   - Params: `session_id`
+   - On success: Show toast and reload list
+
+4. **Switch**
+   - Action: Make selected account the active one for forwarding
+   - API: `PATCH /telegram/session/switch` or `PATCH /discord/session/switch`
+   - Params: `session_id`
+
+5. **Remove / Delete**
+   - Action: Delete selected session from backend
+   - API: `DELETE /telegram/session/:id` or `DELETE /discord/session/:id`
+   - On success: remove from UI immediately
+
+6. **Settings (per session)**
+   - Optional: Show a modal with custom session config
+   - Connect to a real endpoint if available (e.g. `/session/config`)
+
+7. **Refresh Icon**
+   - Reload all session data
+   - Call `GET /telegram/session` and `GET /discord/session` on click
+
+---
+
+### 🧩 Expected UI Behavior:
+
+- Each session has:
+  - Platform tag (Telegram / Discord)
+  - Account name
+  - Status: ✅ Active, ⚠️ Warning, ❌ Offline
+  - Actions: Reconnect | Switch | Remove
+
+- Use toast/snackbar for:
+  - Success
+  - Failure (e.g. unable to reconnect)
+
+- UI must auto-update without full page reload
+
+---
+
+### 🧠 Dev Tips:
+
+- Use Axios instance (`apiService`)
+- Handle loading state per button (e.g., spinning icon while reconnecting)
+- On page load: auto-fetch session list from `/telegram/session` and `/discord/session`
+- Use `useEffect` and `useState` for reactive updates
+
+---
+
+✅ Summary:
+
+Fix and fully connect all action buttons on `/accounts` page. Ensure every button calls the correct API, shows toast feedback, and updates the frontend session list dynamically. Keep UI clean, responsive, and consistent with Tailwind + dark mode theme.

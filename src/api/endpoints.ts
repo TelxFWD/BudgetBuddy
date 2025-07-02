@@ -25,14 +25,21 @@ export const forwardingAPI = {
 export const accountsAPI = {
   getTelegramAccounts: () => axiosInstance.get('/accounts/telegram'),
   getDiscordAccounts: () => axiosInstance.get('/accounts/discord'),
-  addTelegramAccount: (data: any) => axiosInstance.post('/accounts/telegram', data),
-  addDiscordAccount: (data: any) => axiosInstance.post('/accounts/discord', data),
+  addTelegramAccount: (phone: string) => axiosInstance.post('/telegram/session/initiate', { phone }),
+  getDiscordAuthUrl: () => axiosInstance.get('/discord/auth-url'),
   removeAccount: (platform: string, id: number) => 
     axiosInstance.delete(`/accounts/${platform}/${id}`),
   switchAccount: (platform: string, id: number) => 
     axiosInstance.post(`/accounts/${platform}/${id}/switch`),
   reconnectAccount: (platform: string, id: number) => 
     axiosInstance.post(`/accounts/${platform}/${id}/reconnect`),
+  // New specific endpoints
+  deleteTelegramSession: (id: number) => axiosInstance.delete(`/telegram/session/${id}`),
+  deleteDiscordSession: (id: number) => axiosInstance.delete(`/discord/session/${id}`),
+  reconnectTelegramSession: (id: number) => axiosInstance.post(`/telegram/session/reconnect/${id}`),
+  reconnectDiscordSession: (id: number) => axiosInstance.post(`/discord/session/reconnect/${id}`),
+  switchTelegramSession: (id: number) => axiosInstance.patch(`/telegram/session/switch/${id}`),
+  switchDiscordSession: (id: number) => axiosInstance.patch(`/discord/session/switch/${id}`),
 }
 
 // Analytics endpoints
