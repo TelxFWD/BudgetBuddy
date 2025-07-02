@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Connectivity Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #1a1a1a; color: white; padding: 20px; }
+        .test-box { background: #2a2a2a; padding: 20px; border-radius: 8px; margin: 10px 0; }
+        .success { color: #22c55e; }
+        .error { color: #ef4444; }
+    </style>
+</head>
+<body>
+    <h1>AutoForwardX API Connectivity Test</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testApi() {
+            const results = document.getElementById('results');
+            const protocol = window.location.protocol;
+            const hostname = window.location.hostname;
+            const testUrl = `${protocol}//${hostname}:5000/test`;
+            const apiUrl = `${protocol}//${hostname}:5000/api/health`;
+            
+            results.innerHTML = `
+                <div class="test-box">
+                    <h3>Test Information</h3>
+                    <p><strong>Current URL:</strong> ${window.location.href}</p>
+                    <p><strong>Test URL:</strong> ${testUrl}</p>
+                    <p><strong>API URL:</strong> ${apiUrl}</p>
+                    <p><strong>Testing connectivity...</strong></p>
+                </div>
+            `;
+
+            // Test 1: Basic test endpoint
+            try {
+                const testResponse = await fetch(testUrl, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (testResponse.ok) {
+                    const testData = await testResponse.json();
+                    results.innerHTML += `
+                        <div class="test-box success">
+                            <h3>✅ Basic Test Endpoint Successful</h3>
+                            <p><strong>Status:</strong> ${testResponse.status}</p>
+                            <p><strong>Response:</strong> ${JSON.stringify(testData, null, 2)}</p>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML += `
+                        <div class="test-box error">
+                            <h3>❌ Basic Test Endpoint Failed</h3>
+                            <p><strong>Status:</strong> ${testResponse.status}</p>
+                            <p><strong>Status Text:</strong> ${testResponse.statusText}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                results.innerHTML += `
+                    <div class="test-box error">
+                        <h3>❌ Basic Test Connection Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    results.innerHTML += `
+                        <div class="test-box success">
+                            <h3>✅ API Connection Successful</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Response:</strong> ${JSON.stringify(data, null, 2)}</p>
+                        </div>
+                    `;
+                } else {
+                    results.innerHTML += `
+                        <div class="test-box error">
+                            <h3>❌ API Connection Failed</h3>
+                            <p><strong>Status:</strong> ${response.status}</p>
+                            <p><strong>Status Text:</strong> ${response.statusText}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                results.innerHTML += `
+                    <div class="test-box error">
+                        <h3>❌ API Connection Error</h3>
+                        <p><strong>Error:</strong> ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Run test on page load
+        testApi();
+    </script>
+</body>
+</html>

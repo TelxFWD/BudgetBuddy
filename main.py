@@ -100,6 +100,16 @@ async def root():
         "version": "1.0.0"
     }
 
+@app.get("/test")
+async def test_endpoint():
+    """Test endpoint for debugging external access."""
+    return {
+        "status": "success",
+        "message": "External API access is working correctly",
+        "server": "FastAPI",
+        "port": 5000
+    }
+
 @app.get("/health")
 async def health_check():
     """Health check endpoint without API prefix."""
