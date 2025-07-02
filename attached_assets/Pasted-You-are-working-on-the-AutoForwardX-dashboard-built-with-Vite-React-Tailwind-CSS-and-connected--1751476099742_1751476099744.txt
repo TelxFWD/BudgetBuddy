@@ -1,0 +1,125 @@
+You are working on the AutoForwardX dashboard, built with Vite + React + Tailwind CSS and connected to a FastAPI backend.
+
+The current dashboard has the UI structure in place, but most **buttons are broken**, and the layout needs cleanup and modernization.
+
+---
+
+### ✅ Your Goal
+
+1. **Fix all broken buttons** on the Dashboard and Account Manager.
+2. **Redesign layout and spacing for modern, responsive UI.**
+3. **Use Axios to connect everything to backend.**
+4. **No plan-based access control yet — just ensure UI & API work.**
+
+---
+
+### 🧰 Buttons to Fix
+
+#### 🔁 Add Pair (`/dashboard`, `/forwarding`)
+- ✅ Open AddPairModal (modal already exists or create one)
+- ✅ Submit form to `POST /forwarding/pairs`
+- ✅ Refresh the forwarding pairs list on success
+- ❌ Do NOT apply plan limit logic yet
+
+#### 🗑️ Delete Pair
+- ✅ Call `DELETE /forwarding/pairs/:id`
+- ✅ Remove from UI immediately
+- ✅ Show toast notification
+
+#### 🔄 Reconnect Session (Telegram / Discord)
+- ✅ `POST /telegram/session/reconnect` or `/discord/session/reconnect`
+- Params: `{ session_id }`
+- ✅ Show loading while reconnecting
+
+#### 🔃 Switch Session
+- ✅ `PATCH /telegram/session/switch`
+- ✅ Refresh default session tag after switching
+
+#### ❌ Remove Session
+- ✅ `DELETE /telegram/session/:id`
+- ✅ Remove from session list in UI
+
+#### ➕ Add Telegram Account
+- ✅ Call `POST /telegram/session/initiate`
+- ✅ Open link (or popup) if required
+- ✅ Refresh session list
+
+#### ➕ Add Discord Bot
+- ✅ Call `GET /discord/auth-url`
+- ✅ Open returned link in new tab
+- ✅ Refresh list after bot is added
+
+---
+
+### 🖼️ UI Redesign Guidelines
+
+#### 🔳 Plan Summary Box (Top Section)
+- Replace full-width purple bar with 3 clean stat cards:
+[ Plan: Pro ] [ 5 of 15 pairs used ] [ Messages Forwarded: 2,847 ]
+
+markdown
+Copy
+Edit
+- Use `flex`, `gap-4`, `bg-gray-800`, `rounded-xl`, `shadow-md`
+
+#### 🔁 Forwarding Pairs
+- Modern cards with:
+- Source → Target
+- Platform badges
+- Delay info
+- Action icons: Pause, Edit, Delete
+- Empty state: “No pairs yet” with icon and CTA
+
+#### 📊 Analytics Overview
+- Show 3 stat boxes:
+- Total Messages
+- Success Rate
+- Messages Today
+- Add bar graph for weekly activity (dummy data okay)
+- Use Recharts or Chart.js
+
+#### 👥 Account Manager
+- Cards per session
+- Show:
+- Status (green/red dot)
+- Last used
+- Buttons: Reconnect, Switch, Remove
+- Use `.bg-gray-800`, `.rounded-lg`, `.space-y-2`
+
+---
+
+### ⚙️ Axios Integration Checklist
+
+- Import and use a central Axios instance with JWT headers
+- Backend endpoints:
+- `GET /auth/me`
+- `GET /forwarding/pairs`
+- `POST /forwarding/pairs`
+- `DELETE /forwarding/pairs/:id`
+- `POST /telegram/session/reconnect`
+- `DELETE /telegram/session/:id`
+- `POST /telegram/session/initiate`
+- `GET /telegram/session`
+- `GET /analytics/summary`
+
+- Update all button handlers to call these endpoints
+- Use `useEffect` and `useState` to load dynamic data
+
+---
+
+### ✅ Design Specs
+
+- Dark theme: use `bg-gray-900`, `bg-gray-800`, `text-white`
+- Primary color: `bg-violet-600`, `hover:bg-violet-700`
+- Button style: `px-4 py-2 rounded-xl font-semibold text-white`
+- Card style: `rounded-xl p-4 shadow-md bg-gray-800`
+
+---
+
+### 🔚 Final Checklist
+
+- All dashboard buttons functional
+- All Axios calls hooked to backend
+- UI spacing fixed (no top padding issues)
+- Modern, clean Tailwind layout
+- No console errors or hardcoded placeholders

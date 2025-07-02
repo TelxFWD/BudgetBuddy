@@ -1,6 +1,5 @@
 import React, { useState } from 'react'
-import { X, MessageSquare, Hash, Clock, Zap } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
+import { X, Plus, Loader2 } from 'lucide-react'
 import { forwardingAPI } from '../api/endpoints'
 
 interface AddPairModalProps {
@@ -9,123 +8,36 @@ interface AddPairModalProps {
   onSuccess: () => void
 }
 
-interface FormData {
-  sourcePlatform: 'telegram' | 'discord'
-  targetPlatform: 'telegram' | 'discord'
-  sourceId: string
-  targetIds: string[]  // Support multiple destinations
-  delayMinutes: number
-  copyMode: boolean
-  blockImages: boolean
-  blockText: boolean
-  textFilters: {
-    searchText: string
-    replaceWith: string
-  }[]
-}
-
 const AddPairModal: React.FC<AddPairModalProps> = ({ isOpen, onClose, onSuccess }) => {
-  const { user } = useAuth()
-  const [formData, setFormData] = useState<FormData>({
-    sourcePlatform: 'telegram',
-    targetPlatform: 'telegram',
-    sourceId: '',
-    targetIds: [''],
-    delayMinutes: 5,
-    copyMode: false,
-    blockImages: false,
-    blockText: false,
-    textFilters: []
+  const [formData, setFormData] = useState({
+    source_platform: 'telegram',
+    destination_platform: 'telegram',
+    source_chat: '',
+    destination_chat: '',
+    delay_minutes: 0
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const planLimits = {
-    Free: { maxPairs: 1, crossPlatform: false },
-    Pro: { maxPairs: 10, crossPlatform: true },
-    Elite: { maxPairs: 50, crossPlatform: true }
-  }
-
-  const currentPlanLimits = planLimits[user?.plan || 'Free']
-
-  const handleInputChange = (field: keyof FormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
-    setError('')
-  }
-
-  const validateForm = () => {
-    // Check cross-platform restriction for Free plan
-    if (user?.plan === 'Free' && formData.sourcePlatform !== formData.targetPlatform) {
-      setError('Cross-platform forwarding requires Pro or Elite plan')
-      return false
-    }
-
-    // Validate source and target IDs
-    if (!formData.sourceId.trim() || !formData.targetId.trim()) {
-      setError('Please fill in both source and target IDs')
-      return false
-    }
-
-    // Validate Telegram format (should start with @)
-    if (formData.sourcePlatform === 'telegram' && !formData.sourceId.startsWith('@')) {
-      setError('Telegram channels/groups should start with @')
-      return false
-    }
-
-    if (formData.targetPlatform === 'telegram' && !formData.targetId.startsWith('@')) {
-      setError('Telegram channels/groups should start with @')
-      return false
-    }
-
-    // Validate Discord format (should be numeric for channel IDs)
-    if (formData.sourcePlatform === 'discord' && !/^\d+$/.test(formData.sourceId)) {
-      setError('Discord channel ID should be numeric')
-      return false
-    }
-
-    if (formData.targetPlatform === 'discord' && !/^\d+$/.test(formData.targetId)) {
-      setError('Discord channel ID should be numeric')
-      return false
-    }
-
-    return true
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
-    if (!validateForm()) return
-
     setLoading(true)
     setError('')
 
     try {
-      const delayInMinutes = formData.delayUnit === 'hours' 
-        ? formData.delay * 60 
-        : formData.delay
-
-      await forwardingAPI.createPair({
-        source_platform: formData.sourcePlatform,
-        target_platform: formData.targetPlatform,
-        source_id: formData.sourceId.trim(),
-        target_id: formData.targetId.trim(),
-        delay_minutes: delayInMinutes
-      })
-
+      await forwardingAPI.createPair(formData)
       onSuccess()
       onClose()
-      
       // Reset form
       setFormData({
-        sourcePlatform: 'telegram',
-        targetPlatform: 'telegram',
-        sourceId: '',
-        targetId: '',
-        delay: 5,
-        delayUnit: 'minutes'
+        source_platform: 'telegram',
+        destination_platform: 'telegram',
+        source_chat: '',
+        destination_chat: '',
+        delay_minutes: 0
       })
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create forwarding pair')
+    } catch (error: any) {
+      setError(error.response?.data?.detail || 'Failed to create forwarding pair')
     } finally {
       setLoading(false)
     }
@@ -134,202 +46,121 @@ const AddPairModal: React.FC<AddPairModalProps> = ({ isOpen, onClose, onSuccess 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto modal-backdrop">
-      <div className="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
-        <div className="fixed inset-0 transition-opacity" onClick={onClose}>
-          <div className="absolute inset-0 bg-black opacity-50"></div>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-gray-800 rounded-xl p-6 w-full max-w-md mx-4">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-white">Add Forwarding Pair</h2>
+          <button
+            onClick={onClose}
+            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
-        <div className="inline-block align-bottom bg-gray-800 rounded-xl px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6 border border-gray-700">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-white">
-              Add Forwarding Pair
-            </h3>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-white transition-colors"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          {/* Plan restriction warning */}
-          {user?.plan === 'Free' && (
-            <div className="mb-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
-              <p className="text-yellow-400 text-sm">
-                Free plan: Limited to Telegram → Telegram forwarding only. 
-                <span className="font-medium"> Upgrade to Pro</span> for cross-platform support.
-              </p>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {error && (
+            <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 text-sm">
+              {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Platform Selection */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Source Platform
-                </label>
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange('sourcePlatform', 'telegram')}
-                    className={`w-full p-3 rounded-xl border-2 transition-all ${
-                      formData.sourcePlatform === 'telegram'
-                        ? 'border-indigo-500 bg-indigo-500/10'
-                        : 'border-gray-600 bg-gray-700 hover:border-gray-500'
-                    }`}
-                  >
-                    <div className="flex items-center">
-                      <MessageSquare className="h-5 w-5 mr-2 text-blue-400" />
-                      <span className="text-white font-medium">Telegram</span>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange('sourcePlatform', 'discord')}
-                    disabled={user?.plan === 'Free'}
-                    className={`w-full p-3 rounded-xl border-2 transition-all ${
-                      formData.sourcePlatform === 'discord'
-                        ? 'border-indigo-500 bg-indigo-500/10'
-                        : 'border-gray-600 bg-gray-700 hover:border-gray-500'
-                    } ${user?.plan === 'Free' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <div className="flex items-center">
-                      <Hash className="h-5 w-5 mr-2 text-purple-400" />
-                      <span className="text-white font-medium">Discord</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Target Platform
-                </label>
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange('targetPlatform', 'telegram')}
-                    className={`w-full p-3 rounded-xl border-2 transition-all ${
-                      formData.targetPlatform === 'telegram'
-                        ? 'border-indigo-500 bg-indigo-500/10'
-                        : 'border-gray-600 bg-gray-700 hover:border-gray-500'
-                    }`}
-                  >
-                    <div className="flex items-center">
-                      <MessageSquare className="h-5 w-5 mr-2 text-blue-400" />
-                      <span className="text-white font-medium">Telegram</span>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleInputChange('targetPlatform', 'discord')}
-                    disabled={user?.plan === 'Free'}
-                    className={`w-full p-3 rounded-xl border-2 transition-all ${
-                      formData.targetPlatform === 'discord'
-                        ? 'border-indigo-500 bg-indigo-500/10'
-                        : 'border-gray-600 bg-gray-700 hover:border-gray-500'
-                    } ${user?.plan === 'Free' ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    <div className="flex items-center">
-                      <Hash className="h-5 w-5 mr-2 text-purple-400" />
-                      <span className="text-white font-medium">Discord</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Source ID */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
-                Source {formData.sourcePlatform === 'telegram' ? 'Channel/Group' : 'Channel ID'}
+                Source Platform
               </label>
-              <input
-                type="text"
-                value={formData.sourceId}
-                onChange={(e) => handleInputChange('sourceId', e.target.value)}
-                placeholder={formData.sourcePlatform === 'telegram' ? '@channelname' : '123456789'}
-                className="w-full px-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Target ID */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Target {formData.targetPlatform === 'telegram' ? 'Channel/Group' : 'Channel ID'}
-              </label>
-              <input
-                type="text"
-                value={formData.targetId}
-                onChange={(e) => handleInputChange('targetId', e.target.value)}
-                placeholder={formData.targetPlatform === 'telegram' ? '@targetchannel' : '987654321'}
-                className="w-full px-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              />
-            </div>
-
-            {/* Delay Configuration */}
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                <Clock className="inline h-4 w-4 mr-1" />
-                Forwarding Delay
-              </label>
-              <div className="flex space-x-2">
-                <input
-                  type="number"
-                  min="1"
-                  max={formData.delayUnit === 'hours' ? 24 : 1440}
-                  value={formData.delay}
-                  onChange={(e) => handleInputChange('delay', parseInt(e.target.value))}
-                  className="flex-1 px-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                />
-                <select
-                  value={formData.delayUnit}
-                  onChange={(e) => handleInputChange('delayUnit', e.target.value)}
-                  className="px-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                >
-                  <option value="minutes">Minutes</option>
-                  <option value="hours">Hours</option>
-                </select>
-              </div>
-              <p className="mt-1 text-xs text-gray-400">
-                {formData.delay === 0 && <><Zap className="inline h-3 w-3 mr-1" />Real-time forwarding</>}
-                {formData.delay > 0 && `Messages will be forwarded after ${formData.delay} ${formData.delayUnit}`}
-              </p>
-            </div>
-
-            {/* Error message */}
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex space-x-3 pt-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex-1 py-3 px-4 border border-gray-600 rounded-xl text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+              <select
+                value={formData.source_platform}
+                onChange={(e) => setFormData({ ...formData, source_platform: e.target.value })}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
               >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              >
-                {loading ? (
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                ) : (
-                  'Create Pair'
-                )}
-              </button>
+                <option value="telegram">Telegram</option>
+                <option value="discord">Discord</option>
+              </select>
             </div>
-          </form>
-        </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">
+                Destination Platform
+              </label>
+              <select
+                value={formData.destination_platform}
+                onChange={(e) => setFormData({ ...formData, destination_platform: e.target.value })}
+                className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+              >
+                <option value="telegram">Telegram</option>
+                <option value="discord">Discord</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Source Chat ID/Username
+            </label>
+            <input
+              type="text"
+              value={formData.source_chat}
+              onChange={(e) => setFormData({ ...formData, source_chat: e.target.value })}
+              placeholder="@channel_name or chat_id"
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Destination Chat ID/Username
+            </label>
+            <input
+              type="text"
+              value={formData.destination_chat}
+              onChange={(e) => setFormData({ ...formData, destination_chat: e.target.value })}
+              placeholder="@channel_name or chat_id"
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300 mb-2">
+              Delay (minutes)
+            </label>
+            <input
+              type="number"
+              value={formData.delay_minutes}
+              onChange={(e) => setFormData({ ...formData, delay_minutes: parseInt(e.target.value) || 0 })}
+              min="0"
+              max="1440"
+              className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-violet-500"
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white rounded-xl font-medium transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex-1 px-4 py-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white rounded-xl font-medium transition-colors disabled:opacity-50 flex items-center justify-center"
+            >
+              {loading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Pair
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   )

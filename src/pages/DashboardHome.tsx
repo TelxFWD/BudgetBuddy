@@ -12,10 +12,12 @@ import {
   MessageCircle,
   CheckCircle,
   Activity,
-  ArrowRight
+  ArrowRight,
+  Loader2
 } from 'lucide-react'
 import { forwardingAPI, systemAPI } from '../api/endpoints'
 import { useAuth } from '../context/AuthContext'
+import AddPairModal from '../components/AddPairModal'
 
 // Component for System Status Panel
 const SystemStatusPanel: React.FC = () => {
@@ -111,7 +113,12 @@ const SystemStatusPanel: React.FC = () => {
 }
 
 // Plan Summary Panel Component (Replaces System Status)
-const PlanSummaryPanel: React.FC = () => {
+interface PlanSummaryPanelProps {
+  onAddPairClick: () => void;
+  onRefresh: () => void;
+}
+
+const PlanSummaryPanel: React.FC<PlanSummaryPanelProps> = ({ onAddPairClick, onRefresh }) => {
   const { user } = useAuth();
   const [stats, setStats] = useState({
     activePairs: 0,
@@ -128,23 +135,30 @@ const PlanSummaryPanel: React.FC = () => {
   const userPlan = user?.plan?.toLowerCase() || 'free';
   const currentPlan = planLimits[userPlan as keyof typeof planLimits] || planLimits.free;
 
+  const fetchStats = async () => {
+    try {
+      const response = await forwardingAPI.getPairs();
+      const pairs = response.data || [];
+      setStats({
+        activePairs: pairs.filter((p: any) => p.status === 'active').length,
+        messagesForwarded: pairs.reduce((sum: number, p: any) => sum + (p.messages_forwarded || 0), 0),
+        planUsage: { used: pairs.length, limit: currentPlan.pairs }
+      });
+    } catch (error) {
+      console.error('Failed to fetch stats:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await forwardingAPI.getPairs();
-        const pairs = response.data || [];
-        setStats({
-          activePairs: pairs.filter((p: any) => p.status === 'active').length,
-          messagesForwarded: pairs.reduce((sum: number, p: any) => sum + (p.messages_forwarded || 0), 0),
-          planUsage: { used: pairs.length, limit: currentPlan.pairs }
-        });
-      } catch (error) {
-        console.error('Failed to fetch stats:', error);
-      }
-    };
-    
     fetchStats();
   }, [currentPlan.pairs]);
+
+  // Expose fetchStats via onRefresh
+  useEffect(() => {
+    if (onRefresh) {
+      window.planSummaryRefresh = fetchStats;
+    }
+  }, [onRefresh]);
 
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
@@ -180,7 +194,11 @@ const PlanSummaryPanel: React.FC = () => {
 
       {/* Quick Actions */}
       <div className="mt-6 flex gap-3">
-        <button className="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white px-4 py-2 rounded-xl font-medium transition-colors">
+        <button 
+          onClick={onAddPairClick}
+          className="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center justify-center"
+        >
+          <Plus className="h-4 w-4 mr-2" />
           Add New Pair
         </button>
         {userPlan === 'free' && (
@@ -194,10 +212,16 @@ const PlanSummaryPanel: React.FC = () => {
 };
 
 // Enhanced Component for Forwarding Pairs Manager with Elite Features
-const ForwardingPairsPanel: React.FC = () => {
+interface ForwardingPairsPanelProps {
+  onAddPairClick: () => void;
+  onRefresh: () => void;
+}
+
+const ForwardingPairsPanel: React.FC<ForwardingPairsPanelProps> = ({ onAddPairClick, onRefresh }) => {
   const { user } = useAuth();
   const [pairs, setPairs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [actionLoading, setActionLoading] = useState<{[key: string]: boolean}>({})
 
   const userPlan = user?.plan?.toLowerCase() || 'free';
   const planLimits = {
@@ -208,42 +232,61 @@ const ForwardingPairsPanel: React.FC = () => {
   const currentPlan = planLimits[userPlan as keyof typeof planLimits] || planLimits.free;
 
   // Load pairs from API
-  useEffect(() => {
-    const loadPairs = async () => {
-      try {
-        const response = await forwardingAPI.getPairs()
-        setPairs(response.data || [])
-      } catch (error) {
-        console.error('Failed to load forwarding pairs:', error)
-        setPairs([]) // Use empty array, no fallback data
-      } finally {
-        setLoading(false)
-      }
+  const loadPairs = async () => {
+    try {
+      setLoading(true)
+      const response = await forwardingAPI.getPairs()
+      setPairs(response.data || [])
+    } catch (error) {
+      console.error('Failed to load forwarding pairs:', error)
+      setPairs([]) // Use empty array, no fallback data
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
     loadPairs()
   }, [])
 
+  // Expose loadPairs via onRefresh
+  useEffect(() => {
+    if (onRefresh) {
+      window.forwardingRefresh = loadPairs;
+    }
+  }, [onRefresh]);
+
   // Enhanced pair actions with backend integration
   const handlePauseResume = async (pairId: number, currentStatus: string) => {
+    const actionKey = `pause-${pairId}`;
+    setActionLoading(prev => ({ ...prev, [actionKey]: true }));
+    
     try {
-      const endpoint = currentStatus === 'active' ? 'pause' : 'resume';
-      await forwardingAPI.updatePair(pairId, { status: endpoint });
-      setPairs(pairs.map(p => p.id === pairId ? {...p, status: endpoint === 'pause' ? 'paused' : 'active'} : p));
+      const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+      await forwardingAPI.updatePair(pairId, { status: newStatus });
+      setPairs(pairs.map(p => p.id === pairId ? {...p, status: newStatus} : p));
     } catch (error) {
       console.error('Failed to update pair status:', error);
       alert('Failed to update pair status. Please try again.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [actionKey]: false }));
     }
   };
 
   const handleDelete = async (pairId: number) => {
-    if (confirm('Are you sure you want to delete this forwarding pair?')) {
-      try {
-        await forwardingAPI.deletePair(pairId);
-        setPairs(pairs.filter(p => p.id !== pairId));
-      } catch (error) {
-        console.error('Failed to delete pair:', error);
-        alert('Failed to delete pair. Please try again.');
-      }
+    if (!confirm('Are you sure you want to delete this forwarding pair?')) return;
+    
+    const actionKey = `delete-${pairId}`;
+    setActionLoading(prev => ({ ...prev, [actionKey]: true }));
+    
+    try {
+      await forwardingAPI.deletePair(pairId);
+      setPairs(pairs.filter(p => p.id !== pairId));
+    } catch (error) {
+      console.error('Failed to delete pair:', error);
+      alert('Failed to delete pair. Please try again.');
+    } finally {
+      setActionLoading(prev => ({ ...prev, [actionKey]: false }));
     }
   };
 
@@ -311,7 +354,7 @@ const ForwardingPairsPanel: React.FC = () => {
             {pairs.length}/{currentPlan.pairs === 999 ? '∞' : currentPlan.pairs} pairs used
           </span>
           <button 
-            onClick={handleAddPair}
+            onClick={onAddPairClick}
             className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all duration-200 flex items-center"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -324,9 +367,10 @@ const ForwardingPairsPanel: React.FC = () => {
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">No forwarding pairs yet</div>
           <button 
-            onClick={handleAddPair}
-            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl hover:from-indigo-700 hover:to-violet-700 transition-colors"
+            onClick={onAddPairClick}
+            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl hover:from-indigo-700 hover:to-violet-700 transition-colors flex items-center justify-center mx-auto"
           >
+            <Plus className="h-4 w-4 mr-2" />
             Create Your First Pair
           </button>
         </div>
@@ -381,17 +425,29 @@ const ForwardingPairsPanel: React.FC = () => {
                   </button>
                   <button 
                     onClick={() => handlePauseResume(pair.id, pair.status)}
-                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors"
+                    disabled={actionLoading[`pause-${pair.id}`]}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
                     title={pair.status === 'active' ? 'Pause' : 'Resume'}
                   >
-                    {pair.status === 'active' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    {actionLoading[`pause-${pair.id}`] ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : pair.status === 'active' ? (
+                      <Pause className="h-4 w-4" />
+                    ) : (
+                      <Play className="h-4 w-4" />
+                    )}
                   </button>
                   <button 
                     onClick={() => handleDelete(pair.id)}
-                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-colors"
+                    disabled={actionLoading[`delete-${pair.id}`]}
+                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-colors disabled:opacity-50"
                     title="Delete pair"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {actionLoading[`delete-${pair.id}`] ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -642,6 +698,22 @@ const AccountManagerPanel: React.FC = () => {
 
 // Main Dashboard Home Component
 const DashboardHome: React.FC = () => {
+  const [showAddPairModal, setShowAddPairModal] = useState(false)
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const handleAddPairClick = () => {
+    setShowAddPairModal(true)
+  }
+
+  const handleModalSuccess = () => {
+    setRefreshKey(prev => prev + 1) // Trigger refresh
+    setShowAddPairModal(false)
+  }
+
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1)
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -651,16 +723,30 @@ const DashboardHome: React.FC = () => {
       </div>
 
       {/* Plan Summary and Quick Actions */}
-      <PlanSummaryPanel />
+      <PlanSummaryPanel 
+        onAddPairClick={handleAddPairClick}
+        onRefresh={handleRefresh}
+      />
 
       {/* Forwarding Pairs */}
-      <ForwardingPairsPanel />
+      <ForwardingPairsPanel 
+        onAddPairClick={handleAddPairClick}
+        onRefresh={handleRefresh}
+        key={refreshKey} // Force refresh when needed
+      />
 
       {/* Analytics and Account Manager in Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         <AnalyticsPanel />
         <AccountManagerPanel />
       </div>
+
+      {/* Add Pair Modal */}
+      <AddPairModal
+        isOpen={showAddPairModal}
+        onClose={() => setShowAddPairModal(false)}
+        onSuccess={handleModalSuccess}
+      />
     </div>
   )
 }
