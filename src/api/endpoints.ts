@@ -73,6 +73,18 @@ export const settingsAPI = {
   upgradeUser: (plan: string) => axiosInstance.post('/settings/upgrade', { plan }),
 }
 
+// Filters endpoints for Block Manager
+export const filtersAPI = {
+  getReplaceRules: (pairId: number) => axiosInstance.get(`/filters/replace/${pairId}`),
+  createReplaceRule: (data: { searchText: string; replaceWith: string; pairId: number }) => 
+    axiosInstance.post('/filters/replace', data),
+  updateReplaceRule: (id: number, data: { searchText: string; replaceWith: string }) => 
+    axiosInstance.put(`/filters/replace/${id}`, data),
+  deleteReplaceRule: (id: number) => axiosInstance.delete(`/filters/replace/${id}`),
+  updatePairSettings: (pairId: number, settings: { blockText?: boolean; blockImage?: boolean }) =>
+    axiosInstance.patch(`/forwarding/pairs/${pairId}/settings`, settings),
+}
+
 // API_ENDPOINTS for backwards compatibility
 export const API_ENDPOINTS = {
   AUTH: {

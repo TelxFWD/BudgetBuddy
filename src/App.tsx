@@ -9,6 +9,7 @@ import AccountsPage from './pages/AccountsPage'
 import SettingsPage from './pages/SettingsPage'
 import AnalyticsPage from './pages/AnalyticsPage'
 import BillingPage from './pages/BillingPage'
+import BlockManager from './pages/BlockManager'
 
 // Loading Spinner Component
 const LoadingSpinner: React.FC = () => (
@@ -43,6 +44,7 @@ const App: React.FC = () => {
         <Route path="pairs" element={<ForwardingPairs />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="block-manager" element={<BlockManager />} />
         <Route path="billing" element={<BillingPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
