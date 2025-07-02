@@ -99,7 +99,7 @@ async def get_user_stats(
     success_rate = (successful_messages / total_messages * 100) if total_messages > 0 else 100.0
     
     # Average delay calculation
-    avg_delay_result = db.query(func.avg(ForwardingPair.delay_seconds)).filter(
+    avg_delay_result = db.query(func.avg(ForwardingPair.delay)).filter(
         ForwardingPair.user_id == current_user.id,
         ForwardingPair.is_active == True
     ).scalar()
@@ -234,12 +234,10 @@ async def get_message_volume(
         ForwardingPair.user_id == current_user.id
     ).subquery()
     
-    # Query daily message volumes
+    # Query daily message volumes - simplified approach
     daily_stats = db.query(
         func.date(MessageLog.forwarded_at).label('date'),
-        func.count(MessageLog.id).label('total_count'),
-        func.sum(func.case([(MessageLog.success == True, 1)], else_=0)).label('success_count'),
-        func.sum(func.case([(MessageLog.success == False, 1)], else_=0)).label('error_count')
+        func.count(MessageLog.id).label('total_count')
     ).filter(
         MessageLog.forwarding_pair_id.in_(user_pair_ids),
         MessageLog.forwarded_at >= start_date
@@ -249,13 +247,38 @@ async def get_message_volume(
         func.date(MessageLog.forwarded_at)
     ).all()
     
+    # Get success and error counts separately to avoid complex case syntax
+    success_counts = {}
+    error_counts = {}
+    
+    for stat in daily_stats:
+        date_str = str(stat.date)
+        
+        # Count successful messages for this date
+        success_count = db.query(MessageLog).filter(
+            MessageLog.forwarding_pair_id.in_(user_pair_ids),
+            func.date(MessageLog.forwarded_at) == stat.date,
+            MessageLog.success == True
+        ).count()
+        
+        # Count failed messages for this date
+        error_count = db.query(MessageLog).filter(
+            MessageLog.forwarding_pair_id.in_(user_pair_ids),
+            func.date(MessageLog.forwarded_at) == stat.date,
+            MessageLog.success == False
+        ).count()
+        
+        success_counts[date_str] = success_count
+        error_counts[date_str] = error_count
+    
     volume_stats = []
     for stat in daily_stats:
+        date_str = str(stat.date)
         volume_stats.append(MessageVolumeStats(
             date=stat.date.strftime('%Y-%m-%d'),
             message_count=stat.total_count,
-            success_count=stat.success_count or 0,
-            error_count=stat.error_count or 0
+            success_count=success_counts.get(date_str, 0),
+            error_count=error_counts.get(date_str, 0)
         ))
     
     return volume_stats

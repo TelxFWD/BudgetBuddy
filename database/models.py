@@ -99,6 +99,7 @@ class ForwardingPair(Base):
     delay = Column(Integer, default=0, nullable=False)  # Delay in seconds
     silent_mode = Column(Boolean, default=False, nullable=False)
     status = Column(String(50), default="active", nullable=False)  # active, inactive, paused
+    is_active = Column(Boolean, default=True, nullable=False)  # Active status for analytics
     platform_type = Column(String(50), nullable=False)  # telegram_to_telegram, telegram_to_discord, discord_to_telegram, discord_to_discord
     created_at = Column(DateTime, default=func.now(), nullable=False)
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
@@ -204,6 +205,7 @@ class MessageLog(Base):
     forwarded_at = Column(DateTime, default=func.now(), nullable=False)
     processing_time = Column(Float, nullable=True)  # Time taken to process in seconds
     status = Column(String(50), nullable=False)  # success, failed, pending
+    success = Column(Boolean, default=True, nullable=False)  # Success status for analytics
     error_message = Column(Text, nullable=True)
     
     # Message metadata
