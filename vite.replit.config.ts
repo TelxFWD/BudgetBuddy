@@ -6,11 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
-    port: 3000,
+    port: 5000,
     allowedHosts: true, // Allow all dynamic Replit hosts
     proxy: {
       '/api': {
-        target: 'http://0.0.0.0:5000',
+        target: 'http://0.0.0.0:8000',
         changeOrigin: true,
         secure: false,
         configure: (proxy, _options) => {
