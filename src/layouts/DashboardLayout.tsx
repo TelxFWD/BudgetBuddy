@@ -155,8 +155,8 @@ const DashboardLayout: React.FC = () => {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 min-h-screen bg-gray-900">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 min-h-screen bg-gray-900 pt-4">
+          <div className="max-w-7xl mx-auto px-4">
             <Outlet />
           </div>
           
