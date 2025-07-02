@@ -388,23 +388,42 @@ const AccountManagerPanel: React.FC = () => {
 // Main Dashboard Home Component
 const DashboardHome: React.FC = () => {
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 min-h-screen">
       {/* Header */}
-      <div>
+      <div className="bg-red-500/20 border border-red-500/50 p-4 rounded-lg">
         <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
         <p className="text-gray-400">Monitor and manage your message forwarding system</p>
+        <p className="text-green-300 text-sm">✅ This header is rendering correctly</p>
+      </div>
+
+      {/* Test Panel */}
+      <div className="bg-green-500/20 border border-green-500/50 p-4 rounded-lg">
+        <h2 className="text-xl font-semibold text-white">🔧 Debug Test Panel</h2>
+        <p className="text-green-300">If you can see this green panel, React is working correctly.</p>
       </div>
 
       {/* System Status */}
-      <SystemStatusPanel />
+      <div className="bg-blue-500/20 border border-blue-500/50 p-2 rounded-lg">
+        <p className="text-blue-300 text-sm">📊 System Status Panel should appear below:</p>
+        <SystemStatusPanel />
+      </div>
 
       {/* Forwarding Pairs */}
-      <ForwardingPairsPanel />
+      <div className="bg-purple-500/20 border border-purple-500/50 p-2 rounded-lg">
+        <p className="text-purple-300 text-sm">🔗 Forwarding Pairs Panel should appear below:</p>
+        <ForwardingPairsPanel />
+      </div>
 
       {/* Analytics and Account Manager in Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <AnalyticsPanel />
-        <AccountManagerPanel />
+        <div className="bg-yellow-500/20 border border-yellow-500/50 p-2 rounded-lg">
+          <p className="text-yellow-300 text-sm">📈 Analytics Panel:</p>
+          <AnalyticsPanel />
+        </div>
+        <div className="bg-cyan-500/20 border border-cyan-500/50 p-2 rounded-lg">
+          <p className="text-cyan-300 text-sm">👥 Account Manager Panel:</p>
+          <AccountManagerPanel />
+        </div>
       </div>
     </div>
   )
