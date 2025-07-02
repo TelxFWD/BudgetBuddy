@@ -34,7 +34,7 @@ const DashboardLayout: React.FC = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-900 font-inter">
+    <div className="flex h-screen bg-gray-900 font-inter">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
@@ -47,7 +47,7 @@ const DashboardLayout: React.FC = () => {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 z-50 h-full w-64 transform bg-gray-800 border-r border-gray-700 transition-transform duration-200 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-64 transform bg-gray-800 border-r border-gray-700 transition-transform duration-200 ease-in-out lg:translate-x-0 lg:relative lg:z-0 ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
@@ -141,7 +141,7 @@ const DashboardLayout: React.FC = () => {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="flex-1 flex flex-col">
         {/* Mobile header */}
         <div className="flex h-16 items-center justify-between bg-gray-800 border-b border-gray-700 px-4 lg:hidden">
           <button
@@ -155,27 +155,10 @@ const DashboardLayout: React.FC = () => {
         </div>
 
         {/* Page content */}
-        <main className="flex-1 min-h-screen bg-gray-900 pt-4">
-          <div className="max-w-7xl mx-auto px-4">
+        <main className="flex-1 p-4 overflow-auto">
+          <div className="max-w-7xl mx-auto">
             <Outlet />
           </div>
-          
-          {/* Footer */}
-          <footer className="mt-16 border-t border-gray-700 bg-gray-800/50 backdrop-blur-sm">
-            <div className="max-w-7xl mx-auto px-6 py-4">
-              <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-                <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 text-indigo-300">
-                  Modern UI
-                </span>
-                <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20 text-green-300">
-                  Production Ready
-                </span>
-                <span className="inline-flex items-center px-3 py-1 rounded-full bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border border-blue-500/20 text-blue-300">
-                  Fully Responsive
-                </span>
-              </div>
-            </div>
-          </footer>
         </main>
       </div>
     </div>
