@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Plus, Search, Play, Pause, Edit, Trash2, ArrowRight, MessageCircle, Clock } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { forwardingAPI } from '../api/endpoints'
-import AddPairModal from '../components/AddPairModal'
+import AddPairModalSimple from '../components/AddPairModalSimple'
 
 interface ForwardingPair {
   id: number
@@ -121,8 +121,13 @@ const ForwardingPairs: React.FC = () => {
     Elite: 50
   }
 
-  const currentLimit = planLimits[user?.plan || 'Free']
+  // Fix potential case sensitivity issue
+  const userPlan = user?.plan ? user.plan.charAt(0).toUpperCase() + user.plan.slice(1).toLowerCase() : 'Free'
+  const currentLimit = planLimits[userPlan as keyof typeof planLimits] || planLimits.Free
   const canAddMore = pairs.length < currentLimit
+
+  // Debug: Let's log the values to see what's happening
+  console.log('Debug - Raw user plan:', user?.plan, 'Normalized plan:', userPlan, 'Current limit:', currentLimit, 'Pairs count:', pairs.length, 'Can add more:', canAddMore)
 
   if (loading) {
     return (
@@ -308,7 +313,7 @@ const ForwardingPairs: React.FC = () => {
       )}
 
       {/* Add Pair Modal */}
-      <AddPairModal
+      <AddPairModalSimple
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
         onSuccess={loadPairs}
