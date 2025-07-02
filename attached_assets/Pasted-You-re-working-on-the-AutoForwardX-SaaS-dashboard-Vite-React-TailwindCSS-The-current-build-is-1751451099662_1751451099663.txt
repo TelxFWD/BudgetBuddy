@@ -1,0 +1,111 @@
+You’re working on the AutoForwardX SaaS dashboard (Vite + React + TailwindCSS). The current build is partially complete but has serious UI and backend connectivity issues.
+
+✅ Your job is to FIX and COMPLETE the User Dashboard according to the specs below:
+
+---
+
+### 🔧 UI / UX Fixes:
+
+1. **Remove System Status Block**
+   - Delete or comment out the `<SystemStatus />` card from `/dashboard`
+   - Replace with Plan Summary and Quick Actions (if needed)
+
+2. **Fix Broken Buttons**
+   - `Add Pair`, `Delete`, `Pause`, `Edit`, `Reconnect`, `Switch`, `Remove` → must call backend
+   - Use `axios` with endpoints like:
+     - `POST /forwarding/pairs`
+     - `DELETE /forwarding/pairs/:id`
+     - `PATCH /forwarding/pairs/:id`
+   - Show error/success toast notifications
+
+3. **Analytics Page**
+   - Currently shows “Coming Soon” → Complete it with:
+     - Total Messages
+     - Weekly Activity (bar chart)
+     - Success Rate (pie chart)
+     - Export as CSV/PDF (only for Pro/Elite)
+   - Use `Recharts` and dummy data until backend wired
+
+4. **Billing Page**
+   - Move Billing under a dedicated **Sidebar Tab** (NOT inside Settings)
+   - Title: `Billing`
+   - Section for:
+     - Current Plan
+     - Upgrade Plan (button)
+     - Payment Method (if any)
+
+---
+
+### 🧩 Feature Components to Build:
+
+1. ✅ **Copy Mode Toggle**
+   - Show toggle in each `PairCard` (Elite only)
+   - Call `PATCH /forwarding/pairs/:id` to enable copy mode
+
+2. ✅ **Custom Delay Slider**
+   - In `AddPairModal`, add slider to set delay (0m–24h)
+   - Store in backend `delay_minutes` field
+
+3. ✅ **Block Image/Text**
+   - Add toggles to each `PairCard`:
+     - [ ] Block Image
+     - [ ] Block Text
+   - Applies content filters (Elite only)
+
+4. ✅ **Replace Text Rules**
+   - Add button in each pair: “Edit Text Filters”
+   - Modal with:
+     - Search Text
+     - Replace With
+     - Save
+
+5. ✅ **Multi-Redirect Setup**
+   - In `AddPairModal`, allow user to select **multiple destination channels**
+   - Store as array in `destinations: []`
+
+---
+
+### ⚙️ Backend Connectivity
+
+- All UI components must sync with backend:
+  - On Load → `GET /auth/me`, `GET /forwarding/pairs`
+  - On Create → `POST /forwarding/pairs`
+  - On Edit → `PATCH /forwarding/pairs/:id`
+  - On Delete → `DELETE /forwarding/pairs/:id`
+  - On Reconnect → `POST /telegram/session/reconnect`
+- Display backend errors via toast/snackbar
+
+---
+
+### 🚫 Plan-Based Access Control (Broken)
+
+Fix the feature restriction logic using plan from `auth.me`:
+
+| Feature              | Free | Pro | Elite |
+|----------------------|------|-----|--------|
+| Max Pairs            | 1    | 15  | Unlimited |
+| Copy Mode            | ❌   | ❌  | ✅      |
+| Block Text/Image     | ❌   | ❌  | ✅      |
+| CSV Export           | ❌   | ✅  | ✅      |
+| PDF Export           | ❌   | ❌  | ✅      |
+| Discord → Telegram   | ❌   | ✅  | ✅ (50) |
+
+Each restricted button must:
+- Show disabled state
+- Tooltip: “Upgrade to unlock this feature”
+- Trigger upgrade modal if clicked
+
+---
+
+### ✅ Final Checklist:
+
+- Fix blank space/padding
+- Remove unused “SystemStatus” code
+- All buttons call backend endpoints
+- All pages and tabs work
+- Billing moved to sidebar
+- New features (copy, filter, multi-redirect) implemented
+- UI reflects plan restrictions correctly
+- No console errors
+
+Use clean, responsive Tailwind UI. Use cards, modals, buttons with violet-indigo theme. Preserve dark mode layout. DO NOT regenerate layout — just apply fixes and enhancements.

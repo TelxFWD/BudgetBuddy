@@ -15,6 +15,7 @@ import {
   ArrowRight
 } from 'lucide-react'
 import { forwardingAPI, systemAPI } from '../api/endpoints'
+import { useAuth } from '../context/AuthContext'
 
 // Component for System Status Panel
 const SystemStatusPanel: React.FC = () => {
@@ -109,10 +110,105 @@ const SystemStatusPanel: React.FC = () => {
   )
 }
 
-// Component for Forwarding Pairs Manager
+// Plan Summary Panel Component (Replaces System Status)
+const PlanSummaryPanel: React.FC = () => {
+  const { user } = useAuth();
+  const [stats, setStats] = useState({
+    activePairs: 0,
+    messagesForwarded: 0,
+    planUsage: { used: 0, limit: 0 }
+  });
+
+  const planLimits = {
+    'free': { pairs: 1, name: 'Free' },
+    'pro': { pairs: 15, name: 'Pro' },
+    'elite': { pairs: 999, name: 'Elite' }
+  };
+
+  const userPlan = user?.plan?.toLowerCase() || 'free';
+  const currentPlan = planLimits[userPlan as keyof typeof planLimits] || planLimits.free;
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await forwardingAPI.getPairs();
+        const pairs = response.data || [];
+        setStats({
+          activePairs: pairs.filter((p: any) => p.status === 'active').length,
+          messagesForwarded: pairs.reduce((sum: number, p: any) => sum + (p.messages_forwarded || 0), 0),
+          planUsage: { used: pairs.length, limit: currentPlan.pairs }
+        });
+      } catch (error) {
+        console.error('Failed to fetch stats:', error);
+      }
+    };
+    
+    fetchStats();
+  }, [currentPlan.pairs]);
+
+  return (
+    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl border border-gray-700 p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold text-white">Plan Summary</h2>
+        <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+          userPlan === 'elite' ? 'bg-purple-500/20 text-purple-300' :
+          userPlan === 'pro' ? 'bg-blue-500/20 text-blue-300' :
+          'bg-gray-500/20 text-gray-300'
+        }`}>
+          {currentPlan.name} Plan
+        </span>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="text-center">
+          <div className="text-3xl font-bold text-white mb-2">{stats.activePairs}</div>
+          <div className="text-gray-400 text-sm">Active Pairs</div>
+        </div>
+        
+        <div className="text-center">
+          <div className="text-3xl font-bold text-indigo-400 mb-2">{stats.messagesForwarded}</div>
+          <div className="text-gray-400 text-sm">Messages Forwarded</div>
+        </div>
+        
+        <div className="text-center">
+          <div className="text-3xl font-bold text-violet-400 mb-2">
+            {stats.planUsage.used}/{currentPlan.pairs === 999 ? '∞' : currentPlan.pairs}
+          </div>
+          <div className="text-gray-400 text-sm">Pair Usage</div>
+        </div>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="mt-6 flex gap-3">
+        <button className="flex-1 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white px-4 py-2 rounded-xl font-medium transition-colors">
+          Add New Pair
+        </button>
+        {userPlan === 'free' && (
+          <button className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-4 py-2 rounded-xl font-medium transition-colors">
+            Upgrade Plan
+          </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// Enhanced Component for Forwarding Pairs Manager with Elite Features
 const ForwardingPairsPanel: React.FC = () => {
+  const { user } = useAuth();
   const [pairs, setPairs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showTextFiltersModal, setShowTextFiltersModal] = useState(false)
+  const [selectedPair, setSelectedPair] = useState<any>(null)
+
+  const userPlan = user?.plan?.toLowerCase() || 'free';
+  const planLimits = {
+    'free': { pairs: 1, name: 'Free', copyMode: false, contentFilter: false, csvExport: false },
+    'pro': { pairs: 15, name: 'Pro', copyMode: false, contentFilter: false, csvExport: true },
+    'elite': { pairs: 999, name: 'Elite', copyMode: true, contentFilter: true, csvExport: true }
+  };
+  const currentPlan = planLimits[userPlan as keyof typeof planLimits] || planLimits.free;
 
   // Load pairs from API
   useEffect(() => {
@@ -122,27 +218,7 @@ const ForwardingPairsPanel: React.FC = () => {
         setPairs(response.data || [])
       } catch (error) {
         console.error('Failed to load forwarding pairs:', error)
-        // Use demo data as fallback
-        setPairs([
-          {
-            id: 1,
-            type: 'Telegram → Discord',
-            source: '@techNews',
-            destination: '#general',
-            delay: '5m',
-            status: 'active',
-            messages: 156
-          },
-          {
-            id: 2,
-            type: 'Discord → Telegram',
-            source: '#announcements',
-            destination: '@myChannel',
-            delay: '1h',
-            status: 'paused',
-            messages: 89
-          }
-        ])
+        setPairs([]) // Use empty array, no fallback data
       } finally {
         setLoading(false)
       }
@@ -150,97 +226,279 @@ const ForwardingPairsPanel: React.FC = () => {
     loadPairs()
   }, [])
 
-  // Handle pair actions
+  // Enhanced pair actions with backend integration
   const handlePauseResume = async (pairId: number, currentStatus: string) => {
     try {
-      if (currentStatus === 'active') {
-        await forwardingAPI.pausePair(pairId)
-        setPairs(pairs.map(p => p.id === pairId ? {...p, status: 'paused'} : p))
-      } else {
-        await forwardingAPI.resumePair(pairId)
-        setPairs(pairs.map(p => p.id === pairId ? {...p, status: 'active'} : p))
-      }
+      const endpoint = currentStatus === 'active' ? 'pause' : 'resume';
+      await forwardingAPI.updatePair(pairId, { status: endpoint });
+      setPairs(pairs.map(p => p.id === pairId ? {...p, status: endpoint === 'pause' ? 'paused' : 'active'} : p));
     } catch (error) {
-      console.error('Failed to update pair status:', error)
+      console.error('Failed to update pair status:', error);
+      alert('Failed to update pair status. Please try again.');
     }
-  }
+  };
 
   const handleDelete = async (pairId: number) => {
     if (confirm('Are you sure you want to delete this forwarding pair?')) {
       try {
-        await forwardingAPI.deletePair(pairId)
-        setPairs(pairs.filter(p => p.id !== pairId))
+        await forwardingAPI.deletePair(pairId);
+        setPairs(pairs.filter(p => p.id !== pairId));
       } catch (error) {
-        console.error('Failed to delete pair:', error)
+        console.error('Failed to delete pair:', error);
+        alert('Failed to delete pair. Please try again.');
       }
     }
-  }
+  };
+
+  const handleCopyModeToggle = async (pairId: number, currentMode: boolean) => {
+    if (!currentPlan.copyMode) {
+      alert('Copy Mode is only available for Elite plan users. Upgrade to unlock this feature.');
+      return;
+    }
+    try {
+      await forwardingAPI.updatePair(pairId, { copy_mode: !currentMode });
+      setPairs(pairs.map(p => p.id === pairId ? {...p, copy_mode: !currentMode} : p));
+    } catch (error) {
+      console.error('Failed to toggle copy mode:', error);
+      alert('Failed to update copy mode. Please try again.');
+    }
+  };
+
+  const handleContentFilterToggle = async (pairId: number, filterType: 'block_images' | 'block_text', currentValue: boolean) => {
+    if (!currentPlan.contentFilter) {
+      alert('Content filtering is only available for Elite plan users. Upgrade to unlock this feature.');
+      return;
+    }
+    try {
+      await forwardingAPI.updatePair(pairId, { [filterType]: !currentValue });
+      setPairs(pairs.map(p => p.id === pairId ? {...p, [filterType]: !currentValue} : p));
+    } catch (error) {
+      console.error('Failed to update content filter:', error);
+      alert('Failed to update content filter. Please try again.');
+    }
+  };
+
+  const handleCustomDelayUpdate = async (pairId: number, delayMinutes: number) => {
+    try {
+      await forwardingAPI.updatePair(pairId, { delay_minutes: delayMinutes });
+      setPairs(pairs.map(p => p.id === pairId ? {...p, delay_minutes: delayMinutes} : p));
+    } catch (error) {
+      console.error('Failed to update delay:', error);
+      alert('Failed to update delay. Please try again.');
+    }
+  };
+
+  const handleAddPair = () => {
+    if (pairs.length >= currentPlan.pairs) {
+      alert(`You've reached your plan limit of ${currentPlan.pairs} forwarding pairs. Upgrade to add more.`);
+      return;
+    }
+    setShowAddModal(true);
+  };
+
+  const openTextFilters = (pair: any) => {
+    if (!currentPlan.contentFilter) {
+      alert('Text filtering is only available for Elite plan users. Upgrade to unlock this feature.');
+      return;
+    }
+    setSelectedPair(pair);
+    setShowTextFiltersModal(true);
+  };
 
   return (
-    <div className="bg-gray-800 rounded-xl p-6 shadow-md border border-gray-700">
+    <div className="bg-gray-800/50 backdrop-blur-sm rounded-xl p-6 border border-gray-700">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-semibold text-white">Forwarding Pairs</h2>
-        <button className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all duration-200 flex items-center">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Pair
-        </button>
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-gray-400">
+            {pairs.length}/{currentPlan.pairs === 999 ? '∞' : currentPlan.pairs} pairs used
+          </span>
+          <button 
+            onClick={handleAddPair}
+            className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white text-sm font-medium rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all duration-200 flex items-center"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Pair
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-3">
-        {pairs.map((pair) => (
-          <div key={pair.id} className="bg-gray-700/50 rounded-lg p-4 border border-gray-600">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center mb-2">
-                  <span className="text-white font-medium">{pair.type}</span>
-                  <span className="ml-2 px-2 py-1 text-xs rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                    {pair.delay}
-                  </span>
-                  <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                    pair.status === 'active' 
-                      ? 'bg-green-500/20 text-green-300 border border-green-500/30'
-                      : 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
-                  }`}>
-                    {pair.status}
-                  </span>
+      {pairs.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">No forwarding pairs yet</div>
+          <button 
+            onClick={handleAddPair}
+            className="px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-xl hover:from-indigo-700 hover:to-violet-700 transition-colors"
+          >
+            Create Your First Pair
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {pairs.map((pair) => (
+            <div key={pair.id} className="bg-gray-700/50 rounded-xl p-6 border border-gray-600">
+              {/* Main pair info */}
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex-1">
+                  <div className="flex items-center mb-2">
+                    <span className="text-white font-medium text-lg">
+                      {pair.source_platform?.charAt(0).toUpperCase() + pair.source_platform?.slice(1) || 'Unknown'} → {pair.destination_platform?.charAt(0).toUpperCase() + pair.destination_platform?.slice(1) || 'Unknown'}
+                    </span>
+                    <span className={`ml-3 px-3 py-1 text-xs rounded-full font-medium ${
+                      pair.status === 'active' 
+                        ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                        : pair.status === 'paused'
+                        ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30'
+                        : 'bg-red-500/20 text-red-300 border border-red-500/30'
+                    }`}>
+                      {pair.status?.toUpperCase() || 'UNKNOWN'}
+                    </span>
+                  </div>
+                  <div className="flex items-center text-sm text-gray-400 mb-2">
+                    <span className="font-mono">{pair.source_chat || 'N/A'}</span>
+                    <ArrowRight className="h-4 w-4 mx-2" />
+                    <span className="font-mono">{pair.destination_chat || 'N/A'}</span>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm text-gray-400">
+                    <span className="flex items-center">
+                      <MessageCircle className="h-4 w-4 mr-1" />
+                      {pair.messages_forwarded || 0} messages
+                    </span>
+                    <span>Delay: {pair.delay_minutes ? `${pair.delay_minutes}m` : '0m'}</span>
+                  </div>
                 </div>
-                <div className="flex items-center text-sm text-gray-400">
-                  <span>{pair.source}</span>
-                  <ArrowRight className="h-4 w-4 mx-2" />
-                  <span>{pair.destination}</span>
-                  <span className="ml-4 flex items-center">
-                    <MessageCircle className="h-4 w-4 mr-1" />
-                    {pair.messages} messages
-                  </span>
+                
+                {/* Action buttons */}
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => openTextFilters(pair)}
+                    className={`p-2 text-sm rounded-lg transition-colors ${
+                      currentPlan.contentFilter 
+                        ? 'text-gray-400 hover:text-white hover:bg-gray-600' 
+                        : 'text-gray-600 cursor-not-allowed'
+                    }`}
+                    title={currentPlan.contentFilter ? 'Edit Text Filters' : 'Elite feature - Upgrade to unlock'}
+                    disabled={!currentPlan.contentFilter}
+                  >
+                    🔍
+                  </button>
+                  <button 
+                    onClick={() => handlePauseResume(pair.id, pair.status)}
+                    className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors"
+                    title={pair.status === 'active' ? 'Pause' : 'Resume'}
+                  >
+                    {pair.status === 'active' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                  </button>
+                  <button 
+                    onClick={() => handleDelete(pair.id)}
+                    className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-colors"
+                    title="Delete pair"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <button 
-                  onClick={() => console.log('Edit pair:', pair.id)}
-                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors"
-                  title="Edit pair"
-                >
-                  <Edit className="h-4 w-4" />
-                </button>
-                <button 
-                  onClick={() => handlePauseResume(pair.id, pair.status)}
-                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors"
-                  title={pair.status === 'active' ? 'Pause' : 'Resume'}
-                >
-                  {pair.status === 'active' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                </button>
-                <button 
-                  onClick={() => handleDelete(pair.id)}
-                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-colors"
-                  title="Delete pair"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+
+              {/* Elite Features Section */}
+              <div className="border-t border-gray-600 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Copy Mode Toggle */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-300">Copy Mode</span>
+                    <button
+                      onClick={() => handleCopyModeToggle(pair.id, pair.copy_mode)}
+                      disabled={!currentPlan.copyMode}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        currentPlan.copyMode
+                          ? pair.copy_mode
+                            ? 'bg-indigo-600'
+                            : 'bg-gray-600'
+                          : 'bg-gray-700 cursor-not-allowed'
+                      }`}
+                      title={currentPlan.copyMode ? 'Toggle copy mode' : 'Elite feature - Upgrade to unlock'}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          pair.copy_mode ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Block Images Toggle */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-300">Block Images</span>
+                    <button
+                      onClick={() => handleContentFilterToggle(pair.id, 'block_images', pair.block_images)}
+                      disabled={!currentPlan.contentFilter}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        currentPlan.contentFilter
+                          ? pair.block_images
+                            ? 'bg-red-600'
+                            : 'bg-gray-600'
+                          : 'bg-gray-700 cursor-not-allowed'
+                      }`}
+                      title={currentPlan.contentFilter ? 'Toggle image blocking' : 'Elite feature - Upgrade to unlock'}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          pair.block_images ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Block Text Toggle */}
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-gray-300">Block Text</span>
+                    <button
+                      onClick={() => handleContentFilterToggle(pair.id, 'block_text', pair.block_text)}
+                      disabled={!currentPlan.contentFilter}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        currentPlan.contentFilter
+                          ? pair.block_text
+                            ? 'bg-red-600'
+                            : 'bg-gray-600'
+                          : 'bg-gray-700 cursor-not-allowed'
+                      }`}
+                      title={currentPlan.contentFilter ? 'Toggle text blocking' : 'Elite feature - Upgrade to unlock'}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          pair.block_text ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Custom Delay Slider */}
+                <div className="mt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-gray-300">Custom Delay</span>
+                    <span className="text-sm text-indigo-400">{pair.delay_minutes || 0} minutes</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1440"
+                    step="5"
+                    value={pair.delay_minutes || 0}
+                    onChange={(e) => handleCustomDelayUpdate(pair.id, parseInt(e.target.value))}
+                    className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer slider"
+                  />
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>0m</span>
+                    <span>6h</span>
+                    <span>12h</span>
+                    <span>24h</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -395,8 +653,8 @@ const DashboardHome: React.FC = () => {
         <p className="text-gray-400">Monitor and manage your message forwarding system</p>
       </div>
 
-      {/* System Status */}
-      <SystemStatusPanel />
+      {/* Plan Summary and Quick Actions */}
+      <PlanSummaryPanel />
 
       {/* Forwarding Pairs */}
       <ForwardingPairsPanel />
