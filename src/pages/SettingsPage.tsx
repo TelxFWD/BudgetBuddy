@@ -1,347 +1,415 @@
 import React, { useState } from 'react'
-import { useAuth } from '../context/AuthContext'
 import { 
-  Moon, 
-  Sun, 
+  Settings, 
+  User, 
   Bell, 
   Shield, 
-  CreditCard,
+  Crown,
   Trash2,
   Save,
-  AlertTriangle,
-  User,
-  Key,
+  Eye,
+  EyeOff,
+  Moon,
+  Sun,
   Globe
 } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { settingsAPI } from '../api/endpoints'
 
 const SettingsPage: React.FC = () => {
   const { user, logout } = useAuth()
-  const [darkMode, setDarkMode] = useState(true)
-  const [notifications, setNotifications] = useState({
-    email: true,
-    push: false,
-    telegram: true,
-    errors: true
+  const [activeTab, setActiveTab] = useState('profile')
+  const [showPassword, setShowPassword] = useState(false)
+  const [loading, setLoading] = useState(false)
+  
+  // Profile settings
+  const [profileData, setProfileData] = useState({
+    username: user?.username || '',
+    email: user?.email || '',
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
   })
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
 
-  const handleSaveSettings = () => {
-    // Implementation for saving settings
-    console.log('Settings saved')
+  // Notification settings
+  const [notificationSettings, setNotificationSettings] = useState({
+    emailNotifications: true,
+    pushNotifications: true,
+    telegramNotifications: false,
+    errorAlerts: true,
+    systemUpdates: false,
+    weeklyReports: true
+  })
+
+  // Theme settings
+  const [themeSettings, setThemeSettings] = useState({
+    theme: 'dark',
+    language: 'en',
+    timezone: 'UTC'
+  })
+
+  const handleProfileUpdate = async () => {
+    setLoading(true)
+    try {
+      await settingsAPI.updateProfile({
+        username: profileData.username,
+        email: profileData.email,
+        ...(profileData.newPassword && {
+          current_password: profileData.currentPassword,
+          new_password: profileData.newPassword
+        })
+      })
+      
+      // Clear password fields
+      setProfileData(prev => ({
+        ...prev,
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      }))
+      
+      alert('Profile updated successfully!')
+    } catch (error) {
+      console.error('Failed to update profile:', error)
+      alert('Failed to update profile. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleDeleteAccount = () => {
-    // Implementation for account deletion
-    setShowDeleteModal(false)
-    logout()
+  const handleNotificationUpdate = async () => {
+    setLoading(true)
+    try {
+      await settingsAPI.updateNotifications(notificationSettings)
+      alert('Notification settings updated successfully!')
+    } catch (error) {
+      console.error('Failed to update notifications:', error)
+      alert('Failed to update notification settings. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
+
+  const handleDeleteAccount = async () => {
+    const confirmation = prompt('Type "DELETE" to confirm account deletion:')
+    if (confirmation === 'DELETE') {
+      try {
+        await settingsAPI.deleteAccount()
+        logout()
+        alert('Account deleted successfully.')
+      } catch (error) {
+        console.error('Failed to delete account:', error)
+        alert('Failed to delete account. Please contact support.')
+      }
+    }
+  }
+
+  const getPlanBadge = (plan: string) => {
+    const badges = {
+      free: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
+      pro: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+      elite: 'bg-purple-500/20 text-purple-300 border-purple-500/30'
+    }
+    return badges[plan as keyof typeof badges] || badges.free
+  }
+
+  const tabs = [
+    { id: 'profile', name: 'Profile', icon: User },
+    { id: 'notifications', name: 'Notifications', icon: Bell },
+    { id: 'security', name: 'Security', icon: Shield },
+    { id: 'appearance', name: 'Appearance', icon: Moon },
+    { id: 'billing', name: 'Billing', icon: Crown }
+  ]
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-white">Settings</h1>
-        <p className="text-gray-400 mt-1">Manage your account preferences and security settings</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Settings</h1>
+        <p className="text-gray-400">Manage your account settings and preferences</p>
       </div>
 
-      {/* Profile Settings */}
-      <div className="card">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="bg-indigo-600 p-2 rounded-lg">
-            <User className="h-6 w-6 text-white" />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Settings Navigation */}
+        <div className="lg:col-span-1">
+          <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
+            <nav className="space-y-2">
+              {tabs.map((tab) => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
+                      activeTab === tab.id
+                        ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-700'
+                    }`}
+                  >
+                    <Icon className="h-4 w-4 mr-3" />
+                    {tab.name}
+                  </button>
+                )
+              })}
+            </nav>
           </div>
-          <h3 className="text-lg font-semibold text-white">Profile Settings</h3>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
-            <input
-              type="text"
-              value={user?.username || ''}
-              className="input-field w-full"
-              disabled
-            />
-            <p className="text-xs text-gray-500 mt-1">Username cannot be changed</p>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
-            <input
-              type="email"
-              value={user?.email || ''}
-              className="input-field w-full"
-              disabled
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Current Plan</label>
-            <div className="flex items-center space-x-3">
-              <span className={`status-badge ${
-                user?.plan === 'elite' ? 'status-active' : 
-                user?.plan === 'pro' ? 'bg-blue-900/50 text-blue-400 border border-blue-800' : 
-                'status-paused'
-              }`}>
-                {user?.plan?.toUpperCase()} Plan
-              </span>
-              <button className="text-indigo-400 hover:text-indigo-300 text-sm font-medium">
-                Upgrade →
-              </button>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Member Since</label>
-            <input
-              type="text"
-              value={user?.created_at ? new Date(user.created_at).toLocaleDateString() : ''}
-              className="input-field w-full"
-              disabled
-            />
+        {/* Settings Content */}
+        <div className="lg:col-span-3">
+          <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+            
+            {/* Profile Tab */}
+            {activeTab === 'profile' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-xl font-semibold text-white">Profile Information</h2>
+                  <span className={`px-3 py-1 text-sm rounded-full border ${getPlanBadge(user?.plan || 'free')}`}>
+                    {user?.plan || 'Free'} Plan
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Username</label>
+                    <input
+                      type="text"
+                      value={profileData.username}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, username: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                    <input
+                      type="email"
+                      value={profileData.email}
+                      onChange={(e) => setProfileData(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-gray-700 pt-6">
+                  <h3 className="text-lg font-medium text-white mb-4">Change Password</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Current Password</label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? 'text' : 'password'}
+                          value={profileData.currentPassword}
+                          onChange={(e) => setProfileData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                          className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-white"
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">New Password</label>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={profileData.newPassword}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, newPassword: e.target.value }))}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={profileData.confirmPassword}
+                        onChange={(e) => setProfileData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleProfileUpdate}
+                    disabled={loading}
+                    className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all duration-200 flex items-center disabled:opacity-50"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {loading ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Notifications Tab */}
+            {activeTab === 'notifications' && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold text-white">Notification Preferences</h2>
+                
+                <div className="space-y-4">
+                  {Object.entries(notificationSettings).map(([key, value]) => (
+                    <div key={key} className="flex items-center justify-between py-3 border-b border-gray-700 last:border-b-0">
+                      <div>
+                        <p className="text-white font-medium">
+                          {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          {key === 'emailNotifications' && 'Receive important updates via email'}
+                          {key === 'pushNotifications' && 'Browser push notifications for real-time alerts'}
+                          {key === 'telegramNotifications' && 'Get notifications through Telegram bot'}
+                          {key === 'errorAlerts' && 'Immediate alerts for system errors and failures'}
+                          {key === 'systemUpdates' && 'News about system updates and new features'}
+                          {key === 'weeklyReports' && 'Weekly summary of your forwarding activity'}
+                        </p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={value}
+                          onChange={(e) => setNotificationSettings(prev => ({ ...prev, [key]: e.target.checked }))}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                      </label>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleNotificationUpdate}
+                    disabled={loading}
+                    className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white font-medium rounded-xl hover:from-indigo-600 hover:to-violet-600 transition-all duration-200 flex items-center disabled:opacity-50"
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    {loading ? 'Saving...' : 'Save Preferences'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Security Tab */}
+            {activeTab === 'security' && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold text-white">Security Settings</h2>
+                
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-4">
+                  <h3 className="text-lg font-medium text-red-300 mb-3">Danger Zone</h3>
+                  <p className="text-gray-300 mb-4">
+                    Once you delete your account, there is no going back. This will permanently delete your account, 
+                    all forwarding pairs, and remove all associated data.
+                  </p>
+                  <button
+                    onClick={handleDeleteAccount}
+                    className="px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors flex items-center"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete Account
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Appearance Tab */}
+            {activeTab === 'appearance' && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold text-white">Appearance & Language</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-3">Theme</label>
+                    <div className="space-y-2">
+                      {[
+                        { value: 'dark', label: 'Dark', icon: Moon },
+                        { value: 'light', label: 'Light', icon: Sun }
+                      ].map(({ value, label, icon: Icon }) => (
+                        <label key={value} className="flex items-center p-3 border border-gray-600 rounded-lg cursor-pointer hover:border-indigo-500 transition-colors">
+                          <input
+                            type="radio"
+                            name="theme"
+                            value={value}
+                            checked={themeSettings.theme === value}
+                            onChange={(e) => setThemeSettings(prev => ({ ...prev, theme: e.target.value }))}
+                            className="sr-only"
+                          />
+                          <Icon className="h-5 w-5 text-gray-400 mr-3" />
+                          <span className="text-white">{label}</span>
+                          {themeSettings.theme === value && (
+                            <div className="ml-auto w-2 h-2 bg-indigo-500 rounded-full"></div>
+                          )}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-300 mb-3">Language</label>
+                    <select
+                      value={themeSettings.language}
+                      onChange={(e) => setThemeSettings(prev => ({ ...prev, language: e.target.value }))}
+                      className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                    >
+                      <option value="en">English</option>
+                      <option value="es">Español</option>
+                      <option value="fr">Français</option>
+                      <option value="de">Deutsch</option>
+                      <option value="zh">中文</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Billing Tab */}
+            {activeTab === 'billing' && (
+              <div className="space-y-6">
+                <h2 className="text-xl font-semibold text-white">Billing & Subscription</h2>
+                
+                <div className="bg-gradient-to-r from-indigo-500/10 to-violet-500/10 border border-indigo-500/20 rounded-xl p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-lg font-medium text-white">Current Plan</h3>
+                      <p className="text-gray-400">You are currently on the {user?.plan || 'Free'} plan</p>
+                    </div>
+                    <Crown className="h-8 w-8 text-indigo-400" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { name: 'Free', price: '$0/month', features: ['1 Telegram account', 'Basic forwarding', 'Community support'] },
+                      { name: 'Pro', price: '$9.99/month', features: ['3 accounts per platform', 'Discord support', 'Priority support'] },
+                      { name: 'Elite', price: '$19.99/month', features: ['Unlimited accounts', 'API access', 'Custom webhooks'] }
+                    ].map((plan) => (
+                      <div key={plan.name} className={`p-4 rounded-lg border ${
+                        user?.plan === plan.name.toLowerCase() 
+                          ? 'border-indigo-500 bg-indigo-500/10' 
+                          : 'border-gray-600 bg-gray-700/50'
+                      }`}>
+                        <h4 className="font-medium text-white">{plan.name}</h4>
+                        <p className="text-2xl font-bold text-indigo-400 my-2">{plan.price}</p>
+                        <ul className="text-sm text-gray-400 space-y-1">
+                          {plan.features.map((feature, index) => (
+                            <li key={index}>• {feature}</li>
+                          ))}
+                        </ul>
+                        {user?.plan !== plan.name.toLowerCase() && (
+                          <button className="w-full mt-4 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                            Upgrade
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
-
-      {/* Appearance */}
-      <div className="card">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="bg-purple-600 p-2 rounded-lg">
-            <Moon className="h-6 w-6 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-white">Appearance</h3>
-        </div>
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-white font-medium">Dark Mode</p>
-            <p className="text-gray-400 text-sm">Use dark theme across the application</p>
-          </div>
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              darkMode ? 'bg-indigo-600' : 'bg-gray-600'
-            }`}
-          >
-            <span
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                darkMode ? 'translate-x-6' : 'translate-x-1'
-              }`}
-            />
-          </button>
-        </div>
-      </div>
-
-      {/* Notifications */}
-      <div className="card">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="bg-green-600 p-2 rounded-lg">
-            <Bell className="h-6 w-6 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-white">Notifications</h3>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Email Notifications</p>
-              <p className="text-gray-400 text-sm">Receive updates via email</p>
-            </div>
-            <button
-              onClick={() => setNotifications({...notifications, email: !notifications.email})}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                notifications.email ? 'bg-indigo-600' : 'bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  notifications.email ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Telegram Notifications</p>
-              <p className="text-gray-400 text-sm">Get notified in Telegram</p>
-            </div>
-            <button
-              onClick={() => setNotifications({...notifications, telegram: !notifications.telegram})}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                notifications.telegram ? 'bg-indigo-600' : 'bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  notifications.telegram ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Error Alerts</p>
-              <p className="text-gray-400 text-sm">Immediate notification for errors</p>
-            </div>
-            <button
-              onClick={() => setNotifications({...notifications, errors: !notifications.errors})}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                notifications.errors ? 'bg-indigo-600' : 'bg-gray-600'
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  notifications.errors ? 'translate-x-6' : 'translate-x-1'
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Security */}
-      <div className="card">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="bg-red-600 p-2 rounded-lg">
-            <Shield className="h-6 w-6 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-white">Security</h3>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Two-Factor Authentication</p>
-              <p className="text-gray-400 text-sm">Secure your account with 2FA</p>
-            </div>
-            <button className="btn-secondary">Configure</button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Active Sessions</p>
-              <p className="text-gray-400 text-sm">Manage your login sessions</p>
-            </div>
-            <button className="btn-secondary">View Sessions</button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">API Keys</p>
-              <p className="text-gray-400 text-sm">Manage API access tokens</p>
-            </div>
-            <button className="btn-secondary">Manage Keys</button>
-          </div>
-        </div>
-      </div>
-
-      {/* Billing */}
-      <div className="card">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="bg-yellow-600 p-2 rounded-lg">
-            <CreditCard className="h-6 w-6 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-white">Billing & Subscription</h3>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Current Plan</p>
-              <p className="text-gray-400 text-sm">{user?.plan?.toUpperCase()} Plan - Active</p>
-            </div>
-            <button className="btn-primary">Upgrade Plan</button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Payment Method</p>
-              <p className="text-gray-400 text-sm">**** **** **** 1234</p>
-            </div>
-            <button className="btn-secondary">Update</button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Billing History</p>
-              <p className="text-gray-400 text-sm">View past invoices and payments</p>
-            </div>
-            <button className="btn-secondary">View History</button>
-          </div>
-        </div>
-      </div>
-
-      {/* Danger Zone */}
-      <div className="card border-red-800">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="bg-red-600 p-2 rounded-lg">
-            <AlertTriangle className="h-6 w-6 text-white" />
-          </div>
-          <h3 className="text-lg font-semibold text-white">Danger Zone</h3>
-        </div>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Export Data</p>
-              <p className="text-gray-400 text-sm">Download all your data before deletion</p>
-            </div>
-            <button className="btn-secondary">Export</button>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-white font-medium">Delete Account</p>
-              <p className="text-gray-400 text-sm">Permanently delete your account and all data</p>
-            </div>
-            <button 
-              onClick={() => setShowDeleteModal(true)}
-              className="btn-danger"
-            >
-              Delete Account
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <button 
-          onClick={handleSaveSettings}
-          className="btn-primary flex items-center"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          Save Changes
-        </button>
-      </div>
-
-      {/* Delete Account Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-dark-card border border-dark-border rounded-xl p-6 max-w-md w-full mx-4">
-            <div className="flex items-center space-x-3 mb-4">
-              <AlertTriangle className="h-6 w-6 text-red-400" />
-              <h3 className="text-lg font-semibold text-white">Delete Account</h3>
-            </div>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data.
-            </p>
-            <div className="flex space-x-3">
-              <button
-                onClick={() => setShowDeleteModal(false)}
-                className="btn-secondary flex-1"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeleteAccount}
-                className="btn-danger flex-1"
-              >
-                Delete Account
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

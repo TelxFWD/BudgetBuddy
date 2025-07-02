@@ -14,6 +14,7 @@ import {
   Activity,
   ArrowRight
 } from 'lucide-react'
+import { forwardingAPI, systemAPI } from '../api/endpoints'
 
 // Component for System Status Panel
 const SystemStatusPanel: React.FC = () => {
@@ -110,35 +111,70 @@ const SystemStatusPanel: React.FC = () => {
 
 // Component for Forwarding Pairs Manager
 const ForwardingPairsPanel: React.FC = () => {
-  const [pairs] = useState([
-    {
-      id: 1,
-      type: 'Telegram → Discord',
-      source: '@techNews',
-      destination: '#general',
-      delay: '5m',
-      status: 'active',
-      messages: 156
-    },
-    {
-      id: 2,
-      type: 'Discord → Telegram',
-      source: '#announcements',
-      destination: '@myChannel',
-      delay: '1h',
-      status: 'paused',
-      messages: 89
-    },
-    {
-      id: 3,
-      type: 'Telegram → Telegram',
-      source: '@sourceChat',
-      destination: '@targetChat',
-      delay: '30m',
-      status: 'active',
-      messages: 234
+  const [pairs, setPairs] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  // Load pairs from API
+  useEffect(() => {
+    const loadPairs = async () => {
+      try {
+        const response = await forwardingAPI.getPairs()
+        setPairs(response.data || [])
+      } catch (error) {
+        console.error('Failed to load forwarding pairs:', error)
+        // Use demo data as fallback
+        setPairs([
+          {
+            id: 1,
+            type: 'Telegram → Discord',
+            source: '@techNews',
+            destination: '#general',
+            delay: '5m',
+            status: 'active',
+            messages: 156
+          },
+          {
+            id: 2,
+            type: 'Discord → Telegram',
+            source: '#announcements',
+            destination: '@myChannel',
+            delay: '1h',
+            status: 'paused',
+            messages: 89
+          }
+        ])
+      } finally {
+        setLoading(false)
+      }
     }
-  ])
+    loadPairs()
+  }, [])
+
+  // Handle pair actions
+  const handlePauseResume = async (pairId: number, currentStatus: string) => {
+    try {
+      if (currentStatus === 'active') {
+        await forwardingAPI.pausePair(pairId)
+        setPairs(pairs.map(p => p.id === pairId ? {...p, status: 'paused'} : p))
+      } else {
+        await forwardingAPI.resumePair(pairId)
+        setPairs(pairs.map(p => p.id === pairId ? {...p, status: 'active'} : p))
+      }
+    } catch (error) {
+      console.error('Failed to update pair status:', error)
+    }
+  }
+
+  const handleDelete = async (pairId: number) => {
+    if (confirm('Are you sure you want to delete this forwarding pair?')) {
+      try {
+        await forwardingAPI.deletePair(pairId)
+        setPairs(pairs.filter(p => p.id !== pairId))
+      } catch (error) {
+        console.error('Failed to delete pair:', error)
+      }
+    }
+  }
 
   return (
     <div className="bg-gray-800 rounded-xl p-6 shadow-md border border-gray-700">
@@ -179,13 +215,25 @@ const ForwardingPairsPanel: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors">
+                <button 
+                  onClick={() => console.log('Edit pair:', pair.id)}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors"
+                  title="Edit pair"
+                >
                   <Edit className="h-4 w-4" />
                 </button>
-                <button className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors">
+                <button 
+                  onClick={() => handlePauseResume(pair.id, pair.status)}
+                  className="p-2 text-gray-400 hover:text-white hover:bg-gray-600 rounded-lg transition-colors"
+                  title={pair.status === 'active' ? 'Pause' : 'Resume'}
+                >
                   {pair.status === 'active' ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
                 </button>
-                <button className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-colors">
+                <button 
+                  onClick={() => handleDelete(pair.id)}
+                  className="p-2 text-gray-400 hover:text-red-400 hover:bg-gray-600 rounded-lg transition-colors"
+                  title="Delete pair"
+                >
                   <Trash2 className="h-4 w-4" />
                 </button>
               </div>
@@ -342,7 +390,7 @@ const DashboardHome: React.FC = () => {
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="mb-8">
+      <div>
         <h1 className="text-3xl font-bold text-white mb-2">Dashboard</h1>
         <p className="text-gray-400">Monitor and manage your message forwarding system</p>
       </div>

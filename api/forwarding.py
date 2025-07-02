@@ -90,7 +90,7 @@ def validate_account_ownership(user_id: int, platform: str, account_id: int, db:
     
     return account is not None
 
-@router.get("/", response_model=List[ForwardingPairResponse])
+@router.get("/pairs", response_model=List[ForwardingPairResponse])
 async def list_forwarding_pairs(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)

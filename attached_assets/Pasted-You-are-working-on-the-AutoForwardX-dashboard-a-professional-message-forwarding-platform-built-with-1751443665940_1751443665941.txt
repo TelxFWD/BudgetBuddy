@@ -1,0 +1,75 @@
+You are working on the AutoForwardX dashboard, a professional message-forwarding platform built with React, Vite, Tailwind CSS, and FastAPI backend.
+
+Your goal is to FIX all the major issues listed below based on provided screenshots and architecture.
+
+---
+
+⚠️ Critical Issues to Fix:
+
+1. **Top Blank Space Bug**
+   - Remove excessive margin/padding at the top of all main pages
+   - Ensure content starts below the top bar
+
+2. **Non-Functional Buttons**
+   - Fix all buttons: Add Pair, Pause, Edit, Delete, Reconnect, Switch, Remove
+   - Buttons must be connected to correct backend routes from `apiService` (axios)
+
+3. **System Status Panel**
+   - REMOVE the `SystemStatus` component from Dashboard if FastAPI/WebSocket is not implemented
+   - Replace with Plan Summary and Forwarding Stats only
+
+4. **Missing Pages**
+   - 🚫 `Account Manager Page` not created → Generate `/accounts` route
+     - Shows Telegram/Discord sessions with [Reconnect], [Switch], [Remove]
+     - Support max sessions based on user plan
+   - 🚫 `Settings Page` not created → Generate `/settings`
+     - Contains: dark mode toggle, logout, delete account, plan upgrade
+
+5. **Backend Integration**
+   - Ensure dashboard loads user session from JWT via `GET /auth/me`
+   - Connect all functional buttons to:
+     - `/forwarding/pairs`
+     - `/forwarding/pairs/:id`
+     - `/telegram/session`
+     - `/discord/session`
+     - `/analytics/dashboard`
+
+6. **Plan Feature Gating**
+   - Logic exists but is not enforcing correctly
+     - Fix visibility of buttons like:
+       - Add Pair (disabled when limit reached)
+       - Copy Mode toggle (Elite only)
+       - Discord → Telegram pairs (Pro+ only)
+       - PDF Export (Elite only)
+     - Use the user plan context (`AuthContext`) to show/hide or lock actions
+
+7. **Visual/UX Fixes**
+   - Ensure cards are evenly spaced
+   - Add hover effects to all buttons
+   - Align charts and tables correctly
+   - Display error modals when backend fails (e.g. API returns error)
+
+8. **Refactor & Finalize Pages**
+   - `/dashboard`: Show stats, pair summary, active sessions
+   - `/forwarding`: Full pair list with working actions
+   - `/accounts`: Full list of Telegram/Discord sessions
+   - `/analytics`: Charts + export
+   - `/settings`: toggle dark mode, delete account, logout
+
+---
+
+🧩 Tech Stack
+- React + Vite
+- Tailwind CSS
+- Axios
+- Recharts
+- JWT auth
+- FastAPI backend
+- PostgreSQL
+- WebSocket (optional)
+
+🎯 Objective:
+Fully connect the dashboard to backend, fix layout/UI bugs, enable all plan-based restrictions, and ensure responsiveness. All pages must be functional with buttons performing real actions via Axios.
+
+DO NOT regenerate layout — just fix what’s missing/broken per above.
+

@@ -110,13 +110,17 @@ async def root():
 
 @app.get("/health")
 async def health_check():
+    """Health check endpoint without API prefix."""
+    return await api_health_check()
+
+@app.get("/api/health") 
+async def api_health_check():
     """Detailed health check endpoint."""
     try:
         # Check database connection
         from sqlalchemy import text
-        db_gen = get_db()
-        db = next(db_gen)
-        db.execute(text("SELECT 1"))
+        with engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
         db_status = "healthy"
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
