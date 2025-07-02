@@ -1,0 +1,123 @@
+You are working on the AutoForwardX project using FastAPI backend and React (Vite + Tailwind) frontend.
+
+Your task is to fully implement **plan-based feature restrictions** based on the user's subscription tier (Free, Pro, Elite).
+
+---
+
+## 🎯 1. USER PLAN INFO
+
+From backend, `/api/auth/me` returns:
+```json
+{
+  "username": "demo_user",
+  "plan": "free" // or "pro", "elite"
+}
+Use this to restrict UI and backend logic.
+
+🔐 2. FEATURE LIMITS PER PLAN
+Feature	Free	Pro	Elite
+Max Telegram → Telegram Pairs	1	15	Unlimited
+Max Telegram → Discord Pairs	0	5	30
+Max Discord → Telegram Pairs	0	5	30
+Telegram Accounts Allowed	1	2	3
+Discord Bots Allowed	0	1	3
+Block Text / Image	❌	✅	✅
+Replace Text	❌	✅	✅
+Copy Mode	❌	❌	✅
+Scheduled Forwarding	❌	❌	✅
+Export PDF	❌	❌	✅
+Export CSV	❌	✅	✅
+
+⚙️ 3. BACKEND CHANGES (FastAPI)
+✅ In auth.py, make sure /auth/me includes plan
+
+✅ In endpoints like:
+
+/forwarding/pairs
+
+/telegram/session/initiate
+
+/discord/session/initiate
+
+/filters/replace
+Add logic like:
+
+python
+Copy
+Edit
+if user.plan == "free" and len(user.pairs) >= 1:
+    raise HTTPException(403, "Upgrade required for more than 1 pair.")
+✅ Add checks for:
+
+Session limits
+
+Copy Mode toggle (Elite only)
+
+Filtering/blocking (Pro+ only)
+
+✅ Optional: Create plan_rules.py with helper methods:
+
+python
+Copy
+Edit
+def can_add_pair(user, direction): ...
+def can_add_session(user, platform): ...
+🖥 4. FRONTEND CHANGES (React + Vite)
+✅ Fetch user plan at login and store in AuthContext
+
+✅ Everywhere in UI:
+
+Check plan before showing action buttons
+
+Disable or gray-out restricted buttons
+
+Show upgrade prompt modal when blocked
+
+Examples:
+Copy Mode Switch:
+
+tsx
+Copy
+Edit
+if (user.plan !== 'elite') return null;
+Add Pair Button:
+
+tsx
+Copy
+Edit
+if (plan === 'free' && pairs.length >= 1) {
+  return <UpgradePrompt />;
+}
+Session Limit Handling:
+
+tsx
+Copy
+Edit
+if (user.plan === 'pro' && telegramSessions.length >= 2) {
+  showUpgradeModal();
+}
+✅ 5. UI Feedback
+Show a modal or banner:
+
+⚠️ This feature is only available in the Pro or Elite plan. [Upgrade Now]
+
+Style:
+
+Use bg-yellow-600, text-white, rounded-lg, shadow
+
+Add action button: "Upgrade Plan"
+
+📋 6. Final Checklist
+ AuthContext provides current user & plan
+
+ All key UI actions are gated visually
+
+ All backend endpoints validate plan usage
+
+ Upgrade message shown for locked features
+
+ Analytics + Export enforce Pro/Elite gating
+
+ No hard crashes or broken calls if feature is locked
+
+🎯 Goal: Ensure users only access features allowed by their plan, with upgrade nudges shown where relevant. Both frontend and backend must enforce restrictions.
