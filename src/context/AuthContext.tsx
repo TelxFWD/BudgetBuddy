@@ -86,12 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const demoLogin = async () => {
     try {
-      console.log('Attempting demo login...')
-      console.log('API Base URL:', axiosInstance.defaults.baseURL)
-      
       const response = await axiosInstance.post('/auth/demo-login')
-      console.log('Demo login response:', response.status)
-      
       const { access_token, refresh_token } = response.data
       
       localStorage.setItem('access_token', access_token)
@@ -100,10 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Get user info
       const userResponse = await axiosInstance.get('/auth/me')
       setUser(userResponse.data)
-      console.log('Demo login successful')
     } catch (error) {
-      console.error('Demo login error:', error)
-      console.error('Error details:', error.response?.data)
       throw new Error('Demo login failed')
     }
   }

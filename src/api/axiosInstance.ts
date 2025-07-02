@@ -5,10 +5,8 @@ const getBaseURL = (): string => {
   const isReplit = window.location.hostname.includes('replit.dev') || window.location.hostname.includes('replit.app')
   
   if (isReplit) {
-    // For Replit environment, always use direct API URL
-    const protocol = window.location.protocol
-    const hostname = window.location.hostname
-    return `${protocol}//${hostname}:5000/api`
+    // For Replit environment, use proxy to avoid CORS and port access issues
+    return '/api'
   }
   
   // For local development, use proxy

@@ -1,0 +1,314 @@
+Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+AuthContext.tsx:89 Attempting demo login...
+AuthContext.tsx:90 API Base URL: https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api
+AuthContext.tsx:89 Attempting demo login...
+AuthContext.tsx:90 API Base URL: https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api
+login:1  Access to XMLHttpRequest at 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api/auth/demo-login' from origin 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+AuthContext.tsx:105  Demo login error: AxiosError
+demoLogin @ AuthContext.tsx:105
+AuthContext.tsx:106  Error details: undefined
+demoLogin @ AuthContext.tsx:106
+:5000/api/auth/demo-login:1   Failed to load resource: net::ERR_FAILED
+login:1  Access to XMLHttpRequest at 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api/auth/demo-login' from origin 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+AuthContext.tsx:105  Demo login error: AxiosError
+demoLogin @ AuthContext.tsx:105
+AuthContext.tsx:106  Error details: undefined
+demoLogin @ AuthContext.tsx:106
+:5000/api/auth/demo-login:1   Failed to load resource: net::ERR_FAILED
+AuthContext.tsx:89 Attempting demo login...
+AuthContext.tsx:90 API Base URL: https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api
+login:1  Access to XMLHttpRequest at 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api/auth/demo-login' from origin 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+AuthContext.tsx:105  Demo login error: AxiosError
+demoLogin @ AuthContext.tsx:105
+AuthContext.tsx:106  Error details: undefined
+demoLogin @ AuthContext.tsx:106
+:5000/api/auth/demo-login:1   Failed to load resource: net::ERR_FAILED
+[NEW] Explain Console errors by using Copilot in Edge: click
+         
+         to explain an error. 
+        Learn more
+        Don't show again
+Navigated to https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:3000/login
+react-dom-client.development.js:24868 Download the React DevTools for a better development experience: https://react.dev/link/react-devtools
+AuthContext.tsx:89 Attempting demo login...
+AuthContext.tsx:90 API Base URL: https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api
+AuthContext.tsx:89 Attempting demo login...
+AuthContext.tsx:90 API Base URL: https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api
+login:1  Access to XMLHttpRequest at 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api/auth/demo-login' from origin 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+AuthContext.tsx:105  Demo login error: AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+demoLogin @ AuthContext.tsx:105
+await in demoLogin
+(anonymous) @ AuthContext.tsx:57
+react-stack-bottom-frame @ react-dom-client.development.js:23949
+runWithFiberInDEV @ react-dom-client.development.js:1519
+commitHookEffectListMount @ react-dom-client.development.js:11905
+commitHookPassiveMountEffects @ react-dom-client.development.js:12026
+commitPassiveMountOnFiber @ react-dom-client.development.js:13841
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13853
+flushPassiveEffects @ react-dom-client.development.js:15737
+(anonymous) @ react-dom-client.development.js:15379
+performWorkUntilDeadline @ scheduler.development.js:45
+<AuthProvider>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+(anonymous) @ main.tsx:11
+AuthContext.tsx:106  Error details: undefined
+demoLogin @ AuthContext.tsx:106
+await in demoLogin
+(anonymous) @ AuthContext.tsx:57
+react-stack-bottom-frame @ react-dom-client.development.js:23949
+runWithFiberInDEV @ react-dom-client.development.js:1519
+commitHookEffectListMount @ react-dom-client.development.js:11905
+commitHookPassiveMountEffects @ react-dom-client.development.js:12026
+commitPassiveMountOnFiber @ react-dom-client.development.js:13841
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13853
+flushPassiveEffects @ react-dom-client.development.js:15737
+(anonymous) @ react-dom-client.development.js:15379
+performWorkUntilDeadline @ scheduler.development.js:45
+<AuthProvider>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+(anonymous) @ main.tsx:11
+AuthContext.tsx:92   POST https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api/auth/demo-login net::ERR_FAILED 502 (Bad Gateway)
+dispatchXhrRequest @ xhr.js:195
+xhr @ xhr.js:15
+dispatchRequest @ dispatchRequest.js:51
+Promise.then
+_request @ Axios.js:163
+request @ Axios.js:40
+httpMethod @ Axios.js:226
+wrap @ bind.js:5
+demoLogin @ AuthContext.tsx:92
+(anonymous) @ AuthContext.tsx:57
+react-stack-bottom-frame @ react-dom-client.development.js:23949
+runWithFiberInDEV @ react-dom-client.development.js:1519
+commitHookEffectListMount @ react-dom-client.development.js:11905
+commitHookPassiveMountEffects @ react-dom-client.development.js:12026
+commitPassiveMountOnFiber @ react-dom-client.development.js:13841
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13834
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13957
+recursivelyTraversePassiveMountEffects @ react-dom-client.development.js:13815
+commitPassiveMountOnFiber @ react-dom-client.development.js:13853
+flushPassiveEffects @ react-dom-client.development.js:15737
+(anonymous) @ react-dom-client.development.js:15379
+performWorkUntilDeadline @ scheduler.development.js:45
+<AuthProvider>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+(anonymous) @ main.tsx:11
+login:1  Access to XMLHttpRequest at 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api/auth/demo-login' from origin 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+AuthContext.tsx:105  Demo login error: AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+demoLogin @ AuthContext.tsx:105
+await in demoLogin
+(anonymous) @ AuthContext.tsx:57
+react-stack-bottom-frame @ react-dom-client.development.js:23949
+runWithFiberInDEV @ react-dom-client.development.js:1519
+commitHookEffectListMount @ react-dom-client.development.js:11905
+commitHookPassiveMountEffects @ react-dom-client.development.js:12026
+reconnectPassiveEffects @ react-dom-client.development.js:14004
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:14051
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:14051
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:13997
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:13997
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:14051
+doubleInvokeEffectsOnFiber @ react-dom-client.development.js:15968
+runWithFiberInDEV @ react-dom-client.development.js:1519
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:15928
+commitDoubleInvokeEffectsInDEV @ react-dom-client.development.js:15977
+flushPassiveEffects @ react-dom-client.development.js:15747
+(anonymous) @ react-dom-client.development.js:15379
+performWorkUntilDeadline @ scheduler.development.js:45
+<AuthProvider>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+(anonymous) @ main.tsx:11
+AuthContext.tsx:106  Error details: undefined
+demoLogin @ AuthContext.tsx:106
+await in demoLogin
+(anonymous) @ AuthContext.tsx:57
+react-stack-bottom-frame @ react-dom-client.development.js:23949
+runWithFiberInDEV @ react-dom-client.development.js:1519
+commitHookEffectListMount @ react-dom-client.development.js:11905
+commitHookPassiveMountEffects @ react-dom-client.development.js:12026
+reconnectPassiveEffects @ react-dom-client.development.js:14004
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:14051
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:14051
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:13997
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:13997
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:14051
+doubleInvokeEffectsOnFiber @ react-dom-client.development.js:15968
+runWithFiberInDEV @ react-dom-client.development.js:1519
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:15928
+commitDoubleInvokeEffectsInDEV @ react-dom-client.development.js:15977
+flushPassiveEffects @ react-dom-client.development.js:15747
+(anonymous) @ react-dom-client.development.js:15379
+performWorkUntilDeadline @ scheduler.development.js:45
+<AuthProvider>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+(anonymous) @ main.tsx:11
+AuthContext.tsx:92   POST https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api/auth/demo-login net::ERR_FAILED 502 (Bad Gateway)
+dispatchXhrRequest @ xhr.js:195
+xhr @ xhr.js:15
+dispatchRequest @ dispatchRequest.js:51
+Promise.then
+_request @ Axios.js:163
+request @ Axios.js:40
+httpMethod @ Axios.js:226
+wrap @ bind.js:5
+demoLogin @ AuthContext.tsx:92
+(anonymous) @ AuthContext.tsx:57
+react-stack-bottom-frame @ react-dom-client.development.js:23949
+runWithFiberInDEV @ react-dom-client.development.js:1519
+commitHookEffectListMount @ react-dom-client.development.js:11905
+commitHookPassiveMountEffects @ react-dom-client.development.js:12026
+reconnectPassiveEffects @ react-dom-client.development.js:14004
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:14051
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:14051
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:13997
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:13997
+recursivelyTraverseReconnectPassiveEffects @ react-dom-client.development.js:13976
+reconnectPassiveEffects @ react-dom-client.development.js:14051
+doubleInvokeEffectsOnFiber @ react-dom-client.development.js:15968
+runWithFiberInDEV @ react-dom-client.development.js:1519
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom-client.development.js:15928
+commitDoubleInvokeEffectsInDEV @ react-dom-client.development.js:15977
+flushPassiveEffects @ react-dom-client.development.js:15747
+(anonymous) @ react-dom-client.development.js:15379
+performWorkUntilDeadline @ scheduler.development.js:45
+<AuthProvider>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+(anonymous) @ main.tsx:11
+AuthContext.tsx:89 Attempting demo login...
+AuthContext.tsx:90 API Base URL: https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api
+login:1  Access to XMLHttpRequest at 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api/auth/demo-login' from origin 'https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:3000' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource.
+AuthContext.tsx:105  Demo login error: AxiosError {message: 'Network Error', name: 'AxiosError', code: 'ERR_NETWORK', config: {…}, request: XMLHttpRequest, …}
+demoLogin @ AuthContext.tsx:105
+await in demoLogin
+handleDemoLogin @ LoginPage.tsx:49
+executeDispatch @ react-dom-client.development.js:16368
+runWithFiberInDEV @ react-dom-client.development.js:1519
+processDispatchQueue @ react-dom-client.development.js:16418
+(anonymous) @ react-dom-client.development.js:17016
+batchedUpdates$1 @ react-dom-client.development.js:3262
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
+dispatchEvent @ react-dom-client.development.js:20658
+dispatchDiscreteEvent @ react-dom-client.development.js:20626
+<button>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+LoginPage @ LoginPage.tsx:187
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<LoginPage>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+App @ App.tsx:33
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<App>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+(anonymous) @ main.tsx:12
+AuthContext.tsx:106  Error details: undefined
+demoLogin @ AuthContext.tsx:106
+await in demoLogin
+handleDemoLogin @ LoginPage.tsx:49
+executeDispatch @ react-dom-client.development.js:16368
+runWithFiberInDEV @ react-dom-client.development.js:1519
+processDispatchQueue @ react-dom-client.development.js:16418
+(anonymous) @ react-dom-client.development.js:17016
+batchedUpdates$1 @ react-dom-client.development.js:3262
+dispatchEventForPluginEventSystem @ react-dom-client.development.js:16572
+dispatchEvent @ react-dom-client.development.js:20658
+dispatchDiscreteEvent @ react-dom-client.development.js:20626
+<button>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+LoginPage @ LoginPage.tsx:187
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<LoginPage>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+App @ App.tsx:33
+react-stack-bottom-frame @ react-dom-client.development.js:23863
+renderWithHooksAgain @ react-dom-client.development.js:5629
+renderWithHooks @ react-dom-client.development.js:5541
+updateFunctionComponent @ react-dom-client.development.js:8897
+beginWork @ react-dom-client.development.js:10522
+runWithFiberInDEV @ react-dom-client.development.js:1519
+performUnitOfWork @ react-dom-client.development.js:15132
+workLoopSync @ react-dom-client.development.js:14956
+renderRootSync @ react-dom-client.development.js:14936
+performWorkOnRoot @ react-dom-client.development.js:14419
+performWorkOnRootViaSchedulerTask @ react-dom-client.development.js:16216
+performWorkUntilDeadline @ scheduler.development.js:45
+<App>
+exports.jsxDEV @ react-jsx-dev-runtime.development.js:346
+(anonymous) @ main.tsx:12
+AuthContext.tsx:92   POST https://a9425111-5cc5-4d34-8f9f-7045ac5d5438-00-3k8mnb0im4v2f.janeway.replit.dev:5000/api/auth/demo-login net::ERR_FAILED 502 (Bad Gateway)
