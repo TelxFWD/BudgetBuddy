@@ -1,7 +1,20 @@
 import axios from 'axios'
 
+// Determine the correct base URL based on environment
+const getBaseURL = () => {
+  // If we're in the Replit environment, use the relative path for proxy
+  if (window.location.hostname.includes('replit.dev') || window.location.hostname.includes('replit.app')) {
+    // For external Replit access, use the FastAPI server URL directly
+    const replitHost = window.location.hostname
+    const fastApiUrl = replitHost.replace('-3000', '-5000')
+    return `https://${fastApiUrl}/api`
+  }
+  // For local development or Replit internal preview, use proxy
+  return '/api'
+}
+
 const axiosInstance = axios.create({
-  baseURL: '/api',
+  baseURL: getBaseURL(),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -34,7 +47,7 @@ axiosInstance.interceptors.response.use(
       try {
         const refreshToken = localStorage.getItem('refresh_token')
         if (refreshToken) {
-          const response = await axios.post('/api/auth/refresh', {
+          const response = await axios.post(`${getBaseURL()}/auth/refresh`, {
             refresh_token: refreshToken
           })
           
