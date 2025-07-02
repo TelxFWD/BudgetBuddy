@@ -65,3 +65,40 @@ export const settingsAPI = {
   deleteAccount: () => axiosInstance.delete('/settings/account'),
   upgradeUser: (plan: string) => axiosInstance.post('/settings/upgrade', { plan }),
 }
+
+// API_ENDPOINTS for backwards compatibility
+export const API_ENDPOINTS = {
+  AUTH: {
+    SEND_OTP: '/telegram/send-otp',
+    VERIFY_OTP: '/telegram/verify-otp',
+    REFRESH: '/auth/refresh',
+    ME: '/auth/me',
+    LOGOUT: '/auth/logout',
+  },
+  FORWARDING: {
+    PAIRS: '/forwarding/pairs',
+    BULK: '/forwarding/pairs/bulk',
+  },
+  ACCOUNTS: {
+    TELEGRAM: '/accounts/telegram',
+    DISCORD: '/accounts/discord',
+  },
+  ANALYTICS: {
+    USER_STATS: '/analytics/user-stats',
+    SYSTEM_STATS: '/analytics/system-stats',
+    FORWARDING_STATS: '/analytics/forwarding-pairs',
+    MESSAGE_VOLUME: '/analytics/message-volume',
+    ERROR_SUMMARY: '/analytics/error-summary',
+    EXPORT: '/analytics/export',
+  },
+  SYSTEM: {
+    HEALTH: '/health',
+    SESSION_HEALTH: '/analytics/session-health',
+  },
+  SETTINGS: {
+    PROFILE: '/settings/profile',
+    NOTIFICATIONS: '/settings/notifications',
+    ACCOUNT: '/settings/account',
+    UPGRADE: '/settings/upgrade',
+  },
+}

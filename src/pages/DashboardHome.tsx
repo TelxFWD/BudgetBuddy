@@ -198,9 +198,6 @@ const ForwardingPairsPanel: React.FC = () => {
   const { user } = useAuth();
   const [pairs, setPairs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [showTextFiltersModal, setShowTextFiltersModal] = useState(false)
-  const [selectedPair, setSelectedPair] = useState<any>(null)
 
   const userPlan = user?.plan?.toLowerCase() || 'free';
   const planLimits = {
@@ -293,7 +290,8 @@ const ForwardingPairsPanel: React.FC = () => {
       alert(`You've reached your plan limit of ${currentPlan.pairs} forwarding pairs. Upgrade to add more.`);
       return;
     }
-    setShowAddModal(true);
+    // Redirect to Add Pair page
+    window.location.href = '/dashboard/pairs';
   };
 
   const openTextFilters = (pair: any) => {
@@ -301,8 +299,7 @@ const ForwardingPairsPanel: React.FC = () => {
       alert('Text filtering is only available for Elite plan users. Upgrade to unlock this feature.');
       return;
     }
-    setSelectedPair(pair);
-    setShowTextFiltersModal(true);
+    alert('Text filter editor coming soon! This will open a modal to edit search/replace rules.');
   };
 
   return (

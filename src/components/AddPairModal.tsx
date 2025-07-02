@@ -13,9 +13,15 @@ interface FormData {
   sourcePlatform: 'telegram' | 'discord'
   targetPlatform: 'telegram' | 'discord'
   sourceId: string
-  targetId: string
-  delay: number
-  delayUnit: 'minutes' | 'hours'
+  targetIds: string[]  // Support multiple destinations
+  delayMinutes: number
+  copyMode: boolean
+  blockImages: boolean
+  blockText: boolean
+  textFilters: {
+    searchText: string
+    replaceWith: string
+  }[]
 }
 
 const AddPairModal: React.FC<AddPairModalProps> = ({ isOpen, onClose, onSuccess }) => {
@@ -24,9 +30,12 @@ const AddPairModal: React.FC<AddPairModalProps> = ({ isOpen, onClose, onSuccess 
     sourcePlatform: 'telegram',
     targetPlatform: 'telegram',
     sourceId: '',
-    targetId: '',
-    delay: 5,
-    delayUnit: 'minutes'
+    targetIds: [''],
+    delayMinutes: 5,
+    copyMode: false,
+    blockImages: false,
+    blockText: false,
+    textFilters: []
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')

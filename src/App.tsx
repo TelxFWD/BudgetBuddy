@@ -7,7 +7,8 @@ import DashboardHome from './pages/DashboardHome'
 import ForwardingPairs from './pages/ForwardingPairs'
 import AccountsPage from './pages/AccountsPage'
 import SettingsPage from './pages/SettingsPage'
-// import AnalyticsPage from './pages/AnalyticsPage'
+import AnalyticsPage from './pages/AnalyticsPage'
+import BillingPage from './pages/BillingPage'
 
 // Loading Spinner Component
 const LoadingSpinner: React.FC = () => (
@@ -41,7 +42,8 @@ const App: React.FC = () => {
         <Route index element={<DashboardHome />} />
         <Route path="pairs" element={<ForwardingPairs />} />
         <Route path="accounts" element={<AccountsPage />} />
-        <Route path="analytics" element={<div className="p-6"><h1 className="text-2xl text-white">Analytics - Coming Soon</h1></div>} />
+        <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="billing" element={<BillingPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
       
