@@ -1,6 +1,6 @@
 """
-Forwarding Pairs API endpoints with plan-based feature restrictions.
-Handles creating, editing, pausing, resuming, and deleting forwarding pairs with proper validation.
+Forwarding Pairs API endpoints for CRUD operations on message forwarding configurations.
+Handles creating, editing, pausing, resuming, and deleting forwarding pairs.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -13,7 +13,7 @@ from database.db import get_db
 from database.models import User, ForwardingPair, TelegramAccount, DiscordAccount
 from api.auth import get_current_user
 from utils.logger import logger
-from utils.plan_rules import PlanValidator, PlatformType, check_plan_expired, get_upgrade_message
+from utils.plan_rules import PlanValidator, PlatformType, check_plan_expired
 
 router = APIRouter(prefix="/forwarding", tags=["forwarding"])
 
@@ -47,11 +47,8 @@ class ForwardingPairResponse(BaseModel):
     is_active: bool
     silent_mode: bool
     copy_mode: bool
-    platform_type: str
     created_at: datetime
-    
-    class Config:
-        from_attributes = True
+    last_forwarded: Optional[datetime]
 
 def validate_plan_limits(user: User, db: Session) -> dict:
     """Check user's plan limits for forwarding pairs."""
@@ -82,17 +79,16 @@ def validate_account_ownership(user_id: int, platform: str, account_id: int, db:
             TelegramAccount.user_id == user_id,
             TelegramAccount.status == "active"
         ).first()
-        return account is not None
-    
     elif platform == "discord":
         account = db.query(DiscordAccount).filter(
             DiscordAccount.id == account_id,
             DiscordAccount.user_id == user_id,
             DiscordAccount.status == "active"
         ).first()
-        return account is not None
+    else:
+        return False
     
-    return False
+    return account is not None
 
 @router.get("/pairs", response_model=List[ForwardingPairResponse])
 async def list_forwarding_pairs(
@@ -104,81 +100,45 @@ async def list_forwarding_pairs(
         ForwardingPair.user_id == current_user.id
     ).order_by(ForwardingPair.created_at.desc()).all()
     
-    result = []
-    for pair in pairs:
-        # Determine source/destination platform and account IDs
-        source_platform = "telegram" if pair.telegram_account_id else "discord"
-        source_account_id = pair.telegram_account_id or pair.discord_account_id
-        
-        # For simplicity, destination is opposite platform unless same platform
-        dest_platform = "discord" if source_platform == "telegram" else "telegram"
-        dest_account_id = source_account_id  # This would need proper mapping
-        
-        result.append(ForwardingPairResponse(
+    return [
+        ForwardingPairResponse(
             id=pair.id,
-            source_platform=source_platform,
-            source_account_id=source_account_id,
-            source_chat_id=pair.source_channel,
-            destination_platform=dest_platform,
-            destination_account_id=dest_account_id,
-            destination_chat_id=pair.destination_channel,
-            delay_seconds=pair.delay,
+            source_platform=pair.source_platform,
+            source_account_id=pair.source_account_id,
+            source_chat_id=pair.source_chat_id,
+            destination_platform=pair.destination_platform,
+            destination_account_id=pair.destination_account_id,
+            destination_chat_id=pair.destination_chat_id,
+            delay_seconds=pair.delay_seconds,
             is_active=pair.is_active,
             silent_mode=pair.silent_mode,
             copy_mode=pair.copy_mode,
-            platform_type=pair.platform_type,
-            created_at=pair.created_at
-        ))
-    
-    return result
+            created_at=pair.created_at,
+            last_forwarded=pair.last_forwarded
+        ) for pair in pairs
+    ]
 
-@router.post("/pairs", response_model=ForwardingPairResponse)
+@router.post("/", response_model=ForwardingPairResponse)
 async def create_forwarding_pair(
     pair_data: ForwardingPairCreate,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Create a new forwarding pair with plan-based validation."""
-    # Check if plan is expired
-    if check_plan_expired(current_user.plan_expires_at):
-        current_user.plan = "free"
-        db.commit()
-    
+    """Create a new forwarding pair."""
     # Validate plan limits
     limits = validate_plan_limits(current_user, db)
     if not limits["can_create"]:
-        max_pairs = limits['max_pairs']
-        if max_pairs == 999:
-            max_pairs = "unlimited"
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Plan limit reached. Maximum {max_pairs} pairs allowed for {current_user.plan} plan. {get_upgrade_message(current_user.plan, 'additional_pairs')}"
+            detail=f"Plan limit reached. Maximum {limits['max_pairs']} pairs allowed for {current_user.plan} plan"
         )
     
-    # Determine platform type for validation
-    platform_type = f"{pair_data.source_platform}_to_{pair_data.destination_platform}"
-    
-    # Validate platform combination is allowed for user's plan
-    can_add, message = PlanValidator.can_add_forwarding_pair(
-        current_user.plan, 
-        limits["current_pairs"], 
-        platform_type
-    )
-    
-    if not can_add:
+    # Validate delay limits
+    if pair_data.delay_seconds > limits["max_delay"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=message
+            detail=f"Delay limit exceeded. Maximum {limits['max_delay']} seconds allowed for {current_user.plan} plan"
         )
-    
-    # Validate copy mode feature
-    if pair_data.copy_mode:
-        can_copy, copy_message = PlanValidator.can_use_feature(current_user.plan, "copy_mode")
-        if not can_copy:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=copy_message
-            )
     
     # Validate platform values
     valid_platforms = ["telegram", "discord"]
@@ -204,8 +164,12 @@ async def create_forwarding_pair(
     # Check for duplicate pairs
     existing_pair = db.query(ForwardingPair).filter(
         ForwardingPair.user_id == current_user.id,
-        ForwardingPair.source_channel == pair_data.source_chat_id,
-        ForwardingPair.destination_channel == pair_data.destination_chat_id
+        ForwardingPair.source_platform == pair_data.source_platform,
+        ForwardingPair.source_account_id == pair_data.source_account_id,
+        ForwardingPair.source_chat_id == pair_data.source_chat_id,
+        ForwardingPair.destination_platform == pair_data.destination_platform,
+        ForwardingPair.destination_account_id == pair_data.destination_account_id,
+        ForwardingPair.destination_chat_id == pair_data.destination_chat_id
     ).first()
     
     if existing_pair:
@@ -214,24 +178,16 @@ async def create_forwarding_pair(
             detail="Forwarding pair already exists"
         )
     
-    # Set telegram_account_id or discord_account_id based on source platform
-    telegram_account_id = None
-    discord_account_id = None
-    
-    if pair_data.source_platform == "telegram":
-        telegram_account_id = pair_data.source_account_id
-    elif pair_data.source_platform == "discord":
-        discord_account_id = pair_data.source_account_id
-    
     # Create new forwarding pair
     new_pair = ForwardingPair(
         user_id=current_user.id,
-        telegram_account_id=telegram_account_id,
-        discord_account_id=discord_account_id,
-        source_channel=pair_data.source_chat_id,
-        destination_channel=pair_data.destination_chat_id,
-        delay=pair_data.delay_seconds,
-        platform_type=platform_type,
+        source_platform=pair_data.source_platform,
+        source_account_id=pair_data.source_account_id,
+        source_chat_id=pair_data.source_chat_id,
+        destination_platform=pair_data.destination_platform,
+        destination_account_id=pair_data.destination_account_id,
+        destination_chat_id=pair_data.destination_chat_id,
+        delay_seconds=pair_data.delay_seconds,
         is_active=True,
         silent_mode=pair_data.silent_mode,
         copy_mode=pair_data.copy_mode
@@ -243,26 +199,20 @@ async def create_forwarding_pair(
     
     logger.info(f"Forwarding pair created: {new_pair.id} by user {current_user.username}")
     
-    # Return response
-    source_platform = "telegram" if new_pair.telegram_account_id else "discord"
-    source_account_id = new_pair.telegram_account_id or new_pair.discord_account_id
-    dest_platform = pair_data.destination_platform
-    dest_account_id = pair_data.destination_account_id
-    
     return ForwardingPairResponse(
         id=new_pair.id,
-        source_platform=source_platform,
-        source_account_id=source_account_id,
-        source_chat_id=new_pair.source_channel,
-        destination_platform=dest_platform,
-        destination_account_id=dest_account_id,
-        destination_chat_id=new_pair.destination_channel,
-        delay_seconds=new_pair.delay,
+        source_platform=new_pair.source_platform,
+        source_account_id=new_pair.source_account_id,
+        source_chat_id=new_pair.source_chat_id,
+        destination_platform=new_pair.destination_platform,
+        destination_account_id=new_pair.destination_account_id,
+        destination_chat_id=new_pair.destination_chat_id,
+        delay_seconds=new_pair.delay_seconds,
         is_active=new_pair.is_active,
         silent_mode=new_pair.silent_mode,
         copy_mode=new_pair.copy_mode,
-        platform_type=new_pair.platform_type,
-        created_at=new_pair.created_at
+        created_at=new_pair.created_at,
+        last_forwarded=new_pair.last_forwarded
     )
 
 @router.put("/{pair_id}", response_model=ForwardingPairResponse)
@@ -272,7 +222,7 @@ async def update_forwarding_pair(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Update an existing forwarding pair with plan validation."""
+    """Update an existing forwarding pair."""
     pair = db.query(ForwardingPair).filter(
         ForwardingPair.id == pair_id,
         ForwardingPair.user_id == current_user.id
@@ -284,18 +234,17 @@ async def update_forwarding_pair(
             detail="Forwarding pair not found"
         )
     
-    # Validate copy mode feature if updating
-    if pair_data.copy_mode is not None and pair_data.copy_mode:
-        can_copy, copy_message = PlanValidator.can_use_feature(current_user.plan, "copy_mode")
-        if not can_copy:
+    # Validate delay limits if updating delay
+    if pair_data.delay_seconds is not None:
+        limits = validate_plan_limits(current_user, db)
+        if pair_data.delay_seconds > limits["max_delay"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=copy_message
+                detail=f"Delay limit exceeded. Maximum {limits['max_delay']} seconds allowed for {current_user.plan} plan"
             )
+        pair.delay_seconds = pair_data.delay_seconds
     
-    # Update fields
-    if pair_data.delay_seconds is not None:
-        pair.delay = pair_data.delay_seconds
+    # Update other fields
     if pair_data.is_active is not None:
         pair.is_active = pair_data.is_active
     if pair_data.silent_mode is not None:
@@ -308,26 +257,20 @@ async def update_forwarding_pair(
     
     logger.info(f"Forwarding pair updated: {pair_id} by user {current_user.username}")
     
-    # Return updated response
-    source_platform = "telegram" if pair.telegram_account_id else "discord"
-    source_account_id = pair.telegram_account_id or pair.discord_account_id
-    dest_platform = "discord" if source_platform == "telegram" else "telegram"
-    dest_account_id = source_account_id
-    
     return ForwardingPairResponse(
         id=pair.id,
-        source_platform=source_platform,
-        source_account_id=source_account_id,
-        source_chat_id=pair.source_channel,
-        destination_platform=dest_platform,
-        destination_account_id=dest_account_id,
-        destination_chat_id=pair.destination_channel,
-        delay_seconds=pair.delay,
+        source_platform=pair.source_platform,
+        source_account_id=pair.source_account_id,
+        source_chat_id=pair.source_chat_id,
+        destination_platform=pair.destination_platform,
+        destination_account_id=pair.destination_account_id,
+        destination_chat_id=pair.destination_chat_id,
+        delay_seconds=pair.delay_seconds,
         is_active=pair.is_active,
         silent_mode=pair.silent_mode,
         copy_mode=pair.copy_mode,
-        platform_type=pair.platform_type,
-        created_at=pair.created_at
+        created_at=pair.created_at,
+        last_forwarded=pair.last_forwarded
     )
 
 @router.delete("/{pair_id}")

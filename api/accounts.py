@@ -15,6 +15,7 @@ import time
 from database.db import get_db
 from database.models import User, TelegramAccount, DiscordAccount
 from api.auth import get_current_user
+from utils.plan_rules import PlanValidator, check_plan_expired, get_upgrade_message
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
