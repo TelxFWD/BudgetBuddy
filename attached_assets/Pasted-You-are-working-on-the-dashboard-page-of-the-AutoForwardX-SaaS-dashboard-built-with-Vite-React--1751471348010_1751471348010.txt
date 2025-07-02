@@ -1,0 +1,76 @@
+You are working on the `/dashboard` page of the AutoForwardX SaaS dashboard built with Vite + React + Tailwind + FastAPI backend.
+
+🧩 Problem:
+The dashboard is rendering UI cards but likely **not fetching live data from the backend**. Stats like “0 pairs”, “0 forwarded”, and “demo_user” are likely hardcoded or not dynamically loaded from API.
+
+---
+
+### ✅ Objective:
+Verify the backend is connected and wired properly on the dashboard. If not, fix all logic using Axios API calls and context.
+
+---
+
+### 🔍 Steps to Diagnose:
+
+1. Open `DashboardHome.tsx` or `Dashboard.tsx`
+2. Check if you are calling the backend on page load:
+   ```ts
+   useEffect(() => {
+     api.get('/auth/me').then(res => setUser(res.data))
+     api.get('/dashboard/summary').then(res => setStats(res.data))
+   }, []);
+Confirm:
+
+active_pairs, total_messages, today_messages come from the API
+
+Authenticated user data (plan, email) is set from /auth/me
+
+No hardcoded Pro Plan, 0/15 usage, etc.
+
+All state should be stored using:
+
+useState() and updated after axios.get()
+
+Use loading indicators (spinners/skeletons) before data arrives
+
+🔁 Expected API Endpoints:
+GET /auth/me → { email, plan, usage }
+
+GET /forwarding/pairs → List of all pairs
+
+GET /analytics/summary → { total, successRate, today }
+
+GET /telegram/session and /discord/session → Account Manager list
+
+🔧 Fix Instructions (if not connected):
+Replace any hardcoded user data with:
+
+tsx
+Copy
+Edit
+const { user } = useAuthContext()
+Replace stats with actual axios calls:
+
+tsx
+Copy
+Edit
+const [stats, setStats] = useState(null)
+
+useEffect(() => {
+  api.get('/dashboard/stats').then(res => setStats(res.data))
+}, [])
+Ensure DashboardLayout uses AuthContext and injects the JWT
+
+Add error boundary if backend returns 401/500
+
+✅ Final Result:
+
+Dashboard shows real-time stats from API
+
+User data reflects logged-in account
+
+Cards like Plan Summary, Active Pairs, Analytics all populate from live data
+
+UI gracefully handles loading/errors
+
+Use React best practices: useEffect, useContext, axios, Skeleton loading, and clean Tailwind layout. Do not hardcode any plan or stat.

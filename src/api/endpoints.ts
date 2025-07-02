@@ -44,14 +44,14 @@ export const accountsAPI = {
 
 // Analytics endpoints
 export const analyticsAPI = {
-  getUserStats: () => axiosInstance.get('/analytics/user-stats'),
-  getSystemStats: () => axiosInstance.get('/analytics/system-stats'),
+  getUserStats: () => axiosInstance.get('/analytics/stats'),
+  getSystemStats: () => axiosInstance.get('/analytics/system'),
   getForwardingStats: (days: number = 7) => 
-    axiosInstance.get(`/analytics/forwarding-pairs?days=${days}`),
+    axiosInstance.get(`/analytics/pairs?days=${days}`),
   getMessageVolume: (days: number = 30) => 
-    axiosInstance.get(`/analytics/message-volume?days=${days}`),
+    axiosInstance.get(`/analytics/volume?days=${days}`),
   getErrorSummary: (days: number = 7) => 
-    axiosInstance.get(`/analytics/error-summary?days=${days}`),
+    axiosInstance.get(`/analytics/errors?days=${days}`),
   exportData: (format: 'csv' | 'pdf', type: string) => 
     axiosInstance.get(`/analytics/export?format=${format}&type=${type}`, { 
       responseType: 'blob' 
@@ -91,11 +91,11 @@ export const API_ENDPOINTS = {
     DISCORD: '/accounts/discord',
   },
   ANALYTICS: {
-    USER_STATS: '/analytics/user-stats',
-    SYSTEM_STATS: '/analytics/system-stats',
-    FORWARDING_STATS: '/analytics/forwarding-pairs',
-    MESSAGE_VOLUME: '/analytics/message-volume',
-    ERROR_SUMMARY: '/analytics/error-summary',
+    USER_STATS: '/analytics/stats',
+    SYSTEM_STATS: '/analytics/system',
+    FORWARDING_STATS: '/analytics/pairs',
+    MESSAGE_VOLUME: '/analytics/volume',
+    ERROR_SUMMARY: '/analytics/errors',
     EXPORT: '/analytics/export',
   },
   SYSTEM: {
