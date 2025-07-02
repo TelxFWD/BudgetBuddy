@@ -8,7 +8,7 @@
   }
   
   body {
-    @apply bg-dark-bg text-gray-300 antialiased;
+    @apply bg-slate-900 text-gray-300 antialiased;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -22,7 +22,7 @@
   }
   
   .btn-secondary {
-    @apply bg-dark-card hover:bg-slate-700 text-gray-300 py-2 px-4 rounded-xl border border-dark-border shadow-sm font-medium transition-colors duration-200;
+    @apply bg-slate-800 hover:bg-slate-700 text-gray-300 py-2 px-4 rounded-xl border border-slate-600 shadow-sm font-medium transition-colors duration-200;
   }
   
   .btn-danger {
@@ -30,11 +30,11 @@
   }
   
   .card {
-    @apply bg-dark-card border border-dark-border rounded-xl p-6 shadow-sm;
+    @apply bg-slate-800 border border-slate-600 rounded-xl p-6 shadow-sm;
   }
   
   .input-field {
-    @apply bg-dark-card border border-dark-border rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all duration-200;
+    @apply bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all duration-200;
   }
   
   .status-badge {
@@ -60,11 +60,11 @@
 }
 
 ::-webkit-scrollbar-track {
-  @apply bg-dark-bg;
+  @apply bg-slate-900;
 }
 
 ::-webkit-scrollbar-thumb {
-  @apply bg-dark-border rounded-lg;
+  @apply bg-slate-600 rounded-lg;
 }
 
 ::-webkit-scrollbar-thumb:hover {
