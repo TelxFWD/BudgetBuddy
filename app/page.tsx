@@ -48,7 +48,7 @@ export default function LoginPage() {
 
     try {
       console.log('Sending OTP request for phone:', phoneNumber)
-      const response = await authService.sendOTP({ phone_number: phoneNumber })
+      const response = await authService.sendOTP({ phone: phoneNumber })
       console.log('OTP response:', response)
       setStep('otp')
       setCountdown(60)
@@ -74,7 +74,7 @@ export default function LoginPage() {
 
     try {
       const response = await authService.verifyOTP({
-        phone_number: phoneNumber,
+        phone: phoneNumber,
         otp_code: otpCode
       })
       dispatch(loginSuccess(response.access_token))
@@ -91,7 +91,7 @@ export default function LoginPage() {
 
     dispatch(setLoading(true))
     try {
-      const response = await authService.sendOTP({ phone_number: phoneNumber })
+      const response = await authService.sendOTP({ phone: phoneNumber })
       setCountdown(60)
     } catch (error: any) {
       dispatch(setError(error.response?.data?.detail || 'Failed to resend OTP'))

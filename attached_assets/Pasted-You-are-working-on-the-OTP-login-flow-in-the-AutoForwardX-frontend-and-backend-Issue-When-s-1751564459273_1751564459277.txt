@@ -1,0 +1,86 @@
+You are working on the OTP login flow in the AutoForwardX frontend and backend.
+
+🛑 Issue:
+When submitting the phone number to `/api/telegram/send-otp`, the response is:
+```http
+422 Unprocessable Entity
+This means the frontend is sending the wrong payload format or the backend Pydantic model isn't matched properly.
+
+✅ Fix Instructions:
+1. Frontend Fix (React)
+In AuthContext.tsx or LoginPage.tsx, update the OTP submission code:
+
+✅ Replace any use of FormData or incorrect keys.
+
+🔧 Correct axios call:
+
+tsx
+Copy
+Edit
+await axios.post("/api/telegram/send-otp", {
+  phone: phoneNumber.trim() // Ensure it's a string like "+91XXXXXXXXXX"
+});
+✅ The variable phoneNumber must be a valid E.164 format:
+
+tsx
+Copy
+Edit
+const phoneRegex = /^\+\d{10,15}$/;
+if (!phoneRegex.test(phoneNumber)) {
+  showToast("Invalid phone format. Use +91XXXXXXXXXX");
+  return;
+}
+2. Backend Fix (FastAPI)
+In api/telegram.py, confirm this is your Pydantic model:
+
+python
+Copy
+Edit
+from pydantic import BaseModel
+
+class OTPRequest(BaseModel):
+    phone: str
+And the endpoint should be:
+
+python
+Copy
+Edit
+@router.post("/send-otp")
+async def send_otp(req: OTPRequest):
+    logger.info(f"Sending OTP to {req.phone}")
+    await telethon.send_code(req.phone)
+    return {"message": "OTP sent"}
+3. Debugging & Logging
+✅ Add backend logging to ensure the request body is parsed correctly:
+
+python
+Copy
+Edit
+logger.info(f"Received OTP request: {req.phone}")
+✅ In Replit logs, if still seeing 422, look for:
+
+mathematica
+Copy
+Edit
+422 Unprocessable Entity
+{"detail":[{"loc":["body","phone"],"msg":"field required"}]}
+This confirms that the key phone is missing in the body.
+
+✅ Final Checklist
+ Frontend uses JSON { phone: "+91..." }
+
+ No FormData or multipart encoding
+
+ Backend has phone: str Pydantic model
+
+ Telethon properly triggers send_code_request
+
+Once fixed, the user should:
+
+Input phone → click send
+
+Get OTP from Telegram (5-digit)
+
+Be prompted for 5-digit input
+
+OTP verified → user logged in

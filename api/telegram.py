@@ -28,10 +28,10 @@ router = APIRouter(prefix="/api/telegram", tags=["Telegram Authentication"])
 otp_storage: Dict[str, Dict] = {}
 
 class SendOTPRequest(BaseModel):
-    phone_number: str = Field(..., description="Phone number with country code")
+    phone: str = Field(..., description="Phone number with country code")
 
 class VerifyOTPRequest(BaseModel):
-    phone_number: str = Field(..., description="Phone number with country code")
+    phone: str = Field(..., description="Phone number with country code")
     otp_code: str = Field(..., description="5-digit OTP code")
 
 class TelegramAuthResponse(BaseModel):
@@ -209,6 +209,12 @@ def clean_phone_number(phone: str) -> str:
     
     return cleaned
 
+@router.post("/debug-request")
+async def debug_request(request: dict):
+    """Debug endpoint to see raw request data."""
+    logger.info(f"DEBUG: Raw request data: {request}")
+    return {"received": request}
+
 @router.post("/send-otp")
 async def send_otp(
     request: SendOTPRequest,
@@ -218,13 +224,13 @@ async def send_otp(
     try:
         logger.info(f"=== OTP REQUEST DEBUG ===")
         logger.info(f"Raw request received: {request}")
-        logger.info(f"Request phone_number: '{request.phone_number}'")
-        logger.info(f"Phone number type: {type(request.phone_number)}")
-        logger.info(f"Phone number length: {len(request.phone_number) if request.phone_number else 0}")
+        logger.info(f"Request phone: '{request.phone}'")
+        logger.info(f"Phone number type: {type(request.phone)}")
+        logger.info(f"Phone number length: {len(request.phone) if request.phone else 0}")
         logger.info(f"Request dict: {request.dict()}")
         
-        # Validate that phone_number is provided
-        if not request.phone_number:
+        # Validate that phone is provided
+        if not request.phone:
             logger.error("Phone number is missing from request")
             raise HTTPException(
                 status_code=422,
@@ -232,7 +238,7 @@ async def send_otp(
             )
         
         # Clean phone number
-        phone = clean_phone_number(request.phone_number)
+        phone = clean_phone_number(request.phone)
         logger.info(f"Cleaned phone number: {phone}")
         
         # Validate phone number format
@@ -298,10 +304,10 @@ async def verify_otp(
 ):
     """Verify OTP and authenticate user."""
     try:
-        logger.info(f"OTP verification request - Phone: {request.phone_number}, OTP: {request.otp_code}")
+        logger.info(f"OTP verification request - Phone: {request.phone}, OTP: {request.otp_code}")
         
         # Clean phone number
-        phone = clean_phone_number(request.phone_number)
+        phone = clean_phone_number(request.phone)
         logger.info(f"Cleaned phone number: {phone}")
         
         # Check if OTP exists and is valid

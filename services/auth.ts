@@ -2,11 +2,11 @@ import api from './api'
 import Cookies from 'js-cookie'
 
 export interface OTPRequest {
-  phone_number: string
+  phone: string
 }
 
 export interface OTPVerifyRequest {
-  phone_number: string
+  phone: string
   otp_code: string
 }
 
