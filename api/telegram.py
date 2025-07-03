@@ -60,51 +60,68 @@ async def send_telegram_otp_production(phone: str) -> dict:
             return {"success": False, "error": "API credentials not configured"}
         
         from pyrogram.client import Client
-        from pyrogram.errors import PhoneNumberInvalid, PhoneNumberBanned
+        from pyrogram.errors import PhoneNumberInvalid, PhoneNumberBanned, FloodWait, AuthKeyUnregistered
+        import asyncio
         
         # Create session directory if it doesn't exist
         os.makedirs("sessions/otp", exist_ok=True)
         
+        # Use a unique session name to avoid conflicts
+        session_name = f"otp_session_{abs(hash(phone))}"
+        
         # Create a client for OTP sending
         client = Client(
-            "otp_session",
+            session_name,
             api_id=int(api_id),
             api_hash=api_hash,
             workdir="sessions/otp"
         )
         
         try:
+            logger.info(f"Connecting to Telegram API for phone: {phone}")
             await client.connect()
             
             # Send verification code via Telegram
+            logger.info(f"Sending verification code to {phone}")
             sent_code = await client.send_code(phone)
             
-            logger.info(f"OTP sent successfully to {phone} via Telegram")
+            logger.info(f"✅ OTP sent successfully to {phone} via Telegram (Hash: {sent_code.phone_code_hash[:10]}...)")
             
             return {
                 "success": True,
                 "phone_code_hash": sent_code.phone_code_hash,
                 "phone": phone,
-                "message": f"OTP sent to {phone} via Telegram"
+                "message": f"Verification code sent to {phone} via Telegram"
             }
             
         except PhoneNumberInvalid:
-            logger.error(f"Invalid phone number: {phone}")
-            return {"success": False, "error": "Invalid phone number"}
+            logger.error(f"❌ Invalid phone number format: {phone}")
+            return {"success": False, "error": "Invalid phone number format"}
         except PhoneNumberBanned:
-            logger.error(f"Phone number banned: {phone}")
-            return {"success": False, "error": "Phone number is banned"}
+            logger.error(f"❌ Phone number is banned: {phone}")
+            return {"success": False, "error": "Phone number is banned from Telegram"}
+        except FloodWait as e:
+            logger.error(f"❌ Rate limited by Telegram for {e.value} seconds")
+            return {"success": False, "error": f"Rate limited. Please try again in {e.value} seconds"}
+        except AuthKeyUnregistered:
+            logger.error(f"❌ Authentication key unregistered, clearing session")
+            # Clear the session file and retry
+            session_file = f"sessions/otp/{session_name}.session"
+            if os.path.exists(session_file):
+                os.remove(session_file)
+            return {"success": False, "error": "Authentication expired. Please try again"}
         except Exception as e:
-            logger.error(f"Failed to send OTP via Telegram: {e}")
-            return {"success": False, "error": f"Failed to send OTP: {str(e)}"}
+            logger.error(f"❌ Failed to send OTP via Telegram: {type(e).__name__}: {e}")
+            return {"success": False, "error": f"Failed to send verification code: {str(e)}"}
         finally:
             try:
                 await client.disconnect()
-            except:
-                pass
+                logger.info(f"Disconnected from Telegram API for {phone}")
+            except Exception as e:
+                logger.warning(f"Error disconnecting client: {e}")
                 
     except Exception as e:
-        logger.error(f"Error in production OTP sending: {e}")
+        logger.error(f"❌ Critical error in production OTP sending: {type(e).__name__}: {e}")
         return {"success": False, "error": f"System error: {str(e)}"}
 
 async def verify_telegram_otp_production(phone: str, otp_code: str, phone_code_hash: str) -> dict:
@@ -237,13 +254,12 @@ async def send_otp(
                 "message": result["message"]
             }
         else:
-            # Demo mode: Return OTP in response for testing
-            logger.info(f"Generated OTP for {phone}: {otp_code}")
-            return {
-                "success": True,
-                "message": f"OTP sent to {phone} via Telegram",
-                "demo_otp": otp_code
-            }
+            # Demo mode disabled - production only
+            logger.error("Production mode required for OTP sending")
+            raise HTTPException(
+                status_code=500,
+                detail="System is configured for production mode only. Please contact support."
+            )
         
     except Exception as e:
         logger.error(f"Failed to send OTP: {e}")

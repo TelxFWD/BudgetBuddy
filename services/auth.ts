@@ -28,7 +28,7 @@ export interface UserData {
 
 export const authService = {
   // Send OTP to phone number
-  async sendOTP(data: OTPRequest): Promise<{ message: string; demo_otp?: string }> {
+  async sendOTP(data: OTPRequest): Promise<{ message: string }> {
     const response = await api.post('/telegram/send-otp', data)
     return response.data
   },
