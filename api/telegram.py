@@ -259,25 +259,46 @@ async def send_otp(
             "attempts": 0
         }
         
-        # Production mode: Send actual OTP via Telegram
-        result = await send_telegram_otp_production(phone)
-        if not result["success"]:
-            raise HTTPException(
-                status_code=500,
-                detail=result.get("error", "Failed to send OTP via Telegram. Please try again.")
-            )
+        # Check if we should use development fallback for testing
+        development_mode = os.getenv("ENVIRONMENT", "production").lower() == "development"
         
-        # Store phone_code_hash instead of OTP for production verification
-        otp_storage[phone] = {
-            "phone_code_hash": result["phone_code_hash"],
-            "expires_at": datetime.now() + timedelta(minutes=5),
-            "attempts": 0
-        }
-        
-        return {
-            "success": True,
-            "message": result["message"]
-        }
+        if development_mode:
+            # Development fallback - generate a test OTP for immediate testing
+            logger.warning(f"🚧 Development mode: Using fallback OTP for {phone}")
+            test_otp = "12345"  # Fixed OTP for development testing
+            
+            # Store test OTP for development verification
+            otp_storage[phone] = {
+                "otp": test_otp,
+                "expires_at": datetime.now() + timedelta(minutes=5),
+                "attempts": 0,
+                "development_mode": True
+            }
+            
+            return {
+                "success": True,
+                "message": f"Development mode: Use OTP {test_otp} to verify"
+            }
+        else:
+            # Production mode: Send actual OTP via Telegram
+            result = await send_telegram_otp_production(phone)
+            if not result["success"]:
+                raise HTTPException(
+                    status_code=500,
+                    detail=result.get("error", "Failed to send OTP via Telegram. Please try again.")
+                )
+            
+            # Store phone_code_hash instead of OTP for production verification
+            otp_storage[phone] = {
+                "phone_code_hash": result["phone_code_hash"],
+                "expires_at": datetime.now() + timedelta(minutes=5),
+                "attempts": 0
+            }
+            
+            return {
+                "success": True,
+                "message": result["message"]
+            }
         
     except Exception as e:
         logger.error(f"Failed to send OTP: {e}")
@@ -328,26 +349,46 @@ async def verify_otp(
                 detail="Too many failed attempts. Please request a new OTP."
             )
         
-        # Production mode only: Verify OTP via Telegram API
-        if "phone_code_hash" not in otp_data:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid verification session. Please request a new OTP."
-            )
-        
-        result = await verify_telegram_otp_production(phone, request.otp_code, otp_data["phone_code_hash"])
-        if not result["success"]:
-            otp_data["attempts"] += 1
-            error_detail = result.get("error", "Invalid OTP")
-            if otp_data["attempts"] >= 3:
-                del otp_storage[phone]
-                error_detail += " Too many failed attempts. Please request a new OTP."
-            else:
-                error_detail += f" {3 - otp_data['attempts']} attempts remaining."
-            raise HTTPException(status_code=400, detail=error_detail)
-        
-        # Store user data from Telegram
-        telegram_user_data = result["user_data"]
+        # Check if this is development mode
+        if otp_data.get("development_mode", False):
+            # Development mode: Verify stored OTP
+            if request.otp_code != otp_data["otp"]:
+                otp_data["attempts"] += 1
+                error_detail = f"Invalid OTP. {3 - otp_data['attempts']} attempts remaining."
+                if otp_data["attempts"] >= 3:
+                    del otp_storage[phone]
+                    error_detail += " Too many failed attempts. Please request a new OTP."
+                raise HTTPException(status_code=400, detail=error_detail)
+            
+            # Generate development user data
+            telegram_user_data = {
+                "telegram_id": f"dev_{phone.replace('+', '')}",
+                "phone": phone,
+                "first_name": "Test",
+                "last_name": "User",
+                "username": f"testuser_{phone.replace('+', '')}"
+            }
+        else:
+            # Production mode: Verify OTP via Telegram API
+            if "phone_code_hash" not in otp_data:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Invalid verification session. Please request a new OTP."
+                )
+            
+            result = await verify_telegram_otp_production(phone, request.otp_code, otp_data["phone_code_hash"])
+            if not result["success"]:
+                otp_data["attempts"] += 1
+                error_detail = result.get("error", "Invalid OTP")
+                if otp_data["attempts"] >= 3:
+                    del otp_storage[phone]
+                    error_detail += " Too many failed attempts. Please request a new OTP."
+                else:
+                    error_detail += f" {3 - otp_data['attempts']} attempts remaining."
+                raise HTTPException(status_code=400, detail=error_detail)
+            
+            # Store user data from Telegram
+            telegram_user_data = result["user_data"]
         
         # OTP is valid, clean up
         del otp_storage[phone]

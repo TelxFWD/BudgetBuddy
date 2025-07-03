@@ -81,7 +81,7 @@ app.add_middleware(
 )
 
 # Import and register API routers
-from api import auth, forwarding_simple, analytics, admin, payments, realtime, telegram_auth, accounts, plan_validation, telegram_test, telegram
+from api import auth, forwarding_simple, analytics, admin, payments, realtime, telegram_auth, accounts, plan_validation, telegram_test, telegram_fixed
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(forwarding_simple.router, prefix="/api")
@@ -90,7 +90,7 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(payments.router, prefix="/api")
 app.include_router(realtime.router, prefix="/api")
 app.include_router(telegram_auth.router, prefix="/api")
-app.include_router(telegram.router)  # No prefix since it already has /api/telegram
+app.include_router(telegram_fixed.router, prefix="/api/telegram")  # Use the fixed telegram endpoints
 app.include_router(accounts.router, prefix="/api")
 app.include_router(plan_validation.router, prefix="/api")
 app.include_router(telegram_test.router)
