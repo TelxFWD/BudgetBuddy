@@ -38,6 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const token = localStorage.getItem('access_token')
     if (token) {
+      // Set axios header for authentication
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`
+      
       // Verify token and get user info
       axiosInstance.get('/auth/me')
         .then(response => {
@@ -46,6 +49,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .catch(() => {
           localStorage.removeItem('access_token')
           localStorage.removeItem('refresh_token')
+          delete axiosInstance.defaults.headers.common['Authorization']
         })
         .finally(() => {
           setIsLoading(false)
@@ -69,8 +73,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await axiosInstance.post('/telegram/verify-otp', { phone, otp })
       const { access_token, refresh_token, user: userData } = response.data
       
+      // Store tokens in localStorage
       localStorage.setItem('access_token', access_token)
       localStorage.setItem('refresh_token', refresh_token)
+      
+      // Update axios default headers immediately
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
+      
+      // Set user data
       setUser(userData)
     } catch (error) {
       throw new Error('Invalid OTP')
@@ -82,6 +92,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
+    delete axiosInstance.defaults.headers.common['Authorization']
     setUser(null)
   }
 
