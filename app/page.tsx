@@ -18,6 +18,7 @@ export default function LoginPage() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [otpCode, setOtpCode] = useState('')
   const [countdown, setCountdown] = useState(0)
+  const [demoOtp, setDemoOtp] = useState<string | null>(null)
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -46,7 +47,8 @@ export default function LoginPage() {
     dispatch(setError(null))
 
     try {
-      await authService.sendOTP({ phone_number: phoneNumber })
+      const response = await authService.sendOTP({ phone_number: phoneNumber })
+      setDemoOtp(response.demo_otp || null)
       setStep('otp')
       setCountdown(60)
     } catch (error: any) {
@@ -86,7 +88,8 @@ export default function LoginPage() {
 
     dispatch(setLoading(true))
     try {
-      await authService.sendOTP({ phone_number: phoneNumber })
+      const response = await authService.sendOTP({ phone_number: phoneNumber })
+      setDemoOtp(response.demo_otp || null)
       setCountdown(60)
     } catch (error: any) {
       dispatch(setError(error.response?.data?.detail || 'Failed to resend OTP'))
@@ -177,6 +180,27 @@ export default function LoginPage() {
                   Enter the 6-digit code sent to {phoneNumber}
                 </p>
               </div>
+
+              {demoOtp && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="bg-green-500/20 border border-green-500/50 rounded-xl p-4 text-center"
+                >
+                  <p className="text-green-400 text-sm font-medium mb-2">📱 Demo OTP Code</p>
+                  <div 
+                    className="bg-green-500/10 rounded-lg p-3 cursor-pointer hover:bg-green-500/20 transition-colors"
+                    onClick={() => setOtpCode(demoOtp)}
+                  >
+                    <code className="text-green-300 text-2xl font-mono font-bold tracking-widest">
+                      {demoOtp}
+                    </code>
+                  </div>
+                  <p className="text-green-400/80 text-xs mt-2">
+                    Click on the code above to auto-fill, or copy and paste manually
+                  </p>
+                </motion.div>
+              )}
 
               <div className="relative">
                 <input
