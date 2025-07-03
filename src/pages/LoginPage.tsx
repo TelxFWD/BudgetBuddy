@@ -8,9 +8,7 @@ const LoginPage: React.FC = () => {
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [demoOtp, setDemoOtp] = useState<string | null>(null)
-
-  const { login, verifyOTP, demoLogin } = useAuth()
+  const { login, verifyOTP } = useAuth()
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -42,19 +40,7 @@ const LoginPage: React.FC = () => {
     }
   }
 
-  const handleDemoLogin = async () => {
-    setLoading(true)
-    setError('')
 
-    try {
-      await demoLogin()
-      // Navigation will be handled by AuthContext
-    } catch (err) {
-      setError('Demo login failed. Please try again.')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/\D/g, '')
@@ -151,6 +137,7 @@ const LoginPage: React.FC = () => {
                 <p className="mt-2 text-xs text-gray-400">
                   Check your Telegram for the verification code sent to {formatPhoneNumber(phone)}
                 </p>
+
               </div>
 
               {error && (
@@ -183,16 +170,7 @@ const LoginPage: React.FC = () => {
           )}
         </div>
 
-        {/* Demo Login for Testing */}
-        <div className="text-center">
-          <button
-            onClick={handleDemoLogin}
-            disabled={loading}
-            className="w-full py-2 px-4 border border-yellow-600 rounded-xl text-sm font-medium text-yellow-400 bg-yellow-600/10 hover:bg-yellow-600/20 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 mb-4"
-          >
-            {loading ? 'Connecting...' : '🚀 Demo Login (Testing)'}
-          </button>
-        </div>
+
 
         {/* Footer */}
         <div className="text-center">

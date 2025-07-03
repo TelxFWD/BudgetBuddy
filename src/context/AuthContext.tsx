@@ -16,7 +16,6 @@ interface AuthContextType {
   isLoading: boolean
   login: (phone: string) => Promise<void>
   verifyOTP: (phone: string, otp: string) => Promise<void>
-  demoLogin: () => Promise<void>
   logout: () => void
 }
 
@@ -52,20 +51,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsLoading(false)
         })
     } else {
-      // Auto-login for development testing
-      if (process.env.NODE_ENV === 'development' && !localStorage.getItem('skip_auto_login')) {
-        demoLogin().catch(() => {
-          setIsLoading(false)
-        })
-      } else {
-        setIsLoading(false)
-      }
+      setIsLoading(false)
     }
   }, [])
 
   const login = async (phone: string) => {
     try {
-      await axiosInstance.post('/telegram/send-otp', { phone })
+      const response = await axiosInstance.post('/telegram/send-otp', { phone })
+      return response.data
     } catch (error) {
       throw new Error('Failed to send OTP')
     }
@@ -84,21 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  const demoLogin = async () => {
-    try {
-      const response = await axiosInstance.post('/auth/demo-login')
-      const { access_token, refresh_token } = response.data
-      
-      localStorage.setItem('access_token', access_token)
-      localStorage.setItem('refresh_token', refresh_token)
-      
-      // Get user info
-      const userResponse = await axiosInstance.get('/auth/me')
-      setUser(userResponse.data)
-    } catch (error) {
-      throw new Error('Demo login failed')
-    }
-  }
+
 
   const logout = () => {
     localStorage.removeItem('access_token')
@@ -113,7 +92,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       isLoading,
       login,
       verifyOTP,
-      demoLogin,
       logout
     }}>
       {children}
