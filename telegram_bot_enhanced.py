@@ -195,59 +195,12 @@ class AutoForwardXBot:
         
         keyboard = [
             [InlineKeyboardButton("📱 Phone Number", callback_data="auth_phone")],
-            [InlineKeyboardButton("🔑 Demo Login", callback_data="auth_demo")],
             [InlineKeyboardButton("ℹ️ Learn More", callback_data="auth_info")],
             [InlineKeyboardButton("🔙 Back to Menu", callback_data="main_menu")]
         ]
         
         await query.edit_message_text(
             auth_text,
-            parse_mode=ParseMode.MARKDOWN,
-            reply_markup=InlineKeyboardMarkup(keyboard)
-        )
-    
-    async def _handle_demo_login(self, query, user_id: int):
-        """Handle demo login with progress indicator."""
-        progress_steps = [
-            "🔄 Connecting to server...",
-            "🔐 Authenticating credentials...",
-            "📱 Setting up session...",
-            "✅ Login successful!"
-        ]
-        
-        for i, step in enumerate(progress_steps):
-            await query.edit_message_text(
-                f"*Demo Authentication*\n\n{step}",
-                parse_mode=ParseMode.MARKDOWN
-            )
-            await asyncio.sleep(0.8)
-        
-        # Update user session
-        self.user_sessions[user_id] = {
-            'authenticated': True,
-            'current_account': '@demo_user',
-            'plan': 'pro',
-            'login_time': datetime.utcnow().isoformat()
-        }
-        
-        success_text = "🎉 *Welcome to AutoForwardX!*\n\n"
-        success_text += "✅ Successfully authenticated\n"
-        success_text += "📱 Account: @demo_user\n"
-        success_text += "💎 Plan: Pro (Demo)\n\n"
-        success_text += "*You can now:*\n"
-        success_text += "• Create forwarding pairs\n"
-        success_text += "• Manage multiple accounts\n"
-        success_text += "• Access analytics dashboard\n\n"
-        success_text += "Ready to get started?"
-        
-        keyboard = [
-            [InlineKeyboardButton("➕ Create First Pair", callback_data="pair_add")],
-            [InlineKeyboardButton("👤 Manage Accounts", callback_data="accounts_list")],
-            [InlineKeyboardButton("🏠 Main Menu", callback_data="main_menu")]
-        ]
-        
-        await query.edit_message_text(
-            success_text,
             parse_mode=ParseMode.MARKDOWN,
             reply_markup=InlineKeyboardMarkup(keyboard)
         )
@@ -630,8 +583,7 @@ class AutoForwardXBot:
             # Authentication flows
             elif data == "auth_login":
                 await self._handle_authentication(query, user_id)
-            elif data == "auth_demo":
-                await self._handle_demo_login(query, user_id)
+
             elif data == "auth_phone":
                 await self._handle_phone_auth(query, user_id)
             elif data == "auth_info":

@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from database.db import get_db
 from database.models import User, TelegramAccount
-from api.auth import create_access_token, create_refresh_token, hash_password
+from api.auth import create_access_token, create_refresh_token, hash_password, get_current_user
 from utils.logger import get_logger
 
 logger = get_logger(__name__)
@@ -228,19 +228,19 @@ async def get_linked_accounts(
 
 @router.get("/me")
 async def get_current_user_telegram(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     Get current user information for Telegram bot.
     """
     try:
-        # Simplified user info for bot
         return {
             "success": True,
-            "id": 1,
-            "username": "demo_user",
-            "plan": "free",
-            "plan_expiry": None
+            "id": current_user.id,
+            "username": current_user.username,
+            "plan": current_user.plan,
+            "plan_expiry": current_user.plan_expiry
         }
     except Exception as e:
         logger.error(f"Error getting user info: {e}")

@@ -174,36 +174,6 @@ async def login(user_data: UserLogin, db: Session = Depends(get_db)):
         expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60
     )
 
-@router.post("/demo-login", response_model=TokenResponse)
-async def demo_login(db: Session = Depends(get_db)):
-    """Demo login for testing - creates or uses existing test user."""
-    # Find or create demo user
-    demo_user = db.query(User).filter(User.username == "demo_user").first()
-    
-    if not demo_user:
-        demo_user = User(
-            username="demo_user",
-            email="demo@test.com",
-            password_hash=hash_password("demo123"),
-            plan="pro",  # Give demo user pro access
-            status="active"
-        )
-        db.add(demo_user)
-        db.commit()
-        db.refresh(demo_user)
-    
-    # Create tokens
-    access_token = create_access_token(data={"sub": str(demo_user.id)})
-    refresh_token = create_refresh_token(data={"sub": str(demo_user.id)})
-    
-    logger.info(f"Demo user logged in: {demo_user.username}")
-    
-    return TokenResponse(
-        access_token=access_token,
-        refresh_token=refresh_token,
-        expires_in=ACCESS_TOKEN_EXPIRE_MINUTES * 60
-    )
-
 @router.post("/refresh", response_model=TokenResponse)
 async def refresh_token(refresh_token: str, db: Session = Depends(get_db)):
     """Refresh access token using refresh token."""

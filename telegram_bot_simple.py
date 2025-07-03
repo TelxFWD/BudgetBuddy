@@ -56,12 +56,12 @@ Hello {user.first_name}! I help you manage message forwarding between Telegram a
 
 📋 **Available Commands:**
 /help - Show detailed help
-/login - Connect your account (Demo)
+/login - Authentication information
 /status - Check system status
 /health - Check backend health
 
 🔐 **Get Started:**
-This is a demonstration bot showing the AutoForwardX system capabilities.
+Contact system administrator for authentication and access to AutoForwardX features.
         """
         
         await update.message.reply_text(welcome_text, parse_mode='Markdown')
@@ -72,13 +72,13 @@ This is a demonstration bot showing the AutoForwardX system capabilities.
 📚 **AutoForwardX Bot Help**
 
 🔐 **Authentication:**
-/login - Demo login process
+/login - Authentication information
 /status - Check your connection status
 
 🔧 **System:**
 /health - Check backend server health
 
-📊 **Features Available in Full Version:**
+📊 **Available Features:**
 • Multi-platform forwarding (Telegram ↔ Discord)
 • Custom delay settings
 • Bulk operations
@@ -86,8 +86,7 @@ This is a demonstration bot showing the AutoForwardX system capabilities.
 • Subscription management
 • API key management
 
-💡 **This is a Demo Bot**
-The full production bot includes:
+🚀 **Production Features:**
 • Phone number authentication
 • Account management
 • Forwarding pair creation
@@ -98,38 +97,24 @@ The full production bot includes:
         await update.message.reply_text(help_text, parse_mode='Markdown')
     
     async def login_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle /login command - demo version."""
-        user_id = update.effective_user.id
-        
-        keyboard = [
-            [InlineKeyboardButton("📱 Demo Login", callback_data="demo_login")],
-            [InlineKeyboardButton("ℹ️ About Authentication", callback_data="about_auth")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
+        """Handle /login command - production version."""
         await update.message.reply_text(
-            "🔐 **Authentication Demo**\n\n"
-            "In the production version, you would:\n"
-            "• Share your phone number\n"
-            "• Receive an OTP code\n"
-            "• Connect your Telegram/Discord accounts\n\n"
-            "Try the demo below:",
-            parse_mode='Markdown',
-            reply_markup=reply_markup
+            "🔐 **Authentication Required**\n\n"
+            "To use AutoForwardX, you need to authenticate with:\n"
+            "• Your phone number\n"
+            "• OTP verification code\n"
+            "• Account linking\n\n"
+            "Please contact the system administrator to set up authentication.",
+            parse_mode='Markdown'
         )
     
     async def status_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle /status command."""
         user_id = update.effective_user.id
         
-        if user_id in self.user_sessions:
-            status_text = "✅ **Connected to AutoForwardX**\n\n"
-            status_text += f"User ID: {user_id}\n"
-            status_text += f"Session: Demo Active\n"
-            status_text += f"Plan: Free Demo\n"
-        else:
-            status_text = "❌ **Not Connected**\n\n"
-            status_text += "Use /login to connect your account."
+        status_text = "❌ **Not Connected**\n\n"
+        status_text += "Authentication required to access AutoForwardX.\n"
+        status_text += "Contact system administrator for access."
         
         await update.message.reply_text(status_text, parse_mode='Markdown')
     
@@ -184,28 +169,7 @@ The full production bot includes:
         data = query.data
         user_id = update.effective_user.id
         
-        if data == "demo_login":
-            # Simulate successful login
-            self.user_sessions[user_id] = {
-                'authenticated': True,
-                'demo_mode': True,
-                'login_time': datetime.utcnow().isoformat()
-            }
-            
-            await query.edit_message_text(
-                "✅ **Demo Login Successful!**\n\n"
-                "You're now connected to AutoForwardX in demo mode.\n\n"
-                "📋 **Next Steps:**\n"
-                "• Use /status to check connection\n"
-                "• Use /health to check backend\n"
-                "• Use /help for more information\n\n"
-                "🔧 **In Production:**\n"
-                "You would now be able to create forwarding pairs, "
-                "manage accounts, and configure real-time message forwarding.",
-                parse_mode='Markdown'
-            )
-        
-        elif data == "about_auth":
+        if data == "about_auth":
             await query.edit_message_text(
                 "🔐 **About Authentication**\n\n"
                 "**Production Authentication Flow:**\n"
@@ -219,9 +183,9 @@ The full production bot includes:
                 "• Session persistence\n"
                 "• Multi-account support\n"
                 "• Secure API integration\n\n"
-                "**Demo Mode:**\n"
-                "This bot demonstrates the interface without requiring "
-                "real authentication or external integrations.",
+                "**Production System:**\n"
+                "This system requires proper authentication credentials "
+                "and backend integration for full functionality.",
                 parse_mode='Markdown'
             )
         
@@ -234,7 +198,7 @@ The full production bot includes:
         commands = [
             BotCommand("start", "Start the bot"),
             BotCommand("help", "Show help menu"),
-            BotCommand("login", "Demo login process"),
+            BotCommand("login", "Authentication information"),
             BotCommand("status", "Check connection status"),
             BotCommand("health", "Check backend health")
         ]
@@ -250,7 +214,7 @@ The full production bot includes:
 async def main():
     """Main function to start the bot."""
     # Get configuration from environment
-    bot_token = os.getenv('TELEGRAM_BOT_TOKEN', 'DEMO_TOKEN')
+    bot_token = os.getenv('TELEGRAM_BOT_TOKEN', 'REQUIRED_TOKEN')
     backend_url = os.getenv('BACKEND_URL', 'http://localhost:8000')
     
     if not TELEGRAM_AVAILABLE:
