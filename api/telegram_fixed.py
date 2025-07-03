@@ -60,43 +60,34 @@ async def send_otp(
         phone = clean_phone_number(request.phone)
         logger.info(f"Sending OTP to phone: {phone}")
         
-        # Check if we should use development fallback for testing
-        development_mode = os.getenv("ENVIRONMENT", "production").lower() == "development"
+        # Production mode: Use real Telegram API for all OTP requests
+        logger.info(f"🚀 Production mode: Sending real OTP via Telegram to {phone}")
         
-        if development_mode:
-            # Development fallback - generate a test OTP for immediate testing
-            logger.warning(f"🚧 Development mode: Using fallback OTP for {phone}")
-            test_otp = "12345"  # Fixed OTP for development testing
-            
-            # Store test OTP for development verification
-            otp_storage[phone] = {
-                "otp": test_otp,
-                "expires_at": datetime.now() + timedelta(minutes=5),
-                "attempts": 0,
-                "development_mode": True
-            }
-            
-            return TelegramAuthResponse(
-                success=True,
-                message=f"Development mode: Use OTP {test_otp} to verify"
+        # Import Telegram OTP function from the main API
+        from api.telegram import send_telegram_otp_production
+        
+        # Send real OTP via Telegram
+        result = await send_telegram_otp_production(phone)
+        
+        if not result["success"]:
+            logger.error(f"Failed to send OTP via Telegram: {result.get('error')}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Failed to send OTP: {result.get('error', 'Unknown error')}"
             )
-        else:
-            # Production mode would use Telegram API here
-            # For now, using development mode since Telegram API has issues
-            logger.warning(f"🚧 Production mode disabled, using development fallback for {phone}")
-            test_otp = "12345"
-            
-            otp_storage[phone] = {
-                "otp": test_otp,
-                "expires_at": datetime.now() + timedelta(minutes=5),
-                "attempts": 0,
-                "development_mode": True
-            }
-            
-            return TelegramAuthResponse(
-                success=True,
-                message=f"Development mode: Use OTP {test_otp} to verify"
-            )
+        
+        # Store phone_code_hash for verification
+        otp_storage[phone] = {
+            "phone_code_hash": result["phone_code_hash"],
+            "expires_at": datetime.now() + timedelta(minutes=5),
+            "attempts": 0,
+            "production_mode": True
+        }
+        
+        return TelegramAuthResponse(
+            success=True,
+            message=f"OTP sent to {phone} via Telegram. Check your messages."
+        )
         
     except Exception as e:
         logger.error(f"Failed to send OTP: {e}")
@@ -140,14 +131,25 @@ async def verify_otp(
                 detail="Too many failed attempts. Please request a new OTP."
             )
         
-        # Verify OTP
-        if request.otp != otp_data["otp"]:
+        # Production mode: Verify with Telegram API
+        from api.telegram import verify_telegram_otp_production
+        
+        verification_result = await verify_telegram_otp_production(
+            phone, 
+            request.otp, 
+            otp_data["phone_code_hash"]
+        )
+        
+        if not verification_result["success"]:
             otp_data["attempts"] += 1
             error_detail = f"Invalid OTP. {3 - otp_data['attempts']} attempts remaining."
             if otp_data["attempts"] >= 3:
                 del otp_storage[phone]
                 error_detail += " Too many failed attempts. Please request a new OTP."
             raise HTTPException(status_code=400, detail=error_detail)
+            
+        # Extract Telegram user data from verification
+        telegram_user_data = verification_result["user_data"]
         
         # OTP is valid, clean up
         del otp_storage[phone]
