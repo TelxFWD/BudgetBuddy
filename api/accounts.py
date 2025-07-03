@@ -67,15 +67,15 @@ async def get_telegram_accounts(
         
         result = []
         for account in accounts:
-            # Simple status logic
-            status = "connected" if account.is_active else "disconnected"
-            sessions = 1 if account.is_active else 0
-            last_active = "Recently active" if account.is_active else "Inactive"
+            # Simple status logic based on account status
+            status = "connected" if account.status == "active" else "disconnected"
+            sessions = 1 if account.status == "active" else 0
+            last_active = "Recently active" if account.status == "active" else "Inactive"
             
             result.append(TelegramAccountResponse(
                 id=account.id,
-                phone=account.phone,
-                username=account.username,
+                phone=account.phone_number,
+                username=account.telegram_user_id or f"User{account.id}",
                 status=status,
                 sessions=sessions,
                 lastActive=last_active
@@ -138,7 +138,7 @@ async def initiate_telegram_session(
         
         # Check if phone already exists
         existing = db.query(TelegramAccount).filter_by(
-            phone=request.phone,
+            phone_number=request.phone,
             user_id=current_user.id
         ).first()
         
@@ -149,12 +149,10 @@ async def initiate_telegram_session(
         try:
             new_account = TelegramAccount(
                 user_id=current_user.id,
-                phone=request.phone,
-                username=f"@user_{current_user.id}",
-                api_id="demo_api_id",
-                api_hash="demo_api_hash", 
-                session_string="demo_session",
-                is_active=True
+                phone_number=request.phone,
+                telegram_user_id=f"demo_user_{current_user.id}",
+                session_data="demo_session_data",
+                status="pending_verification"
             )
             
             db.add(new_account)
