@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { ArrowRightLeft, Phone, Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 
 const LoginPage: React.FC = () => {
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
@@ -9,6 +10,7 @@ const LoginPage: React.FC = () => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const { login, verifyOTP } = useAuth()
+  const navigate = useNavigate()
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,7 +34,8 @@ const LoginPage: React.FC = () => {
 
     try {
       await verifyOTP(phone, otp)
-      // Navigation will be handled by AuthContext
+      // Redirect to dashboard on successful authentication
+      navigate('/dashboard')
     } catch (err) {
       setError('Invalid OTP. Please try again.')
     } finally {

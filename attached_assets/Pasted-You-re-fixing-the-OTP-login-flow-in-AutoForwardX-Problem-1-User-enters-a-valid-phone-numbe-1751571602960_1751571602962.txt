@@ -1,0 +1,113 @@
+You're fixing the OTP login flow in AutoForwardX.
+
+🧩 Problem:
+1. User enters a valid phone number.
+2. OTP is received and entered correctly.
+3. When they click **Submit**, they are redirected **back to the login page** — not the dashboard.
+
+---
+
+## ✅ Goal:
+- When OTP is correct, user should be:
+  - Authenticated
+  - Issued a JWT
+  - Persisted in context/localStorage
+  - Redirected to `/dashboard`
+
+---
+
+## ✅ Fix in React (Frontend)
+
+### Step 1: Verify OTP Response
+
+Ensure the response from `/api/telegram/verify-otp` contains:
+
+```json
+{
+  "access_token": "<JWT_TOKEN>",
+  "token_type": "bearer"
+}
+Step 2: Store JWT in localStorage
+After axios.post('/verify-otp', { phone, code }), do:
+
+tsx
+Copy
+Edit
+const token = response.data.access_token;
+localStorage.setItem("token", token);
+setAuthToken(token); // If axiosInstance uses auth header
+setUserFromToken(token); // Optional: decode and set user context
+navigate("/dashboard");
+✅ Step 3: Check AuthContext.tsx
+In useAuth() or AuthContext.tsx, confirm the logic:
+
+tsx
+Copy
+Edit
+const token = localStorage.getItem("token");
+if (token) {
+  axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+  // decode JWT, set user state
+}
+✅ If you're using RequireAuth route guard:
+
+It should read AuthContext.user or token
+
+If token is missing or invalid, it redirects to /login
+
+✅ Step 4: Backend Verification
+Ensure the backend /verify-otp route:
+
+Issues a valid JWT via create_access_token(phone)
+
+Returns correct response
+
+Example:
+
+python
+Copy
+Edit
+return {
+  "access_token": token,
+  "token_type": "bearer"
+}
+✅ No redirect should happen from backend — only token response.
+
+🔎 Step 5: Debug Common Frontend Errors
+❌ navigate("/dashboard") is missing
+
+❌ JWT not stored in localStorage
+
+❌ AuthContext not updated
+
+❌ RequireAuth reads null → assumes user not logged in
+
+✅ Final Flow Summary
+User enters phone
+
+OTP is received
+
+On submit:
+
+POST /verify-otp
+
+Response contains token
+
+Store token → set context → redirect to /dashboard
+
+Dashboard reads token from context or localStorage
+
+🧪 Test Checklist
+ OTP form accepts 5 digits
+
+ Submit triggers POST /verify-otp
+
+ JWT stored on success
+
+ AuthContext is set
+
+ No redirect to /login if token exists
+
+yaml
+Copy
+Edit
