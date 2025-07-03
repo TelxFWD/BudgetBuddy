@@ -216,7 +216,20 @@ async def send_otp(
 ):
     """Send OTP via Telegram for phone number verification."""
     try:
-        logger.info(f"Received OTP request for phone: {request.phone_number}")
+        logger.info(f"=== OTP REQUEST DEBUG ===")
+        logger.info(f"Raw request received: {request}")
+        logger.info(f"Request phone_number: '{request.phone_number}'")
+        logger.info(f"Phone number type: {type(request.phone_number)}")
+        logger.info(f"Phone number length: {len(request.phone_number) if request.phone_number else 0}")
+        logger.info(f"Request dict: {request.dict()}")
+        
+        # Validate that phone_number is provided
+        if not request.phone_number:
+            logger.error("Phone number is missing from request")
+            raise HTTPException(
+                status_code=422,
+                detail="Phone number is required"
+            )
         
         # Clean phone number
         phone = clean_phone_number(request.phone_number)
