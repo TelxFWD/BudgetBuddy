@@ -8,6 +8,7 @@ const LoginPage: React.FC = () => {
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [demoOtp, setDemoOtp] = useState<string | null>(null)
 
   const { login, verifyOTP, demoLogin } = useAuth()
 

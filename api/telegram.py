@@ -18,6 +18,8 @@ from database.db import get_db
 from database.models import User, TelegramAccount
 from api.auth import create_access_token, create_refresh_token, hash_password
 from utils.logger import get_logger
+from pyrogram import Client
+from pyrogram.errors import SessionPasswordNeeded, UserNotParticipant, PhoneNumberInvalid
 
 logger = get_logger(__name__)
 router = APIRouter(prefix="/api/telegram", tags=["Telegram Authentication"])
@@ -42,6 +44,42 @@ class TelegramAuthResponse(BaseModel):
 def generate_otp() -> str:
     """Generate a 6-digit OTP code."""
     return ''.join(random.choices(string.digits, k=6))
+
+async def send_telegram_otp(phone: str, otp_code: str) -> bool:
+    """
+    Send OTP via Telegram API using Pyrogram client.
+    Returns True if successful, False otherwise.
+    """
+    try:
+        api_id = os.getenv("TELEGRAM_API_ID")
+        api_hash = os.getenv("TELEGRAM_API_HASH")
+        
+        if not api_id or not api_hash:
+            logger.error("Telegram API credentials not configured")
+            return False
+        
+        # Create a temporary client for sending OTP
+        async with Client(
+            "otp_sender",
+            api_id=int(api_id),
+            api_hash=api_hash,
+            workdir="sessions/temp"
+        ) as client:
+            # Send code request to Telegram
+            try:
+                await client.send_code(phone)
+                logger.info(f"OTP sent successfully to {phone}")
+                return True
+            except PhoneNumberInvalid:
+                logger.error(f"Invalid phone number: {phone}")
+                return False
+            except Exception as e:
+                logger.error(f"Failed to send OTP via Telegram: {e}")
+                return False
+                
+    except Exception as e:
+        logger.error(f"Error initializing Telegram client for OTP: {e}")
+        return False
 
 def clean_phone_number(phone: str) -> str:
     """Clean and normalize phone number."""
@@ -78,17 +116,30 @@ async def send_otp(
             "attempts": 0
         }
         
-        # In a real implementation, you would send the OTP via Telegram API
-        # For demo purposes, we'll log it
-        logger.info(f"Generated OTP for {phone}: {otp_code}")
+        # Check if we should use production mode or demo mode
+        use_production = os.getenv("TELEGRAM_PRODUCTION_MODE", "false").lower() == "true"
         
-        # For demo/testing, return success
-        # In production, integrate with Telegram API to send actual OTP
-        return {
-            "success": True,
-            "message": f"OTP sent to {phone} via Telegram",
-            "demo_otp": otp_code  # Remove this in production
-        }
+        if use_production:
+            # Production mode: Send actual OTP via Telegram
+            success = await send_telegram_otp(phone, otp_code)
+            if not success:
+                raise HTTPException(
+                    status_code=500,
+                    detail="Failed to send OTP via Telegram. Please try again."
+                )
+            
+            return {
+                "success": True,
+                "message": f"OTP sent to {phone} via Telegram"
+            }
+        else:
+            # Demo mode: Return OTP in response for testing
+            logger.info(f"Generated OTP for {phone}: {otp_code}")
+            return {
+                "success": True,
+                "message": f"OTP sent to {phone} via Telegram",
+                "demo_otp": otp_code
+            }
         
     except Exception as e:
         logger.error(f"Failed to send OTP: {e}")
