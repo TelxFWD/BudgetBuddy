@@ -9,6 +9,7 @@ const LoginPage: React.FC = () => {
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [otpMessage, setOtpMessage] = useState('')
   const { login, verifyOTP } = useAuth()
   const navigate = useNavigate()
 
@@ -18,7 +19,8 @@ const LoginPage: React.FC = () => {
     setError('')
 
     try {
-      await login(phone)
+      const response = await login(phone)
+      setOtpMessage(response.message || 'OTP sent successfully')
       setStep('otp')
     } catch (err) {
       setError('Failed to send OTP. Please check your phone number.')
@@ -137,6 +139,11 @@ const LoginPage: React.FC = () => {
                     className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center text-lg tracking-widest"
                   />
                 </div>
+                {otpMessage && (
+                  <div className="mt-2 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                    <p className="text-indigo-400 text-sm">{otpMessage}</p>
+                  </div>
+                )}
                 <p className="mt-2 text-xs text-gray-400">
                   Check your Telegram for the verification code sent to {formatPhoneNumber(phone)}
                 </p>
