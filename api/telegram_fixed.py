@@ -11,6 +11,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+import json
+import redis
 
 from database.db import get_db
 from database.models import User, TelegramAccount
@@ -22,8 +24,35 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
-# In-memory storage for OTP (in production, use Redis)
-otp_storage: Dict[str, dict] = {}
+# Redis client for persistent OTP storage
+redis_client = redis.Redis(host='localhost', port=6379, db=1, decode_responses=True)
+
+def store_otp(phone: str, otp_data: Dict) -> None:
+    """Store OTP data in Redis with expiration."""
+    key = f"otp:{phone}"
+    redis_client.setex(key, 300, json.dumps(otp_data))  # 5 minutes expiry
+    logger.info(f"Stored OTP for {phone} in Redis")
+
+def get_otp(phone: str) -> Optional[Dict]:
+    """Get OTP data from Redis."""
+    try:
+        key = f"otp:{phone}"
+        data = redis_client.get(key)
+        if data:
+            otp_data = json.loads(data)
+            # Convert expires_at back to datetime for compatibility
+            if isinstance(otp_data.get("expires_at"), str):
+                otp_data["expires_at"] = datetime.fromisoformat(otp_data["expires_at"])
+            return otp_data
+        return None
+    except Exception as e:
+        logger.error(f"Error getting OTP from Redis: {e}")
+        return None
+
+def delete_otp(phone: str) -> None:
+    """Delete OTP data from Redis."""
+    key = f"otp:{phone}"
+    redis_client.delete(key)
 
 class SendOTPRequest(BaseModel):
     phone: str = Field(..., description="Phone number with country code")
@@ -73,12 +102,13 @@ async def send_otp(
             
             if result["success"]:
                 # Store phone_code_hash for verification
-                otp_storage[phone] = {
+                otp_data = {
                     "phone_code_hash": result["phone_code_hash"],
-                    "expires_at": datetime.now() + timedelta(minutes=5),
+                    "expires_at": datetime.now().isoformat(),
                     "attempts": 0,
                     "production_mode": True
                 }
+                store_otp(phone, otp_data)
                 
                 return TelegramAuthResponse(
                     success=True,
@@ -94,12 +124,16 @@ async def send_otp(
         demo_otp = "12345"  # Fixed demo OTP
         
         # Store demo OTP for verification
-        otp_storage[phone] = {
+        otp_data = {
             "otp": demo_otp,
-            "expires_at": datetime.now() + timedelta(minutes=5),
+            "expires_at": datetime.now().isoformat(),
             "attempts": 0,
             "demo_mode": True
         }
+        store_otp(phone, otp_data)
+        
+        logger.info(f"Stored OTP for {phone} in Redis: {demo_otp}")
+        logger.info(f"Redis OTP stored successfully")
         
         return TelegramAuthResponse(
             success=True,
@@ -122,15 +156,17 @@ async def verify_otp(
     try:
         phone = clean_phone_number(request.phone)
         logger.info(f"Verifying OTP for phone: {phone}")
+        logger.info(f"Getting OTP data from Redis")
+        logger.info(f"Received OTP: {request.otp}")
         
         # Check if OTP exists and is valid
-        if phone not in otp_storage:
+        otp_data = get_otp(phone)
+        if not otp_data:
+            logger.error(f"No OTP found for phone {phone} in Redis")
             raise HTTPException(
                 status_code=400,
                 detail="No OTP found for this phone number. Please request a new OTP."
             )
-        
-        otp_data = otp_storage[phone]
         
         # Check if OTP has expired
         if datetime.now() > otp_data["expires_at"]:
