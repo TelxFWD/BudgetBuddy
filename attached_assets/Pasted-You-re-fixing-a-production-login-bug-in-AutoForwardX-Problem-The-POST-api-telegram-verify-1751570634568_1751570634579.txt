@@ -1,0 +1,104 @@
+You're fixing a production login bug in AutoForwardX.
+
+🛑 Problem:
+The `POST /api/telegram/verify-otp` endpoint returns:
+422 Unprocessable Entity
+
+yaml
+Copy
+Edit
+
+This means the frontend is sending **incorrect JSON keys** or **missing fields** that don't match the Pydantic model in FastAPI.
+
+---
+
+## ✅ Your Goal:
+
+- Verify OTP sent by Telegram
+- Authenticate real users (not demo/dev/test)
+- Do NOT use development mode, test credentials, or fallback flows
+
+---
+
+## ✅ Step 1: Confirm Backend Expectation
+
+The FastAPI route `/verify-otp` expects a Pydantic model like:
+
+```python
+class OTPVerifyRequest(BaseModel):
+    phone: str
+    code: str
+So, the correct JSON payload should be:
+
+json
+Copy
+Edit
+{
+  "phone": "+919876543210",
+  "code": "12345"
+}
+✅ Step 2: Fix Frontend Axios Call
+In AuthContext.tsx or wherever the verify function is called, fix:
+
+tsx
+Copy
+Edit
+await axios.post("/api/telegram/verify-otp", {
+  phone: phoneNumber.trim(),
+  code: otpCode.trim()
+});
+✅ Do NOT use:
+
+FormData
+
+wrong keys like otp instead of code
+
+empty fields or undefined values
+
+✅ Step 3: Add Input Validation Before Submit
+Before calling the API, validate:
+
+tsx
+Copy
+Edit
+if (!phoneNumber || !otpCode) {
+  showToast("Phone and OTP are required");
+  return;
+}
+if (!/^\d{5}$/.test(otpCode)) {
+  showToast("Enter 5-digit OTP");
+  return;
+}
+✅ Step 4: Add Backend Logs for Debugging
+In /verify-otp route, log raw input:
+
+python
+Copy
+Edit
+logger.info(f"Verifying OTP: phone={req.phone}, code={req.code}")
+Add error catch:
+
+python
+Copy
+Edit
+except Exception as e:
+    logger.error(f"OTP verification failed: {e}")
+    raise HTTPException(400, detail="Invalid OTP or session expired")
+🧪 Checklist:
+ POST /api/telegram/verify-otp uses proper JSON keys
+
+ phone and code match Pydantic model
+
+ No empty, undefined, or null values
+
+ OTP length is 5 digits (not 6)
+
+ Server returns 200 OK with JWT token
+
+✅ Expected result:
+
+Real Telegram OTP verification works
+
+You get 200 OK with JWT
+
+User gets logged in to real dashboard (not demo/dev mode)

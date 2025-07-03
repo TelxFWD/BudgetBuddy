@@ -30,7 +30,7 @@ class SendOTPRequest(BaseModel):
 
 class VerifyOTPRequest(BaseModel):
     phone: str = Field(..., description="Phone number with country code")
-    otp_code: str = Field(..., description="5-digit OTP code")
+    otp: str = Field(..., description="5-digit OTP code")
 
 class TelegramAuthResponse(BaseModel):
     success: bool
@@ -141,7 +141,7 @@ async def verify_otp(
             )
         
         # Verify OTP
-        if request.otp_code != otp_data["otp"]:
+        if request.otp != otp_data["otp"]:
             otp_data["attempts"] += 1
             error_detail = f"Invalid OTP. {3 - otp_data['attempts']} attempts remaining."
             if otp_data["attempts"] >= 3:

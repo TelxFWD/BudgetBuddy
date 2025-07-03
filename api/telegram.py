@@ -32,7 +32,7 @@ class SendOTPRequest(BaseModel):
 
 class VerifyOTPRequest(BaseModel):
     phone: str = Field(..., description="Phone number with country code")
-    otp_code: str = Field(..., description="5-digit OTP code")
+    otp: str = Field(..., description="5-digit OTP code")
 
 class TelegramAuthResponse(BaseModel):
     success: bool
@@ -314,7 +314,7 @@ async def verify_otp(
 ):
     """Verify OTP and authenticate user."""
     try:
-        logger.info(f"OTP verification request - Phone: {request.phone}, OTP: {request.otp_code}")
+        logger.info(f"OTP verification request - Phone: {request.phone}, OTP: {request.otp}")
         
         # Clean phone number
         phone = clean_phone_number(request.phone)
@@ -352,7 +352,7 @@ async def verify_otp(
         # Check if this is development mode
         if otp_data.get("development_mode", False):
             # Development mode: Verify stored OTP
-            if request.otp_code != otp_data["otp"]:
+            if request.otp != otp_data["otp"]:
                 otp_data["attempts"] += 1
                 error_detail = f"Invalid OTP. {3 - otp_data['attempts']} attempts remaining."
                 if otp_data["attempts"] >= 3:
@@ -376,7 +376,7 @@ async def verify_otp(
                     detail="Invalid verification session. Please request a new OTP."
                 )
             
-            result = await verify_telegram_otp_production(phone, request.otp_code, otp_data["phone_code_hash"])
+            result = await verify_telegram_otp_production(phone, request.otp, otp_data["phone_code_hash"])
             if not result["success"]:
                 otp_data["attempts"] += 1
                 error_detail = result.get("error", "Invalid OTP")
