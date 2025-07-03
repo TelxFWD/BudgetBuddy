@@ -1,0 +1,153 @@
+You are testing the complete AutoForwardX system — built with FastAPI backend and React + Tailwind frontend.
+
+Your job is to go through **each core feature**, test it fully end-to-end (UI ↔ API ↔ DB ↔ Bot), identify broken logic, missing UI actions, incorrect plan restrictions, or backend failures — and fix them.
+
+---
+
+## ✅ 1. AUTHENTICATION
+
+- [ ] Test login with phone number
+- [ ] Test `/api/auth/me` returns correct plan
+- [ ] If JWT expires, test refresh and logout
+- [ ] Block dashboard access if token missing/invalid
+
+✅ Fix:
+- Add auth headers to Axios
+- Use `RequireAuth` wrapper in frontend routes
+
+---
+
+## ✅ 2. SESSION MANAGEMENT
+
+- [ ] Add Telegram session
+- [ ] Add Discord bot
+- [ ] Remove session
+- [ ] Reconnect session
+- [ ] Plan restriction: Free (1), Pro (2), Elite (3)
+
+✅ Fix:
+- Buttons not triggering API
+- Add error toasts on failure
+- Prevent session overflow via UI logic and API validation
+
+---
+
+## ✅ 3. FORWARDING PAIRS
+
+- [ ] Add pair (T → T / T → D / D → T)
+- [ ] Limit number of pairs based on plan:
+  - Free: 1 (T→T)
+  - Pro: 15 (T→T), 5 (T→D/D→T)
+  - Elite: Unlimited (T→T), 30 (T→D/D→T)
+
+- [ ] Delete / Pause / Resume pair
+
+✅ Fix:
+- AddPairModal: Form not submitting? Debug field state & submission
+- Recheck route: `/api/forwarding/pairs`
+- Ensure success toast and reload after add/delete
+
+---
+
+## ✅ 4. BLOCK MANAGER (Text & Image)
+
+- [ ] Add image blocking
+- [ ] Add text filter
+- [ ] Plan restriction: Elite only
+- [ ] Test if image blocking reflected during forwarding
+
+✅ Fix:
+- Page might not be connected to backend
+- Fix filter creation logic via `/filters/block`
+- Apply filtering during real forwarding
+
+---
+
+## ✅ 5. TEXT REPLACEMENT
+
+- [ ] Add “replace” rule: `@admin` → `@support`
+- [ ] Delete/Update rule
+- [ ] Check it's applied in forwarded message
+
+✅ Fix:
+- Endpoint `/filters/replace` not connected?
+- ReplaceRulesTable not rendering properly?
+- Validate regex handling in backend
+
+---
+
+## ✅ 6. COPY MODE
+
+- [ ] Toggle Copy Mode per pair (Elite only)
+- [ ] Message should forward clean (remove original formatting)
+
+✅ Fix:
+- PairCard toggle not working
+- Patch request missing
+- Add check in message transformer: `if pair.copy_mode: clean_content()`
+
+---
+
+## ✅ 7. MESSAGE FORMAT CONTROLS
+
+- [ ] Add/remove custom header/footer
+- [ ] Remove original header/footer
+- [ ] Save & reflect instantly in outgoing messages
+
+✅ Fix:
+- Missing modal or form
+- PATCH `/message-edit` not called
+- Backend not prepending/appending text
+
+---
+
+## ✅ 8. ANALYTICS
+
+- [ ] Graph loads (success/failure ratio)
+- [ ] PDF / CSV export
+- [ ] Access only for Pro / Elite
+
+✅ Fix:
+- `/api/analytics/volume` or `/stats` errors — check `MessageLog.success` and `ForwardingPair.is_active` in DB
+- PDF disabled for Pro — return `403` properly
+
+---
+
+## ✅ 9. PLAN CONTROL SYSTEM
+
+- [ ] Free plan cannot access Pro/Elite functions
+- [ ] Pro plan limited on pair/session/features
+- [ ] Elite full access
+- [ ] UI should hide or disable restricted buttons
+- [ ] API must enforce restriction
+
+✅ Fix:
+- Missing plan check in backend
+- UI allows clicks but no warning — add modal/toast
+
+---
+
+## ✅ 10. MISC FRONTEND ISSUES
+
+- [ ] Add/Remove Telegram account buttons work?
+- [ ] Sidebar buttons navigate correctly?
+- [ ] All modals open/close correctly?
+- [ ] Dashboard top margin / layout blank spacing?
+- [ ] WebSocket system status removed?
+
+✅ Fix:
+- Debug modal hooks (`useState`)
+- Fix missing `navigate()` or `Link` wrappers
+- Clean layout using `DashboardLayout.tsx` padding
+
+---
+
+## 🎯 Final Output
+
+Once test is complete:
+- Fix broken features
+- Log errors properly
+- Return updated UI, working features per plan
+- Add alerts, validation, toasts where missing
+
+You MUST test using demo user and real user JWT, for each tier (Free, Pro, Elite).
