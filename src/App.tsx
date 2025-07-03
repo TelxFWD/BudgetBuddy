@@ -5,6 +5,7 @@ import DashboardLayout from './layouts/DashboardLayout'
 import LoginPage from './pages/LoginPage'
 import DashboardHome from './pages/DashboardHome'
 import ForwardingPairs from './pages/ForwardingPairs'
+import MessageFormattingPage from './pages/MessageFormattingPage'
 import AccountsPage from './pages/AccountsPage'
 import SettingsPage from './pages/SettingsPage'
 import AnalyticsPage from './pages/AnalyticsPage'
@@ -42,6 +43,7 @@ const App: React.FC = () => {
       >
         <Route index element={<DashboardHome />} />
         <Route path="pairs" element={<ForwardingPairs />} />
+        <Route path="message-formatting" element={<MessageFormattingPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
         <Route path="block-manager" element={<BlockManager />} />

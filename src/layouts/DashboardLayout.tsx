@@ -12,7 +12,8 @@ import {
   Plus,
   Crown,
   CreditCard,
-  Filter
+  Filter,
+  Edit3
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
@@ -30,6 +31,7 @@ const DashboardLayout: React.FC = () => {
   const navigationItems = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
     { name: 'Add Pair', href: '/dashboard/pairs', icon: Plus },
+    { name: 'Message Formatting', href: '/dashboard/message-formatting', icon: Edit3 },
     { name: 'Account Manager', href: '/dashboard/accounts', icon: Users },
     { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
     { name: 'Block Manager', href: '/dashboard/block-manager', icon: Filter },
