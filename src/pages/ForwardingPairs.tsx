@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { Plus, Search, Play, Pause, Edit, Trash2, ArrowRight, MessageCircle, Clock, Crown } from 'lucide-react'
+import { Plus, Search, Play, Pause, Trash2, ArrowRight, MessageCircle, Crown, Settings } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { forwardingAPI } from '../api/endpoints'
 import AddPairModalSimple from '../components/AddPairModalSimple'
 import UpgradeModal from '../components/UpgradeModal'
+import { MessageFormatModal } from '../components/MessageFormatModal'
 import axiosInstance from '../api/axiosInstance'
 
 interface ForwardingPair {
@@ -18,6 +19,10 @@ interface ForwardingPair {
   created_at: string
   last_forwarded: string | null
   copy_mode?: boolean
+  custom_header?: string
+  custom_footer?: string
+  remove_header?: boolean
+  remove_footer?: boolean
 }
 
 const ForwardingPairs: React.FC = () => {
@@ -30,6 +35,8 @@ const ForwardingPairs: React.FC = () => {
   const [planInfo, setPlanInfo] = useState<any>(null)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [upgradeMessage, setUpgradeMessage] = useState('')
+  const [showMessageFormatModal, setShowMessageFormatModal] = useState(false)
+  const [selectedPairForFormatting, setSelectedPairForFormatting] = useState<ForwardingPair | null>(null)
 
   useEffect(() => {
     loadPairs()
@@ -95,6 +102,16 @@ const ForwardingPairs: React.FC = () => {
     } catch (error) {
       console.error(`Failed to ${action} pair:`, error)
     }
+  }
+
+  const handleOpenMessageFormat = (pair: ForwardingPair) => {
+    setSelectedPairForFormatting(pair)
+    setShowMessageFormatModal(true)
+  }
+
+  const handleMessageFormatClose = () => {
+    setShowMessageFormatModal(false)
+    setSelectedPairForFormatting(null)
   }
 
   const filteredPairs = pairs.filter(pair =>
@@ -223,6 +240,14 @@ const ForwardingPairs: React.FC = () => {
                     </div>
 
                     <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleOpenMessageFormat(pair)}
+                        className="p-2 text-indigo-400 hover:bg-gray-700 rounded-lg transition-colors"
+                        title="Message Formatting"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </button>
+                      
                       {pair.status === 'active' ? (
                         <button
                           onClick={() => handlePairAction(pair.id, 'pause')}
@@ -277,6 +302,19 @@ const ForwardingPairs: React.FC = () => {
         title="Plan Limit Reached"
         message={upgradeMessage}
         currentPlan={planInfo?.plan || 'Free'}
+      />
+
+      <MessageFormatModal
+        isOpen={showMessageFormatModal}
+        onClose={handleMessageFormatClose}
+        pairId={selectedPairForFormatting?.id || 0}
+        currentData={selectedPairForFormatting ? {
+          custom_header: selectedPairForFormatting.custom_header,
+          custom_footer: selectedPairForFormatting.custom_footer,
+          remove_header: selectedPairForFormatting.remove_header || false,
+          remove_footer: selectedPairForFormatting.remove_footer || false
+        } : undefined}
+        onUpdate={loadPairs}
       />
     </div>
   )

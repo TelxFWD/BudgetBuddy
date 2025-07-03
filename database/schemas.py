@@ -136,6 +136,11 @@ class ForwardingPairBase(BaseSchema):
     exclude_keywords: List[str] = []
     custom_prefix: Optional[str] = None
     custom_suffix: Optional[str] = None
+    # Message formatting controls (Pro/Elite only)
+    custom_header: Optional[str] = None
+    custom_footer: Optional[str] = None
+    remove_header: bool = False
+    remove_footer: bool = False
 
 class ForwardingPairCreate(ForwardingPairBase):
     user_id: int
@@ -163,6 +168,13 @@ class ForwardingPairUpdate(BaseSchema):
     exclude_keywords: Optional[List[str]] = None
     custom_prefix: Optional[str] = None
     custom_suffix: Optional[str] = None
+
+# Message formatting controls schema (Pro/Elite only)
+class MessageFormatRequest(BaseSchema):
+    custom_header: Optional[str] = None
+    custom_footer: Optional[str] = None
+    remove_header: bool = False
+    remove_footer: bool = False
 
 class ForwardingPair(ForwardingPairBase):
     id: int

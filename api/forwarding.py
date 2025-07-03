@@ -49,9 +49,20 @@ class ForwardingPairResponse(BaseModel):
     copy_mode: bool
     platform_type: str
     created_at: datetime
+    # Message formatting controls
+    custom_header: Optional[str] = None
+    custom_footer: Optional[str] = None
+    remove_header: bool = False
+    remove_footer: bool = False
     
     class Config:
         from_attributes = True
+
+class MessageFormatRequest(BaseModel):
+    custom_header: Optional[str] = None
+    custom_footer: Optional[str] = None
+    remove_header: bool = False
+    remove_footer: bool = False
 
 def validate_plan_limits(user: User, db: Session) -> dict:
     """Check user's plan limits for forwarding pairs."""
@@ -127,7 +138,11 @@ async def list_forwarding_pairs(
             silent_mode=pair.silent_mode,
             copy_mode=pair.copy_mode,
             platform_type=pair.platform_type,
-            created_at=pair.created_at
+            created_at=pair.created_at,
+            custom_header=pair.custom_header,
+            custom_footer=pair.custom_footer,
+            remove_header=pair.remove_header or False,
+            remove_footer=pair.remove_footer or False
         ))
     
     return result
@@ -327,7 +342,11 @@ async def update_forwarding_pair(
         silent_mode=pair.silent_mode,
         copy_mode=pair.copy_mode,
         platform_type=pair.platform_type,
-        created_at=pair.created_at
+        created_at=pair.created_at,
+        custom_header=pair.custom_header,
+        custom_footer=pair.custom_footer,
+        remove_header=pair.remove_header or False,
+        remove_footer=pair.remove_footer or False
     )
 
 @router.delete("/{pair_id}")
@@ -406,6 +425,71 @@ async def resume_forwarding_pair(
     logger.info(f"Forwarding pair resumed: {pair_id} by user {current_user.username}")
     
     return {"message": "Forwarding pair resumed"}
+
+@router.patch("/{pair_id}/message-edit")
+async def update_message_formatting(
+    pair_id: int,
+    format_request: MessageFormatRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Update message formatting controls for Pro/Elite users only."""
+    
+    # Check if user has Pro or Elite plan
+    if current_user.plan not in ["pro", "elite"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Upgrade to Pro or Elite to access message formatting controls"
+        )
+    
+    # Get the forwarding pair
+    pair = db.query(ForwardingPair).filter(
+        ForwardingPair.id == pair_id,
+        ForwardingPair.user_id == current_user.id
+    ).first()
+    
+    if not pair:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Forwarding pair not found"
+        )
+    
+    # Update message formatting settings
+    pair.custom_header = format_request.custom_header
+    pair.custom_footer = format_request.custom_footer
+    pair.remove_header = format_request.remove_header
+    pair.remove_footer = format_request.remove_footer
+    pair.updated_at = datetime.utcnow()
+    
+    db.commit()
+    
+    logger.info(f"Message formatting updated for pair {pair_id} by user {current_user.username}")
+    
+    # Return updated response
+    source_platform = "telegram" if pair.telegram_account_id else "discord"
+    source_account_id = pair.telegram_account_id or pair.discord_account_id
+    dest_platform = "discord" if source_platform == "telegram" else "telegram"
+    dest_account_id = source_account_id
+    
+    return ForwardingPairResponse(
+        id=pair.id,
+        source_platform=source_platform,
+        source_account_id=source_account_id,
+        source_chat_id=pair.source_channel,
+        destination_platform=dest_platform,
+        destination_account_id=dest_account_id,
+        destination_chat_id=pair.destination_channel,
+        delay_seconds=pair.delay,
+        is_active=pair.is_active,
+        silent_mode=pair.silent_mode,
+        copy_mode=pair.copy_mode,
+        platform_type=pair.platform_type,
+        created_at=pair.created_at,
+        custom_header=pair.custom_header,
+        custom_footer=pair.custom_footer,
+        remove_header=pair.remove_header or False,
+        remove_footer=pair.remove_footer or False
+    )
 
 @router.get("/limits")
 async def get_plan_limits(

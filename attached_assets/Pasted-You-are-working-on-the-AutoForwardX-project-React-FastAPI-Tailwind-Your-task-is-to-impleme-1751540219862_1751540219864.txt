@@ -1,0 +1,137 @@
+You are working on the AutoForwardX project (React + FastAPI + Tailwind).
+
+Your task is to implement complete support for message formatting controls, specifically:
+
+- ✅ Add Custom Header (prepend to message)
+- ✅ Add Custom Footer (append to message)
+- ✅ Remove Original Header
+- ✅ Remove Original Footer
+- 🔐 All these features should only be available for Pro & Elite users.
+
+---
+
+## 🧱 1. DATABASE MODEL
+
+In your `ForwardingPair` SQLAlchemy model, ensure these fields exist:
+
+```python
+custom_header = Column(String, nullable=True)
+custom_footer = Column(String, nullable=True)
+remove_header = Column(Boolean, default=False)
+remove_footer = Column(Boolean, default=False)
+If any are missing, add them and run Alembic:
+
+bash
+Copy
+Edit
+alembic revision --autogenerate -m "Add header/footer customization fields"
+alembic upgrade head
+🔌 2. BACKEND ENDPOINT
+Create or update:
+
+http
+Copy
+Edit
+PATCH /api/forwarding/pairs/{pair_id}/message-edit
+Example request:
+json
+Copy
+Edit
+{
+  "custom_header": "🔔 VIP SIGNAL",
+  "custom_footer": "✅ via FX Leaks",
+  "remove_header": true,
+  "remove_footer": true
+}
+Backend Logic:
+Fetch user and check:
+
+python
+Copy
+Edit
+if user.plan not in ["pro", "elite"]:
+    raise HTTPException(403, "Upgrade to Pro or Elite to access message formatting")
+Save values to DB
+
+Return updated ForwardingPair
+
+🔄 3. MESSAGE MODIFICATION LOGIC
+Inside your message forwarding pipeline (forwarder.py or message_transformer.py), inject logic:
+
+python
+Copy
+Edit
+if pair.remove_header:
+    message = remove_existing_header(message)
+
+if pair.remove_footer:
+    message = remove_existing_footer(message)
+
+if pair.custom_header:
+    message = f"{pair.custom_header}\n{message}"
+
+if pair.custom_footer:
+    message = f"{message}\n{pair.custom_footer}"
+✅ Create helper functions:
+
+python
+Copy
+Edit
+def remove_existing_header(text):
+    return "\n".join(text.split("\n")[1:])
+
+def remove_existing_footer(text):
+    return "\n".join(text.split("\n")[:-1])
+🎨 4. FRONTEND UI
+Add a section in each PairCard or create a MessageEditModal.tsx.
+
+Inside the form:
+Input: Custom Header
+
+Input: Custom Footer
+
+Toggle: Remove Original Header
+
+Toggle: Remove Original Footer
+
+Only show if user has Pro or Elite plan:
+
+tsx
+Copy
+Edit
+if (user.plan === 'free') return null;
+On Save → Call:
+
+tsx
+Copy
+Edit
+PATCH /api/forwarding/pairs/:id/message-edit
+Use Axios and display success/error toast.
+
+🔐 5. PLAN ACCESS CONTROL
+✅ Backend must reject Free plan users on message-edit route
+
+✅ Frontend must:
+
+Hide form section on Free plan
+
+Show “Upgrade Required” modal on blocked features
+
+🧪 6. TEST CASES
+Free user: form not visible, backend 403 if accessed
+
+Pro user: can save/remove headers/footers
+
+Elite user: same, no limits
+
+Message reflects injected/removal logic during live forwarding
+
+📌 Summary:
+
+Backend: /message-edit PATCH endpoint, add 4 fields in model
+
+Frontend: Inputs and toggles per pair, call backend
+
+Message engine: Prepend, append, remove logic
+
+Restrict to Pro/Elite plans only

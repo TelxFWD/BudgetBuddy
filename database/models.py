@@ -111,6 +111,12 @@ class ForwardingPair(Base):
     custom_prefix = Column(String(100), nullable=True)  # Custom message prefix
     custom_suffix = Column(String(100), nullable=True)  # Custom message suffix
     
+    # Message formatting controls (Pro/Elite only)
+    custom_header = Column(String(500), nullable=True)  # Custom header to prepend
+    custom_footer = Column(String(500), nullable=True)  # Custom footer to append
+    remove_header = Column(Boolean, default=False, nullable=False)  # Remove original header
+    remove_footer = Column(Boolean, default=False, nullable=False)  # Remove original footer
+    
     # Relationships
     user = relationship("User", back_populates="forwarding_pairs")
     telegram_account = relationship("TelegramAccount", foreign_keys=[telegram_account_id], back_populates="forwarding_pairs_source")
