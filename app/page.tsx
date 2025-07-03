@@ -177,7 +177,7 @@ export default function LoginPage() {
               <div>
                 <h2 className="text-xl font-semibold text-white mb-2">Verify OTP</h2>
                 <p className="text-dark-text-secondary text-sm">
-                  Enter the 6-digit code sent to {phoneNumber}
+                  Enter the 5-digit code sent to {phoneNumber}
                 </p>
               </div>
 
@@ -205,12 +205,12 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="000000"
+                  placeholder="00000"
                   value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
                   className="w-full px-4 py-3 bg-dark-bg border border-dark-border rounded-xl text-dark-text text-center text-2xl font-mono tracking-widest placeholder-dark-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                   disabled={isLoading}
-                  maxLength={6}
+                  maxLength={5}
                 />
               </div>
 
@@ -235,7 +235,7 @@ export default function LoginPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={isLoading || otpCode.length !== 6}
+                  disabled={isLoading || otpCode.length !== 5}
                   className="flex-2 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary disabled:opacity-50 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (

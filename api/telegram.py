@@ -28,11 +28,11 @@ router = APIRouter(prefix="/api/telegram", tags=["Telegram Authentication"])
 otp_storage: Dict[str, Dict] = {}
 
 class SendOTPRequest(BaseModel):
-    phone: str = Field(..., description="Phone number with country code")
+    phone_number: str = Field(..., description="Phone number with country code")
 
 class VerifyOTPRequest(BaseModel):
-    phone: str = Field(..., description="Phone number with country code")
-    otp: str = Field(..., description="6-digit OTP code")
+    phone_number: str = Field(..., description="Phone number with country code")
+    otp_code: str = Field(..., description="5-digit OTP code")
 
 class TelegramAuthResponse(BaseModel):
     success: bool
@@ -42,8 +42,8 @@ class TelegramAuthResponse(BaseModel):
     user: Optional[Dict] = None
 
 def generate_otp() -> str:
-    """Generate a 6-digit OTP code."""
-    return ''.join(random.choices(string.digits, k=6))
+    """Generate a 5-digit OTP code (matching Telegram's format)."""
+    return ''.join(random.choices(string.digits, k=5))
 
 async def send_telegram_otp_production(phone: str) -> dict:
     """
@@ -200,7 +200,7 @@ async def send_otp(
     """Send OTP via Telegram for phone number verification."""
     try:
         # Clean phone number
-        phone = clean_phone_number(request.phone)
+        phone = clean_phone_number(request.phone_number)
         logger.info(f"Sending OTP to phone: {phone}")
         
         # Generate OTP
@@ -259,20 +259,26 @@ async def verify_otp(
 ):
     """Verify OTP and authenticate user."""
     try:
+        logger.info(f"OTP verification request - Phone: {request.phone_number}, OTP: {request.otp_code}")
+        
         # Clean phone number
-        phone = clean_phone_number(request.phone)
+        phone = clean_phone_number(request.phone_number)
+        logger.info(f"Cleaned phone number: {phone}")
         
         # Check if OTP exists and is valid
         if phone not in otp_storage:
+            logger.error(f"No OTP found for phone: {phone}")
             raise HTTPException(
                 status_code=400,
                 detail="No OTP found for this phone number. Please request a new OTP."
             )
         
         otp_data = otp_storage[phone]
+        logger.info(f"OTP data found for {phone}: {otp_data}")
         
         # Check if OTP is expired
         if datetime.now() > otp_data["expires_at"]:
+            logger.error(f"OTP expired for phone: {phone}")
             del otp_storage[phone]
             raise HTTPException(
                 status_code=400,
@@ -281,6 +287,7 @@ async def verify_otp(
         
         # Check attempt limit
         if otp_data["attempts"] >= 3:
+            logger.error(f"Too many attempts for phone: {phone}")
             del otp_storage[phone]
             raise HTTPException(
                 status_code=400,
@@ -298,7 +305,7 @@ async def verify_otp(
                     detail="Invalid verification session. Please request a new OTP."
                 )
             
-            result = await verify_telegram_otp_production(phone, request.otp, otp_data["phone_code_hash"])
+            result = await verify_telegram_otp_production(phone, request.otp_code, otp_data["phone_code_hash"])
             if not result["success"]:
                 otp_data["attempts"] += 1
                 error_detail = result.get("error", "Invalid OTP")
@@ -314,7 +321,7 @@ async def verify_otp(
             
         else:
             # Demo mode: Verify stored OTP
-            if request.otp != otp_data["otp"]:
+            if request.otp_code != otp_data["otp"]:
                 otp_data["attempts"] += 1
                 raise HTTPException(
                     status_code=400,
