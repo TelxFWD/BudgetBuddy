@@ -216,9 +216,19 @@ async def send_otp(
 ):
     """Send OTP via Telegram for phone number verification."""
     try:
+        logger.info(f"Received OTP request for phone: {request.phone_number}")
+        
         # Clean phone number
         phone = clean_phone_number(request.phone_number)
-        logger.info(f"Sending OTP to phone: {phone}")
+        logger.info(f"Cleaned phone number: {phone}")
+        
+        # Validate phone number format
+        if not phone or len(phone) < 10:
+            logger.error(f"Invalid phone number format: {phone}")
+            raise HTTPException(
+                status_code=422,
+                detail="Invalid phone number format. Please provide a valid phone number with country code."
+            )
         
         # Generate OTP
         otp_code = generate_otp()

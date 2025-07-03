@@ -47,11 +47,15 @@ export default function LoginPage() {
     dispatch(setError(null))
 
     try {
+      console.log('Sending OTP request for phone:', phoneNumber)
       const response = await authService.sendOTP({ phone_number: phoneNumber })
+      console.log('OTP response:', response)
       setStep('otp')
       setCountdown(60)
     } catch (error: any) {
-      dispatch(setError(error.response?.data?.detail || 'Failed to send OTP'))
+      console.error('OTP error:', error)
+      console.error('Error response:', error.response?.data)
+      dispatch(setError(error.response?.data?.detail || error.message || 'Failed to send OTP'))
     } finally {
       dispatch(setLoading(false))
     }
