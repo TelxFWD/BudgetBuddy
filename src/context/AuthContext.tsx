@@ -74,7 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const verifyOTP = async (phone: string, otp_code: string) => {
     try {
-      const response = await axiosInstance.post('/api/telegram/verify-otp', { phone, otp_code })
+      const response = await axiosInstance.post('/api/telegram/verify-otp', { phone, otp: otp_code })
       const { access_token, refresh_token, user: userData } = response.data
       
       // Store tokens in localStorage

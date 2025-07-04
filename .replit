@@ -128,6 +128,15 @@ args = "python -c \"import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port
 task = "shell.exec"
 args = "npx vite --config vite.replit.config.ts --host 0.0.0.0 --port 5000"
 
+[[workflows.workflow]]
+name = "FastAPI Server Restart"
+author = 44603870
+mode = "sequential"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python -c \"import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)\""
+
 [[ports]]
 localPort = 3000
 externalPort = 3000
