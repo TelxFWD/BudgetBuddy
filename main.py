@@ -40,13 +40,9 @@ async def lifespan(app: FastAPI):
         logger.error(f"Failed to create database tables: {e}")
         raise
 
-    # Initialize session manager
-    try:
-        await session_manager.initialize()
-        logger.info("Session manager initialized")
-    except Exception as e:
-        logger.warning(f"Session manager initialization failed: {e}")
-        # Continue without session manager for now
+    # Skip session manager initialization during startup to avoid blocking
+    # Session manager will be initialized on demand when needed
+    logger.info("Session manager initialization skipped during startup")
 
     # Initialize queue manager
     try:

@@ -1,18 +1,27 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { ArrowRightLeft, Phone, Shield } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useNavigate } from 'react-router-dom'
 
 const LoginPage: React.FC = () => {
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
-  const [phone, setPhone] = useState('+917588993347') // Auto-fill test phone number
+  const [phone, setPhone] = useState('')
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [otpMessage, setOtpMessage] = useState('')
   const [otpSent, setOtpSent] = useState(false) // Track if OTP was sent
+  const [resendTimer, setResendTimer] = useState(0) // 60s resend timer
   const { login, verifyOTP } = useAuth()
   const navigate = useNavigate()
+
+  // Timer countdown for OTP resend
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000)
+      return () => clearTimeout(timer)
+    }
+  }, [resendTimer])
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -27,9 +36,10 @@ const LoginPage: React.FC = () => {
     setError('')
 
     try {
-      const response = await login(phone)
+      await login(phone)
       setOtpMessage(`Please enter the OTP received on Telegram for ${phone}`)
       setOtpSent(true)
+      setResendTimer(60) // Start 60 second countdown
       setStep('otp')
     } catch (err) {
       setError('Failed to send OTP. Please check your phone number.')
@@ -173,14 +183,19 @@ const LoginPage: React.FC = () => {
               <div className="flex space-x-3">
                 <button
                   type="button"
-                  onClick={() => setStep('phone')}
+                  onClick={() => {
+                    setStep('phone')
+                    setOtpSent(false)
+                    setResendTimer(0)
+                    setError('')
+                  }}
                   className="flex-1 py-3 px-4 border border-gray-600 rounded-xl text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                 >
-                  Back
+                  {resendTimer > 0 ? `Resend in ${resendTimer}s` : 'Back / Resend'}
                 </button>
                 <button
                   type="submit"
-                  disabled={loading || otp.length < 4}
+                  disabled={loading || otp.length < 5}
                   className="flex-1 flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   {loading ? (

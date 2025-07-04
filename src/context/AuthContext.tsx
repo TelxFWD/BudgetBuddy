@@ -62,7 +62,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (phone: string) => {
     try {
       const response = await axiosInstance.post('/api/telegram/send-otp', { phone })
-      return response.data
+      if (response.data.success) {
+        return response.data
+      } else {
+        throw new Error(response.data.message || 'Failed to send OTP')
+      }
     } catch (error: any) {
       console.error('Login error:', error)
       if (error.response?.data?.detail) {
@@ -75,17 +79,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const verifyOTP = async (phone: string, otp_code: string) => {
     try {
       const response = await axiosInstance.post('/api/telegram/verify-otp', { phone, otp: otp_code })
-      const { access_token, refresh_token, user: userData } = response.data
       
-      // Store tokens in localStorage
-      localStorage.setItem('access_token', access_token)
-      localStorage.setItem('refresh_token', refresh_token)
-      
-      // Update axios default headers immediately
-      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
-      
-      // Set user data
-      setUser(userData)
+      if (response.data.success && response.data.access_token) {
+        const { access_token, refresh_token, user: userData } = response.data
+        
+        // Store tokens in localStorage
+        localStorage.setItem('access_token', access_token)
+        localStorage.setItem('refresh_token', refresh_token)
+        
+        // Update axios default headers immediately
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${access_token}`
+        
+        // Set user data
+        setUser(userData)
+      } else {
+        throw new Error(response.data.message || 'Authentication failed')
+      }
     } catch (error: any) {
       console.error('OTP verification error:', error)
       if (error.response?.data?.detail) {
