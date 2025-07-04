@@ -81,7 +81,7 @@ app.add_middleware(
 )
 
 # Import and register API routers
-from api import auth, forwarding_simple, analytics, admin, payments, realtime, telegram_auth, accounts, plan_validation, telegram_test, telegram_auth_simple, telegram_otp_fixed
+from api import auth, forwarding_simple, analytics, admin, payments, realtime, telegram_auth, accounts, plan_validation, telegram_test, telegram_auth_simple, telegram_auth_fixed
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(forwarding_simple.router, prefix="/api")
@@ -89,7 +89,7 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(payments.router, prefix="/api")
 app.include_router(realtime.router, prefix="/api")
-app.include_router(telegram_otp_fixed.router)  # New Telethon-based OTP system (primary)
+app.include_router(telegram_auth_fixed.router)  # Fixed Telethon-based OTP system (primary)
 app.include_router(telegram_auth.router, prefix="/api")
 app.include_router(telegram_auth_simple.router, prefix="/api/telegram")  # Fallback endpoints
 app.include_router(accounts.router, prefix="/api")
