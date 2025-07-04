@@ -8,6 +8,7 @@ import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+import asyncio  # Import asyncio
 
 from database.db import engine, Base, get_db
 from utils.env_loader import load_environment
@@ -15,6 +16,7 @@ from utils.logger import setup_logger
 from services.session_manager import SessionManager
 from services.queue_manager import QueueManager
 from tasks.celery_config import celery_app
+from database.db import init_database # Import init_database
 
 # Load environment variables
 load_environment()
@@ -172,6 +174,33 @@ async def get_stats():
     except Exception as e:
         logger.error(f"Failed to get stats: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve system statistics")
+
+@app.on_event("startup")
+async def startup_event():
+    """Initialize application on startup."""
+    try:
+        logger.info("Starting FastAPI application")
+
+        # Initialize database
+        init_database()
+        logger.info("Database tables created successfully")
+
+        # Initialize Session Manager
+        logger.info("Initializing Session Manager")
+        from services.session_manager import SessionManager
+
+        # Start forwarding handlers in background
+        asyncio.create_task(session_manager.start_forwarding_handlers())
+        logger.info("Session manager initialized")
+
+        # Initialize Queue Manager
+        logger.info("Initializing Queue Manager")
+        queue_manager.initialize()
+        logger.info("Queue manager initialized")
+
+    except Exception as e:
+        logger.error(f"Failed to start application: {str(e)}")
+        raise e
 
 if __name__ == "__main__":
     # Run the application
