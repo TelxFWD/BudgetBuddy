@@ -1,384 +1,210 @@
-
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../api/axiosInstance';
-
-interface SendOTPResponse {
-  success: boolean;
-  message: string;
-  session_string?: string;
-  phone_code_hash?: string;
-}
-
-interface VerifyOTPResponse {
-  success: boolean;
-  message: string;
-  access_token?: string;
-  refresh_token?: string;
-  user?: any;
-}
+import React, { useState } from 'react'
+import { ArrowRightLeft, Phone, Shield } from 'lucide-react'
+import { useAuth } from '../context/AuthContext'
+import { useNavigate } from 'react-router-dom'
 
 const LoginPage: React.FC = () => {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  
-  // Step management
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  
-  // Form states
-  const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
-  
-  // Session data from send-otp
-  const [sessionString, setSessionString] = useState('');
-  const [phoneCodeHash, setPhoneCodeHash] = useState('');
-  
-  // UI states
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  
-  // Resend timer
-  const [resendTimer, setResendTimer] = useState(0);
-  const [canResend, setCanResend] = useState(true);
+  const [step, setStep] = useState<'phone' | 'otp'>('phone')
+  const [phone, setPhone] = useState('+917588993347') // Auto-fill test phone number
+  const [otp, setOtp] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+  const [otpMessage, setOtpMessage] = useState('')
+  const [otpSent, setOtpSent] = useState(false) // Track if OTP was sent
+  const { login, verifyOTP } = useAuth()
+  const navigate = useNavigate()
 
-  // Timer countdown effect
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (resendTimer > 0) {
-      timer = setTimeout(() => {
-        setResendTimer(resendTimer - 1);
-      }, 1000);
-    } else if (resendTimer === 0 && !canResend) {
-      setCanResend(true);
-    }
-    return () => clearTimeout(timer);
-  }, [resendTimer, canResend]);
-
-  // Clean phone number format
-  const cleanPhoneNumber = (phoneNumber: string): string => {
-    // Remove all non-digit characters except +
-    let cleaned = phoneNumber.replace(/[^\d+]/g, '');
-    
-    // If it doesn't start with +, add +
-    if (!cleaned.startsWith('+')) {
-      cleaned = '+' + cleaned;
-    }
-    
-    return cleaned;
-  };
-
-  // Validate phone number
-  const validatePhone = (phoneNumber: string): boolean => {
-    const cleaned = cleanPhoneNumber(phoneNumber);
-    // Basic validation: should be +countrycode followed by 10+ digits
-    const phoneRegex = /^\+\d{10,15}$/;
-    return phoneRegex.test(cleaned);
-  };
-
-  // Handle phone submission
   const handlePhoneSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!phone.trim()) {
-      setError('Please enter your phone number');
-      return;
+    e.preventDefault()
+
+    // Don't send OTP if already sent
+    if (otpSent) {
+      setStep('otp')
+      return
     }
 
-    const cleanedPhone = cleanPhoneNumber(phone);
-    
-    if (!validatePhone(cleanedPhone)) {
-      setError('Invalid phone number format. Please use +91xxxxxxxxxx format');
-      return;
-    }
-
-    setError('');
-    setSuccess('');
-    setIsLoading(true);
+    setLoading(true)
+    setError('')
 
     try {
-      const response = await axiosInstance.post<SendOTPResponse>('/api/telegram/send-otp', {
-        phone: cleanedPhone
-      });
-
-      if (response.data.success) {
-        // Store session data
-        setSessionString(response.data.session_string || '');
-        setPhoneCodeHash(response.data.phone_code_hash || '');
-        
-        // Move to OTP step
-        setStep('otp');
-        setSuccess('OTP sent successfully! Check your Telegram messages.');
-        
-        // Start resend timer
-        setResendTimer(60);
-        setCanResend(false);
-        
-        // Update phone to cleaned version
-        setPhone(cleanedPhone);
-      } else {
-        setError(response.data.message || 'Failed to send OTP');
-      }
-    } catch (error: any) {
-      console.error('Send OTP error:', error);
-      
-      if (error.response?.status === 400) {
-        setError('Invalid phone number. Please check and try again.');
-      } else if (error.response?.status === 429) {
-        setError('Too many requests. Please wait before trying again.');
-      } else if (error.response?.status === 500) {
-        setError('Server error. Please try again later.');
-      } else {
-        setError('Network error. Please check your connection and try again.');
-      }
+      const response = await login(phone)
+      setOtpMessage(`Please enter the OTP received on Telegram for ${phone}`)
+      setOtpSent(true)
+      setStep('otp')
+    } catch (err) {
+      setError('Failed to send OTP. Please check your phone number.')
     } finally {
-      setIsLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
-  // Handle OTP submission
   const handleOTPSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!otp.trim()) {
-      setError('Please enter the OTP code');
-      return;
-    }
-
-    if (otp.length !== 6) {
-      setError('OTP must be 6 digits');
-      return;
-    }
-
-    setError('');
-    setSuccess('');
-    setIsLoading(true);
+    e.preventDefault()
+    setLoading(true)
+    setError('')
 
     try {
-      const response = await axiosInstance.post<VerifyOTPResponse>('/api/telegram/verify-otp', {
-        phone: phone,
-        otp: otp,
-        session_string: sessionString,
-        phone_code_hash: phoneCodeHash
-      });
-
-      if (response.data.success && response.data.access_token) {
-        // Store JWT token
-        localStorage.setItem('access_token', response.data.access_token);
-        if (response.data.refresh_token) {
-          localStorage.setItem('refresh_token', response.data.refresh_token);
-        }
-        
-        // Initialize auth context
-        await login(phone, otp);
-        
-        // Navigate to dashboard
-        navigate('/dashboard');
-      } else {
-        setError(response.data.message || 'Invalid OTP code');
-      }
-    } catch (error: any) {
-      console.error('Verify OTP error:', error);
-      
-      if (error.response?.status === 400) {
-        const errorMsg = error.response?.data?.detail || 'Invalid OTP code';
-        setError(errorMsg);
-      } else if (error.response?.status === 422) {
-        setError('OTP expired. Please request a new one.');
-      } else if (error.response?.status === 500) {
-        setError('Authentication failed. Please try again.');
-      } else {
-        setError('Network error. Please check your connection and try again.');
-      }
+      await verifyOTP(phone, otp)
+      // Redirect to dashboard on successful authentication
+      navigate('/dashboard')
+    } catch (err) {
+      setError('Invalid OTP. Please try again.')
     } finally {
-      setIsLoading(false);
+      setLoading(false)
     }
+  }
+
+  const validatePhoneNumber = (phoneNumber: string): boolean => {
+    const phoneRegex = /^\+\d{1,15}$/;
+    return phoneRegex.test(phoneNumber);
   };
 
-  // Handle resend OTP
-  const handleResendOTP = async () => {
-    if (!canResend) return;
-    
-    setError('');
-    setSuccess('');
-    setIsLoading(true);
-
-    try {
-      const response = await axiosInstance.post<SendOTPResponse>('/api/telegram/send-otp', {
-        phone: phone
-      });
-
-      if (response.data.success) {
-        // Update session data
-        setSessionString(response.data.session_string || '');
-        setPhoneCodeHash(response.data.phone_code_hash || '');
-        
-        setSuccess('New OTP sent successfully!');
-        
-        // Restart timer
-        setResendTimer(60);
-        setCanResend(false);
-      } else {
-        setError(response.data.message || 'Failed to resend OTP');
-      }
-    } catch (error: any) {
-      console.error('Resend OTP error:', error);
-      setError('Failed to resend OTP. Please try again.');
-    } finally {
-      setIsLoading(false);
+  const formatPhoneNumber = (value: string) => {
+    const cleaned = value.replace(/\D/g, '')
+    if (cleaned.startsWith('1')) {
+      return '+1 ' + cleaned.slice(1).replace(/(\d{3})(\d{3})(\d{4})/, '$1-$2-$3')
     }
-  };
-
-  // Go back to phone step
-  const handleBackToPhone = () => {
-    setStep('phone');
-    setOtp('');
-    setError('');
-    setSuccess('');
-    setSessionString('');
-    setPhoneCodeHash('');
-  };
-
-  // Reset all states
-  const resetStates = () => {
-    setPhone('');
-    setOtp('');
-    setStep('phone');
-    setError('');
-    setSuccess('');
-    setSessionString('');
-    setPhoneCodeHash('');
-    setResendTimer(0);
-    setCanResend(true);
-  };
+    return '+' + cleaned
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-900 to-purple-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
+        {/* Header */}
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-white mb-2">AutoForwardX</h1>
-          <p className="text-gray-300">
-            {step === 'phone' ? 'Enter your phone number' : 'Enter verification code'}
+          <div className="mx-auto h-16 w-16 bg-gradient-to-r from-indigo-500 to-violet-500 rounded-xl flex items-center justify-center shadow-lg">
+            <ArrowRightLeft className="h-8 w-8 text-white" />
+          </div>
+          <h2 className="mt-6 text-3xl font-bold text-white">
+            AutoForwardX
+          </h2>
+          <p className="mt-2 text-sm text-gray-400">
+            Sign in to your message forwarding dashboard
           </p>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
-          {/* Phone Step */}
-          {step === 'phone' && (
+        {/* Login Form */}
+        <div className="bg-gray-800 rounded-xl shadow-md border border-gray-700 p-8">
+          {step === 'phone' ? (
             <form onSubmit={handlePhoneSubmit} className="space-y-6">
               <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-white mb-2">
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-2">
                   Phone Number
                 </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="+91xxxxxxxxxx"
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={isLoading}
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-              >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Sending OTP...
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Phone className="h-5 w-5 text-gray-400" />
                   </div>
-                ) : (
-                  'Send OTP'
-                )}
-              </button>
-            </form>
-          )}
-
-          {/* OTP Step */}
-          {step === 'otp' && (
-            <form onSubmit={handleOTPSubmit} className="space-y-6">
-              <div>
-                <label htmlFor="otp" className="block text-sm font-medium text-white mb-2">
-                  Verification Code
-                </label>
-                <input
-                  id="otp"
-                  type="text"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                  placeholder="Enter 6-digit OTP"
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl tracking-widest"
-                  maxLength={6}
-                  disabled={isLoading}
-                />
-                <p className="text-sm text-gray-400 mt-2">
-                  Sent to: {phone}
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    required
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="+1 234-567-8900"
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  />
+                </div>
+                <p className="mt-2 text-xs text-gray-400">
+                  We'll send you a verification code via Telegram
                 </p>
               </div>
 
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
               <button
                 type="submit"
-                disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                disabled={loading || !phone || !validatePhoneNumber(phone)}
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                    Verifying...
-                  </div>
+                {loading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : otpSent ? (
+                  'Continue to OTP'
                 ) : (
-                  'Verify OTP'
+                  'Send Verification Code'
                 )}
               </button>
+            </form>
+          ) : (
+            <form onSubmit={handleOTPSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="otp" className="block text-sm font-medium text-gray-300 mb-2">
+                  Verification Code
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Shield className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="otp"
+                    name="otp"
+                    type="text"
+                    required
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    placeholder="Enter OTP code"
+                    maxLength={10}
+                    className="block w-full pl-10 pr-3 py-3 border border-gray-600 rounded-xl bg-gray-700 text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-center text-lg tracking-widest"
+                  />
+                </div>
+                {otpMessage && (
+                  <div className="mt-2 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+                    <p className="text-indigo-400 text-sm">{otpMessage}</p>
+                  </div>
+                )}
+                <p className="mt-2 text-xs text-gray-400">
+                  Check your Telegram for the verification code sent to {formatPhoneNumber(phone)}
+                </p>
 
-              <div className="flex items-center justify-between">
+              </div>
+
+              {error && (
+                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
+              <div className="flex space-x-3">
                 <button
                   type="button"
-                  onClick={handleBackToPhone}
-                  className="text-gray-400 hover:text-white transition-colors duration-200"
+                  onClick={() => setStep('phone')}
+                  className="flex-1 py-3 px-4 border border-gray-600 rounded-xl text-sm font-medium text-gray-300 bg-gray-700 hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                 >
-                  ← Change Phone
+                  Back
                 </button>
-
                 <button
-                  type="button"
-                  onClick={handleResendOTP}
-                  disabled={!canResend || isLoading}
-                  className="text-blue-400 hover:text-blue-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors duration-200"
+                  type="submit"
+                  disabled={loading || otp.length < 4}
+                  className="flex-1 flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
-                  {canResend ? 'Resend OTP' : `Resend in ${resendTimer}s`}
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    'Verify & Sign In'
+                  )}
                 </button>
               </div>
             </form>
           )}
-
-          {/* Messages */}
-          {error && (
-            <div className="mt-4 p-4 bg-red-500/20 border border-red-500/50 rounded-xl">
-              <p className="text-red-200 text-sm">{error}</p>
-            </div>
-          )}
-
-          {success && (
-            <div className="mt-4 p-4 bg-green-500/20 border border-green-500/50 rounded-xl">
-              <p className="text-green-200 text-sm">{success}</p>
-            </div>
-          )}
         </div>
 
+
+
+        {/* Footer */}
         <div className="text-center">
-          <p className="text-gray-400 text-sm">
-            Secure phone-based authentication
+          <p className="text-xs text-gray-400">
+            By signing in, you agree to our Terms of Service and Privacy Policy
           </p>
         </div>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default LoginPage;
+export default LoginPage
