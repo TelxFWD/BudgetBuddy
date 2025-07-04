@@ -57,7 +57,7 @@ const AddPairModalSimple: React.FC<AddPairModalProps> = ({ isOpen, onClose, onSu
     setError('')
 
     try {
-      await forwardingAPI.createPair({
+      console.log('Creating pair with data:', {
         name: formData.name.trim(),
         source_platform: formData.sourcePlatform,
         target_platform: formData.targetPlatform,
@@ -68,6 +68,18 @@ const AddPairModalSimple: React.FC<AddPairModalProps> = ({ isOpen, onClose, onSu
         copy_mode: formData.copyMode
       })
 
+      const response = await forwardingAPI.createPair({
+        name: formData.name.trim(),
+        source_platform: formData.sourcePlatform,
+        target_platform: formData.targetPlatform,
+        source_id: formData.sourceId.trim(),
+        target_id: formData.targetId.trim(),
+        delay_mode: formData.delayMode,
+        delay_minutes: formData.delayMode === 'custom' ? formData.delayMinutes : (formData.delayMode === '24h' ? 1440 : 0),
+        copy_mode: formData.copyMode
+      })
+
+      console.log('Pair created successfully:', response.data)
       onSuccess()
       onClose()
       
@@ -83,7 +95,21 @@ const AddPairModalSimple: React.FC<AddPairModalProps> = ({ isOpen, onClose, onSu
         copyMode: false
       })
     } catch (error: any) {
-      setError(error.response?.data?.detail || 'Failed to create pair')
+      console.error('Error creating pair:', error)
+      console.error('Error response:', error.response)
+      console.error('Error status:', error.response?.status)
+      console.error('Error data:', error.response?.data)
+      
+      let errorMessage = 'Failed to create pair'
+      if (error.response?.status === 404) {
+        errorMessage = 'API endpoint not found. Please check backend connection.'
+      } else if (error.response?.data?.detail) {
+        errorMessage = error.response.data.detail
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
