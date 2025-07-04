@@ -87,23 +87,27 @@ def validate_plan_limits(user: User, db: Session) -> dict:
 
 def validate_account_ownership(user_id: int, platform: str, account_id: int, db: Session) -> bool:
     """Verify user owns the specified account."""
-    if platform == "telegram":
-        account = db.query(TelegramAccount).filter(
-            TelegramAccount.id == account_id,
-            TelegramAccount.user_id == user_id,
-            TelegramAccount.status == "active"
-        ).first()
-        return account is not None
-    
-    elif platform == "discord":
-        account = db.query(DiscordAccount).filter(
-            DiscordAccount.id == account_id,
-            DiscordAccount.user_id == user_id,
-            DiscordAccount.status == "active"
-        ).first()
-        return account is not None
-    
-    return False
+    try:
+        if platform == "telegram":
+            account = db.query(TelegramAccount).filter(
+                TelegramAccount.id == account_id,
+                TelegramAccount.user_id == user_id,
+                TelegramAccount.status == "active"
+            ).first()
+            return account is not None
+        
+        elif platform == "discord":
+            account = db.query(DiscordAccount).filter(
+                DiscordAccount.id == account_id,
+                DiscordAccount.user_id == user_id,
+                DiscordAccount.status == "active"
+            ).first()
+            return account is not None
+        
+        return False
+    except Exception as e:
+        logger.error(f"Error validating account ownership: {str(e)}")
+        return False
 
 @router.get("/pairs")
 async def list_forwarding_pairs(
@@ -223,7 +227,8 @@ async def create_forwarding_pair(
     existing_pair = db.query(ForwardingPair).filter(
         ForwardingPair.user_id == current_user.id,
         ForwardingPair.source_channel == pair_data.source_chat_id,
-        ForwardingPair.destination_channel == pair_data.destination_chat_id
+        ForwardingPair.destination_channel == pair_data.destination_chat_id,
+        ForwardingPair.is_active == True
     ).first()
     
     if existing_pair:
@@ -241,6 +246,13 @@ async def create_forwarding_pair(
     elif pair_data.source_platform == "discord":
         discord_account_id = pair_data.source_account_id
     
+    # Validate that we have at least one account ID set
+    if not telegram_account_id and not discord_account_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid platform configuration"
+        )
+    
     # Create new forwarding pair
     new_pair = ForwardingPair(
         user_id=current_user.id,
@@ -252,14 +264,23 @@ async def create_forwarding_pair(
         platform_type=platform_type,
         is_active=True,
         silent_mode=pair_data.silent_mode,
-        copy_mode=pair_data.copy_mode
+        copy_mode=pair_data.copy_mode,
+        status="active"
     )
     
-    db.add(new_pair)
-    db.commit()
-    db.refresh(new_pair)
-    
-    logger.info(f"Forwarding pair created: {new_pair.id} by user {current_user.username}")
+    try:
+        db.add(new_pair)
+        db.commit()
+        db.refresh(new_pair)
+        
+        logger.info(f"Forwarding pair created: {new_pair.id} by user {current_user.username}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Failed to create forwarding pair for user {current_user.username}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create forwarding pair: {str(e)}"
+        )
     
     # Return response
     source_platform = "telegram" if new_pair.telegram_account_id else "discord"
@@ -501,3 +522,102 @@ async def get_plan_limits(
 ):
     """Get current user's plan limits and usage."""
     return validate_plan_limits(current_user, db)
+
+
+@router.get("/debug/accounts")
+async def debug_user_accounts(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Debug endpoint to check user's accounts."""
+    telegram_accounts = db.query(TelegramAccount).filter(
+        TelegramAccount.user_id == current_user.id
+    ).all()
+    
+    discord_accounts = db.query(DiscordAccount).filter(
+        DiscordAccount.user_id == current_user.id
+    ).all()
+    
+    return {
+        "user_id": current_user.id,
+        "telegram_accounts": [
+            {
+                "id": acc.id,
+                "phone_number": acc.phone_number,
+                "status": acc.status,
+                "telegram_user_id": acc.telegram_user_id
+            } for acc in telegram_accounts
+        ],
+        "discord_accounts": [
+            {
+                "id": acc.id,
+                "discord_user_id": acc.discord_user_id,
+                "status": acc.status,
+                "bot_name": acc.bot_name
+            } for acc in discord_accounts
+        ]
+    }
+
+@router.post("/debug/validate")
+async def debug_validate_pair(
+    pair_data: ForwardingPairCreate,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Debug endpoint to validate pair creation without actually creating it."""
+    errors = []
+    
+    # Check plan limits
+    limits = validate_plan_limits(current_user, db)
+    if not limits["can_create"]:
+        errors.append(f"Plan limit reached. Maximum {limits['max_pairs']} pairs allowed")
+    
+    # Check platform values
+    valid_platforms = ["telegram", "discord"]
+    if pair_data.source_platform not in valid_platforms:
+        errors.append(f"Invalid source platform: {pair_data.source_platform}")
+    if pair_data.destination_platform not in valid_platforms:
+        errors.append(f"Invalid destination platform: {pair_data.destination_platform}")
+    
+    # Check account ownership
+    source_valid = validate_account_ownership(
+        current_user.id, 
+        pair_data.source_platform, 
+        pair_data.source_account_id, 
+        db
+    )
+    dest_valid = validate_account_ownership(
+        current_user.id, 
+        pair_data.destination_platform, 
+        pair_data.destination_account_id, 
+        db
+    )
+    
+    if not source_valid:
+        errors.append(f"Source account {pair_data.source_account_id} not found or not owned by user")
+    if not dest_valid:
+        errors.append(f"Destination account {pair_data.destination_account_id} not found or not owned by user")
+    
+    # Check for duplicates
+    existing_pair = db.query(ForwardingPair).filter(
+        ForwardingPair.user_id == current_user.id,
+        ForwardingPair.source_channel == pair_data.source_chat_id,
+        ForwardingPair.destination_channel == pair_data.destination_chat_id
+    ).first()
+    
+    if existing_pair:
+        errors.append("Forwarding pair already exists")
+    
+    return {
+        "valid": len(errors) == 0,
+        "errors": errors,
+        "pair_data": {
+            "source_platform": pair_data.source_platform,
+            "source_account_id": pair_data.source_account_id,
+            "source_chat_id": pair_data.source_chat_id,
+            "destination_platform": pair_data.destination_platform,
+            "destination_account_id": pair_data.destination_account_id,
+            "destination_chat_id": pair_data.destination_chat_id
+        },
+        "limits": limits
+    }
