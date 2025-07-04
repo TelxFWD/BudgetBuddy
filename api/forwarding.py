@@ -91,17 +91,17 @@ def validate_account_ownership(user_id: int, platform: str, account_id: int, db:
         if platform == "telegram":
             account = db.query(TelegramAccount).filter(
                 TelegramAccount.id == account_id,
-                TelegramAccount.user_id == user_id,
-                TelegramAccount.status == "active"
+                TelegramAccount.user_id == user_id
             ).first()
+            logger.info(f"Telegram account validation: account_id={account_id}, user_id={user_id}, found={account is not None}")
             return account is not None
         
         elif platform == "discord":
             account = db.query(DiscordAccount).filter(
                 DiscordAccount.id == account_id,
-                DiscordAccount.user_id == user_id,
-                DiscordAccount.status == "active"
+                DiscordAccount.user_id == user_id
             ).first()
+            logger.info(f"Discord account validation: account_id={account_id}, user_id={user_id}, found={account is not None}")
             return account is not None
         
         return False
@@ -211,16 +211,20 @@ async def create_forwarding_pair(
         )
     
     # Validate account ownership
+    logger.info(f"Validating source account: platform={pair_data.source_platform}, account_id={pair_data.source_account_id}")
     if not validate_account_ownership(current_user.id, pair_data.source_platform, pair_data.source_account_id, db):
+        logger.error(f"Source account validation failed: user_id={current_user.id}, platform={pair_data.source_platform}, account_id={pair_data.source_account_id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Source account not found or not owned by user"
+            detail=f"Source account {pair_data.source_account_id} not found or not owned by user on {pair_data.source_platform}"
         )
     
+    logger.info(f"Validating destination account: platform={pair_data.destination_platform}, account_id={pair_data.destination_account_id}")
     if not validate_account_ownership(current_user.id, pair_data.destination_platform, pair_data.destination_account_id, db):
+        logger.error(f"Destination account validation failed: user_id={current_user.id}, platform={pair_data.destination_platform}, account_id={pair_data.destination_account_id}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Destination account not found or not owned by user"
+            detail=f"Destination account {pair_data.destination_account_id} not found or not owned by user on {pair_data.destination_platform}"
         )
     
     # Check for duplicate pairs
@@ -269,17 +273,19 @@ async def create_forwarding_pair(
     )
     
     try:
+        logger.info(f"Creating forwarding pair: user_id={current_user.id}, telegram_account_id={telegram_account_id}, discord_account_id={discord_account_id}")
         db.add(new_pair)
         db.commit()
         db.refresh(new_pair)
         
-        logger.info(f"Forwarding pair created: {new_pair.id} by user {current_user.username}")
+        logger.info(f"Forwarding pair created successfully: {new_pair.id} by user {current_user.username}")
     except Exception as e:
         db.rollback()
-        logger.error(f"Failed to create forwarding pair for user {current_user.username}: {str(e)}")
+        logger.error(f"Database error creating forwarding pair for user {current_user.username}: {str(e)}")
+        logger.error(f"Pair data: {pair_data}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to create forwarding pair: {str(e)}"
+            detail=f"Database error: {str(e)}"
         )
     
     # Return response
@@ -566,6 +572,7 @@ async def debug_validate_pair(
 ):
     """Debug endpoint to validate pair creation without actually creating it."""
     errors = []
+    warnings = []
     
     # Check plan limits
     limits = validate_plan_limits(current_user, db)
@@ -578,6 +585,15 @@ async def debug_validate_pair(
         errors.append(f"Invalid source platform: {pair_data.source_platform}")
     if pair_data.destination_platform not in valid_platforms:
         errors.append(f"Invalid destination platform: {pair_data.destination_platform}")
+    
+    # Get all user accounts for debugging
+    telegram_accounts = db.query(TelegramAccount).filter(
+        TelegramAccount.user_id == current_user.id
+    ).all()
+    
+    discord_accounts = db.query(DiscordAccount).filter(
+        DiscordAccount.user_id == current_user.id
+    ).all()
     
     # Check account ownership
     source_valid = validate_account_ownership(
@@ -594,9 +610,9 @@ async def debug_validate_pair(
     )
     
     if not source_valid:
-        errors.append(f"Source account {pair_data.source_account_id} not found or not owned by user")
+        errors.append(f"Source account {pair_data.source_account_id} not found or not owned by user on {pair_data.source_platform}")
     if not dest_valid:
-        errors.append(f"Destination account {pair_data.destination_account_id} not found or not owned by user")
+        errors.append(f"Destination account {pair_data.destination_account_id} not found or not owned by user on {pair_data.destination_platform}")
     
     # Check for duplicates
     existing_pair = db.query(ForwardingPair).filter(
@@ -611,6 +627,25 @@ async def debug_validate_pair(
     return {
         "valid": len(errors) == 0,
         "errors": errors,
+        "warnings": warnings,
+        "available_accounts": {
+            "telegram": [
+                {
+                    "id": acc.id,
+                    "phone_number": acc.phone_number,
+                    "status": acc.status,
+                    "telegram_user_id": acc.telegram_user_id
+                } for acc in telegram_accounts
+            ],
+            "discord": [
+                {
+                    "id": acc.id,
+                    "discord_user_id": acc.discord_user_id,
+                    "status": acc.status,
+                    "bot_name": getattr(acc, 'bot_name', None)
+                } for acc in discord_accounts
+            ]
+        },
         "pair_data": {
             "source_platform": pair_data.source_platform,
             "source_account_id": pair_data.source_account_id,
