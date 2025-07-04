@@ -25,7 +25,12 @@ class SimpleForwardingPairCreate(BaseModel):
     target_id: str       # Channel/chat ID
     delay_mode: str = "realtime"  # "realtime", "24h", "custom"
     delay_minutes: int = 0
+    delay_seconds: int = 0  # Accept delay_seconds from frontend
     copy_mode: bool = False
+    filter_keywords: list = []  # Accept filter_keywords from frontend
+    add_header: bool = False
+    add_footer: bool = False
+    strip_mentions: bool = False
 
 class SimpleForwardingPairResponse(BaseModel):
     id: int
@@ -146,19 +151,26 @@ async def create_pair(
         name=pair_data.name,
         source_channel=pair_data.source_id,
         destination_channel=pair_data.target_id,
-        delay=pair_data.delay_minutes * 60,  # Convert to seconds
+        delay=pair_data.delay_seconds,  # Use delay_seconds directly
         platform_type=f"{pair_data.source_platform}_to_{pair_data.target_platform}",
         is_active=True,
-        messages_forwarded=0,
-        copy_mode=pair_data.copy_mode,
-        created_at=datetime.utcnow()
+        copy_mode=pair_data.copy_mode
     )
     
-    db.add(new_pair)
-    db.commit()
-    db.refresh(new_pair)
-    
-    logger.info(f"Simple forwarding pair created: {new_pair.id} by user {current_user.username}")
+    try:
+        logger.info(f"Creating forwarding pair with data: {pair_data.dict()}")
+        db.add(new_pair)
+        db.commit()
+        db.refresh(new_pair)
+        
+        logger.info(f"Simple forwarding pair created: {new_pair.id} by user {current_user.username}")
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error creating forwarding pair: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to create forwarding pair: {str(e)}"
+        )
     
     return SimpleForwardingPairResponse(
         id=new_pair.id,
@@ -169,7 +181,7 @@ async def create_pair(
         target_id=pair_data.target_id,
         status="active",
         delay_mode=pair_data.delay_mode,
-        delay_minutes=pair_data.delay_minutes,
+        delay_minutes=pair_data.delay_seconds // 60,
         messages_forwarded=0,
         created_at=new_pair.created_at.isoformat(),
         last_forwarded=None,
