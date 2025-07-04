@@ -31,7 +31,7 @@ async def lifespan(app: FastAPI):
     """Application startup and shutdown events."""
     # Startup
     logger.info("Starting FastAPI application")
-    
+
     # Create database tables
     try:
         Base.metadata.create_all(bind=engine)
@@ -39,7 +39,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"Failed to create database tables: {e}")
         raise
-    
+
     # Initialize session manager
     try:
         await session_manager.initialize()
@@ -47,7 +47,7 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Session manager initialization failed: {e}")
         # Continue without session manager for now
-    
+
     # Initialize queue manager
     try:
         await queue_manager.initialize()
@@ -55,9 +55,9 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning(f"Queue manager initialization failed: {e}")
         # Continue without queue manager for now
-    
+
     yield
-    
+
     # Shutdown
     logger.info("Shutting down FastAPI application")
     await session_manager.cleanup()
@@ -81,7 +81,7 @@ app.add_middleware(
 )
 
 # Import and register API routers
-from api import auth, forwarding_simple, analytics, admin, payments, realtime, telegram_auth, accounts, plan_validation, telegram_test, telegram_auth_simple, telegram_auth_fixed
+from api import auth, forwarding_simple, analytics, admin, payments, realtime, telegram_auth_fixed, accounts, plan_validation, telegram_test, telegram_auth_simple
 
 app.include_router(auth.router, prefix="/api")
 app.include_router(forwarding_simple.router, prefix="/api")
@@ -90,7 +90,7 @@ app.include_router(admin.router, prefix="/api")
 app.include_router(payments.router, prefix="/api")
 app.include_router(realtime.router, prefix="/api")
 app.include_router(telegram_auth_fixed.router)  # Fixed Telethon-based OTP system (primary)
-app.include_router(telegram_auth.router, prefix="/api")
+# app.include_router(telegram_auth.router, prefix="/api")
 app.include_router(telegram_auth_simple.router, prefix="/api/telegram")  # Fallback endpoints
 app.include_router(accounts.router, prefix="/api")
 app.include_router(plan_validation.router, prefix="/api")
@@ -132,7 +132,7 @@ async def api_health_check():
     except Exception as e:
         logger.error(f"Database health check failed: {e}")
         db_status = "unhealthy"
-    
+
     # Check Redis connection
     try:
         if queue_manager.redis_client:
@@ -142,7 +142,7 @@ async def api_health_check():
     except Exception as e:
         logger.error(f"Redis health check failed: {e}")
         redis_status = "not_configured"
-    
+
     # Check Celery worker status
     try:
         inspect = celery_app.control.inspect()
@@ -151,7 +151,7 @@ async def api_health_check():
     except Exception as e:
         logger.error(f"Celery health check failed: {e}")
         celery_status = "not_configured"
-    
+
     return {
         "status": "healthy" if all([
             db_status == "healthy",
@@ -184,7 +184,7 @@ if __name__ == "__main__":
     # Run the application
     port = int(os.getenv("PORT", 8000))
     host = os.getenv("HOST", "0.0.0.0")
-    
+
     uvicorn.run(
         "main:app",
         host=host,

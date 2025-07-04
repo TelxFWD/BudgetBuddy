@@ -61,16 +61,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (phone: string) => {
     try {
-      const response = await axiosInstance.post('/telegram/send-otp', { phone })
+      const response = await axiosInstance.post('/api/telegram/send-otp', { phone })
       return response.data
     } catch (error) {
       throw new Error('Failed to send OTP')
     }
   }
 
-  const verifyOTP = async (phone: string, otp: string) => {
+  const verifyOTP = async (phone: string, otp_code: string) => {
     try {
-      const response = await axiosInstance.post('/telegram/verify-otp', { phone, otp })
+      const response = await axiosInstance.post('/api/telegram/verify-otp', { phone, otp_code })
       const { access_token, refresh_token, user: userData } = response.data
       
       // Store tokens in localStorage
