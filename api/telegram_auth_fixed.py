@@ -220,13 +220,16 @@ async def verify_otp(request: OTPRequest, db: Session = Depends(get_db)):
             # Verify the code with stored phone_code_hash
             logger.info(f"Attempting sign_in for {phone} with code={otp_code}, hash={session_data['phone_code_hash'][:10]}...")
             
-            user = await client.sign_in(
-                phone=phone,
-                code=otp_code,
-                phone_code_hash=session_data['phone_code_hash']
-            )
-            
-            logger.info(f"Sign-in successful for {phone}")
+            try:
+                user = await client.sign_in(
+                    phone=phone,
+                    code=otp_code,
+                    phone_code_hash=session_data['phone_code_hash']
+                )
+                logger.info(f"Sign-in successful for {phone}")
+            except Exception as sign_in_error:
+                logger.error(f"Sign-in failed for {phone}: {type(sign_in_error).__name__}: {str(sign_in_error)}")
+                raise sign_in_error
             
             # Clean up session
             delete_session_data(phone)
