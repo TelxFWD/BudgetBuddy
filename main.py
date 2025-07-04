@@ -91,7 +91,7 @@ app.include_router(payments.router, prefix="/api")
 app.include_router(realtime.router, prefix="/api")
 app.include_router(accounts.router, prefix="/api")
 app.include_router(plan_validation.router, prefix="/api")
-app.include_router(telegram_otp.router, prefix="/api")
+app.include_router(telegram_otp.router)
 
 @app.get("/")
 async def root():
