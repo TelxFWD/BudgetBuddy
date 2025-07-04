@@ -1,0 +1,87 @@
+🧩 Issue: OTP Verification (POST /api/telegram/verify-otp) is failing with 500 Internal Server Error
+⛔ Frontend Trace:
+- Error occurs at: `AuthContext.tsx:77`
+- API call: `POST /api/telegram/verify-otp`
+- Error: `AxiosError: Request failed with status code 500`
+
+🎯 Objective:
+Fix backend verification flow using the OTP received from Telegram via the bot.
+
+---
+
+🛠️ Debug & Fix Instructions:
+
+1. ✅ **Verify Input Payload**
+Ensure that `verify-otp` is receiving the correct input:
+
+```json
+{
+  "phone": "+917588993347",
+  "otp": "12345",                     // OTP entered by user
+  "phone_code_hash": "xxxxxx",       // from send-otp
+  "session_string": "ABCDEF..."      // Telethon session string
+}
+🔍 2. Debug FastAPI Exception
+Enable full logging in FastAPI and add a try/except block around the OTP sign-in function.
+
+Example in /verify-otp:
+
+python
+Copy
+Edit
+try:
+    client = TelegramClient(StringSession(session_string), API_ID, API_HASH)
+    await client.connect()
+    await client.sign_in(
+        phone=phone,
+        code=otp,
+        phone_code_hash=phone_code_hash
+    )
+    return {"status": "verified"}
+except Exception as e:
+    logger.error(f"OTP verification failed: {e}")
+    raise HTTPException(status_code=500, detail="OTP verification failed")
+✅ 3. Check for Common Causes of 500 in Telethon
+
+🔴 Invalid or expired phone_code_hash (must match the one from send_otp)
+
+🔴 Wrong session_string used
+
+🔴 Trying to verify again after successful login
+
+🔴 Telegram account is already authorized (use client.is_user_authorized())
+
+🧠 4. Fix Flow in Session Logic
+
+In send-otp, cache these in Redis or memory (example):
+
+json
+Copy
+Edit
+{
+  "session_string": "...",
+  "phone_code_hash": "...",
+  "timestamp": 1725482734
+}
+In verify-otp, fetch this exact session + hash using phone number as key.
+
+🚀 5. Post Verification Success
+
+✅ Set JWT
+
+✅ Save authorized session (Telethon)
+
+✅ Redirect to /dashboard
+
+✅ Initialize frontend AuthContext with /auth/me
+
+🛑 Additional: Do NOT send a new OTP if already sent.
+Use cache/memory timeout logic to prevent repeated requests.
+
+🧪 Final Testing Steps:
+
+Log both send-otp and verify-otp payloads
+
+Make sure session used during verification is exactly same as OTP-sending session
+
+Temporarily print phone_code_hash and session_string to confirm
