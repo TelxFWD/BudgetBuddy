@@ -3,13 +3,25 @@ SQLAlchemy database models for the message forwarding application.
 Contains all database table definitions and relationships.
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, JSON, ForeignKey, Float, DECIMAL, BigInteger
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, JSON, Float, DECIMAL, BigInteger, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from datetime import datetime
+import enum
 
 Base = declarative_base()
+
+class TaskStatus(enum.Enum):
+    pending = "pending"
+    processing = "processing"
+    completed = "completed"
+    failed = "failed"
+
+class TaskPriority(enum.Enum):
+    low = "low"
+    medium = "medium"
+    high = "high"
 
 class User(Base):
     """Users table for storing user account information."""
