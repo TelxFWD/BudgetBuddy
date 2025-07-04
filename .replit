@@ -3,7 +3,7 @@ run = "node index.js"
 
 [nix]
 channel = "stable-24_05"
-packages = ["cargo", "libiconv", "libxcrypt", "redis", "rustc"]
+packages = ["cargo", "libiconv", "libxcrypt", "openssl", "redis", "rustc"]
 
 [workflows]
 runButton = "Project"

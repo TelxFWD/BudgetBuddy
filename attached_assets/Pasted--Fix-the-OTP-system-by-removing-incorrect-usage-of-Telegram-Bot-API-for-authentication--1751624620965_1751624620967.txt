@@ -1,0 +1,73 @@
+🛠️ Fix the OTP system by removing incorrect usage of Telegram Bot API for authentication.
+
+---
+
+✅ Goal:
+- Replace current `/api/telegram/send-otp` and `/verify-otp` logic
+- Use **Telethon** (or Pyrogram) to send code to phone
+- Authenticate user via **client.send_code_request()** and **client.sign_in()**
+
+---
+
+### Step-by-step changes:
+
+1. **Install Telethon (if not already)**
+```bash
+pip install telethon
+In send-otp endpoint:
+Replace Bot API with:
+
+python
+Copy
+Edit
+from telethon.sync import TelegramClient
+from telethon.sessions import StringSession
+
+api_id = YOUR_API_ID
+api_hash = 'YOUR_API_HASH'
+
+@app.post("/api/telegram/send-otp")
+async def send_otp(req: PhoneInput):
+    client = TelegramClient(StringSession(), api_id, api_hash)
+    await client.connect()
+    phone = req.phone
+
+    if not await client.is_user_authorized():
+        sent = await client.send_code_request(phone)
+        # Store phone and sent.phone_code_hash in DB or Redis
+        return { "message": "OTP sent", "hash": sent.phone_code_hash }
+In verify-otp endpoint:
+
+python
+Copy
+Edit
+@app.post("/api/telegram/verify-otp")
+async def verify_otp(req: OTPInput):
+    client = TelegramClient(StringSession(), api_id, api_hash)
+    await client.connect()
+    phone = req.phone
+    code = req.code
+    hash = req.hash  # retrieved from DB/Redis
+
+    try:
+        user = await client.sign_in(phone=phone, code=code, phone_code_hash=hash)
+        token = create_jwt(user.username, plan="free")  # Your logic
+        return { "access_token": token, "user": { "username": user.username } }
+    except SessionPasswordNeededError:
+        return JSONResponse(status_code=403, content={ "error": "2FA not supported" })
+🔒 Secure storage
+Store the session (StringSession) securely to reuse later
+
+Redis or a database can be used to track the phone → phone_code_hash
+
+✅ Expected Result:
+OTP is sent via real Telegram client (not bot)
+
+User enters phone → gets OTP in Telegram
+
+Enters OTP → session is created
+
+JWT is returned and stored in frontend
+
+🚫 Remove any logic using requests.post(f"https://api.telegram.org/bot<TOKEN>/sendMessage", ...)
+✅ Replace all with Telethon-based user authentication
