@@ -34,11 +34,6 @@ router = APIRouter(prefix="/api/telegram", tags=["Telegram Authentication"])
 TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID", "23697291"))
 TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH", "b3a10e33ef507e864ed7018df0495ca8")
 
-# Log configuration for debugging
-logger.info(f"Telegram API ID: {TELEGRAM_API_ID}")
-logger.info(f"Telegram API Hash: {TELEGRAM_API_HASH[:10]}...")
-logger.info(f"Redis available: {REDIS_AVAILABLE}")
-
 # Redis setup for session storage
 try:
     import redis
@@ -50,6 +45,11 @@ except Exception as e:
     logger.warning(f"Redis not available, using in-memory storage: {e}")
     REDIS_AVAILABLE = False
     otp_sessions = {}
+
+# Log configuration for debugging
+logger.info(f"Telegram API ID: {TELEGRAM_API_ID}")
+logger.info(f"Telegram API Hash: {TELEGRAM_API_HASH[:10]}...")
+logger.info(f"Redis available: {REDIS_AVAILABLE}")
 
 class SendOTPRequest(BaseModel):
     phone: str = Field(..., description="Phone number with country code")
@@ -71,6 +71,12 @@ def clean_phone_number(phone: str) -> str:
     if not cleaned.startswith('+'):
         cleaned = '+' + cleaned
     return cleaned
+
+def validate_phone_number(phone: str) -> bool:
+    """Validate phone number format."""
+    import re
+    cleaned = re.sub(r'\D', '', phone)
+    return len(cleaned) >= 10 and len(cleaned) <= 15 and phone.startswith('+')
 
 def store_session_data(phone: str, data: Dict) -> None:
     """Store session data in Redis or memory."""
@@ -125,7 +131,7 @@ async def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
         logger.info(f"Sending OTP to phone: {phone}")
         
         # Validate phone number format
-        if len(phone) < 10 or not phone.startswith('+'):
+        if not validate_phone_number(phone):
             logger.error(f"Invalid phone number format: {phone}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

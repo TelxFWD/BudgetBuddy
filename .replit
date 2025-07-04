@@ -115,6 +115,19 @@ task = "shell.exec"
 args = "npx vite --config vite.replit.config.ts --host 0.0.0.0 --port 5000"
 waitForPort = 5000
 
+[[workflows.workflow]]
+name = "Full Development"
+author = 44603870
+mode = "parallel"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "python -c \"import uvicorn; uvicorn.run('main:app', host='0.0.0.0', port=8000, reload=True)\""
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx vite --config vite.replit.config.ts --host 0.0.0.0 --port 5000"
+
 [[ports]]
 localPort = 3000
 externalPort = 3000

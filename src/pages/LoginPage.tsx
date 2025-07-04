@@ -16,13 +16,13 @@ const LoginPage: React.FC = () => {
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     // Don't send OTP if already sent
     if (otpSent) {
       setStep('otp')
       return
     }
-    
+
     setLoading(true)
     setError('')
 
@@ -54,7 +54,10 @@ const LoginPage: React.FC = () => {
     }
   }
 
-
+  const validatePhoneNumber = (phoneNumber: string): boolean => {
+    const phoneRegex = /^\+\d{1,15}$/;
+    return phoneRegex.test(phoneNumber);
+  };
 
   const formatPhoneNumber = (value: string) => {
     const cleaned = value.replace(/\D/g, '')
@@ -116,7 +119,7 @@ const LoginPage: React.FC = () => {
 
               <button
                 type="submit"
-                disabled={loading || !phone}
+                disabled={loading || !phone || !validatePhoneNumber(phone)}
                 className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-medium text-white bg-gradient-to-r from-indigo-500 to-violet-500 hover:from-indigo-600 hover:to-violet-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {loading ? (

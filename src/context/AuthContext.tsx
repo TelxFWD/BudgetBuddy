@@ -63,7 +63,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await axiosInstance.post('/api/telegram/send-otp', { phone })
       return response.data
-    } catch (error) {
+    } catch (error: any) {
+      console.error('Login error:', error)
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail)
+      }
       throw new Error('Failed to send OTP')
     }
   }
@@ -82,7 +86,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Set user data
       setUser(userData)
-    } catch (error) {
+    } catch (error: any) {
+      console.error('OTP verification error:', error)
+      if (error.response?.data?.detail) {
+        throw new Error(error.response.data.detail)
+      }
       throw new Error('Invalid OTP')
     }
   }

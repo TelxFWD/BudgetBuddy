@@ -2,9 +2,9 @@ import axios from 'axios'
 
 const axiosInstance = axios.create({
   baseURL: process.env.NODE_ENV === 'production' 
-    ? 'https://your-production-domain.com' 
-    : 'http://localhost:8000',
-  timeout: 10000,
+    ? 'https://autoforwardx.com'
+    : 'http://0.0.0.0:8000',
+  timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
