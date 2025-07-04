@@ -31,7 +31,11 @@ router = APIRouter(prefix="/api/telegram", tags=["Telegram Authentication Fixed"
 TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID", "23697291"))
 TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH", "b3a10e33ef507e864ed7018df0495ca8")
 
-# In-memory storage for OTP sessions (use Redis in production)
+# Redis setup for session storage
+import redis
+redis_client = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+
+# In-memory storage for OTP sessions (fallback if Redis fails)
 otp_sessions: Dict[str, Dict] = {}
 
 class PhoneRequest(BaseModel):
@@ -54,6 +58,42 @@ def clean_phone_number(phone: str) -> str:
     if not cleaned.startswith('+'):
         cleaned = '+' + cleaned
     return cleaned
+
+def store_session_data(phone: str, data: Dict) -> None:
+    """Store session data in Redis with fallback to memory."""
+    try:
+        # Store in Redis with 5 minute expiration
+        redis_client.setex(f"otp_session:{phone}", 300, json.dumps(data))
+        logger.info(f"Session stored in Redis for {phone}")
+    except Exception as e:
+        logger.warning(f"Failed to store in Redis, using memory: {e}")
+        # Fallback to in-memory storage
+        otp_sessions[phone] = data
+
+def get_session_data(phone: str) -> Optional[Dict]:
+    """Get session data from Redis with fallback to memory."""
+    try:
+        # Try Redis first
+        data = redis_client.get(f"otp_session:{phone}")
+        if data:
+            logger.info(f"Session retrieved from Redis for {phone}")
+            return json.loads(data)
+    except Exception as e:
+        logger.warning(f"Failed to retrieve from Redis, using memory: {e}")
+    
+    # Fallback to in-memory storage
+    return otp_sessions.get(phone)
+
+def delete_session_data(phone: str) -> None:
+    """Delete session data from both Redis and memory."""
+    try:
+        redis_client.delete(f"otp_session:{phone}")
+        logger.info(f"Session deleted from Redis for {phone}")
+    except Exception as e:
+        logger.warning(f"Failed to delete from Redis: {e}")
+    
+    # Also remove from memory
+    otp_sessions.pop(phone, None)
 
 @router.post("/send-otp", response_model=AuthResponse)
 async def send_otp(request: PhoneRequest, db: Session = Depends(get_db)):
@@ -84,15 +124,16 @@ async def send_otp(request: PhoneRequest, db: Session = Depends(get_db)):
             logger.info(f"Session saved for {phone}, length: {len(session_string)}")
             
             # Store session data with all required info
-            otp_sessions[phone] = {
+            session_data = {
                 'phone_code_hash': sent_code.phone_code_hash,
                 'session_string': session_string,
                 'phone': phone,
-                'expires_at': datetime.utcnow() + timedelta(minutes=5),
+                'expires_at': (datetime.utcnow() + timedelta(minutes=5)).isoformat(),
                 'attempts': 0,
                 'created_at': datetime.utcnow().isoformat()
             }
             
+            store_session_data(phone, session_data)
             logger.info(f"OTP session stored for {phone}: hash={sent_code.phone_code_hash[:10]}...")
             
             return AuthResponse(
@@ -136,20 +177,21 @@ async def verify_otp(request: OTPRequest, db: Session = Depends(get_db)):
         logger.info(f"Verifying OTP for {phone}, code length: {len(otp_code)}")
         
         # Check if session exists
-        if phone not in otp_sessions:
+        session_data = get_session_data(phone)
+        if not session_data:
             logger.error(f"No OTP session found for {phone}")
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No OTP session found. Please request a new OTP."
             )
         
-        session_data = otp_sessions[phone]
         logger.info(f"Retrieved session for {phone}: created={session_data.get('created_at')}")
         
         # Check if session expired
-        if datetime.utcnow() > session_data['expires_at']:
+        expires_at = datetime.fromisoformat(session_data['expires_at'])
+        if datetime.utcnow() > expires_at:
             logger.error(f"OTP session expired for {phone}")
-            del otp_sessions[phone]
+            delete_session_data(phone)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="OTP session expired. Please request a new OTP."
@@ -158,7 +200,7 @@ async def verify_otp(request: OTPRequest, db: Session = Depends(get_db)):
         # Check attempts
         if session_data['attempts'] >= 3:
             logger.error(f"Too many attempts for {phone}")
-            del otp_sessions[phone]
+            delete_session_data(phone)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Too many failed attempts. Please request a new OTP."
@@ -187,7 +229,7 @@ async def verify_otp(request: OTPRequest, db: Session = Depends(get_db)):
             logger.info(f"Sign-in successful for {phone}")
             
             # Clean up session
-            del otp_sessions[phone]
+            delete_session_data(phone)
             
             # Get user information
             me = await client.get_me()
@@ -271,8 +313,11 @@ async def verify_otp(request: OTPRequest, db: Session = Depends(get_db)):
             
             logger.warning(f"Invalid OTP for {phone}, attempts: {session_data['attempts']}")
             
+            # Update session data with new attempt count
+            store_session_data(phone, session_data)
+            
             if remaining_attempts <= 0:
-                del otp_sessions[phone]
+                delete_session_data(phone)
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Invalid OTP. Too many attempts. Please request a new OTP."
@@ -284,7 +329,7 @@ async def verify_otp(request: OTPRequest, db: Session = Depends(get_db)):
             )
         except PhoneCodeExpiredError:
             logger.error(f"OTP expired for {phone}")
-            del otp_sessions[phone]
+            delete_session_data(phone)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="OTP has expired. Please request a new one."
@@ -297,7 +342,7 @@ async def verify_otp(request: OTPRequest, db: Session = Depends(get_db)):
             )
         except SessionPasswordNeededError:
             logger.error(f"2FA enabled for {phone}")
-            del otp_sessions[phone]
+            delete_session_data(phone)
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Two-factor authentication is enabled. Please disable 2FA to use this service."
@@ -318,11 +363,10 @@ async def verify_otp(request: OTPRequest, db: Session = Depends(get_db)):
 async def debug_session(phone: str):
     """Debug endpoint to check stored session data."""
     clean_phone = clean_phone_number(phone)
+    session_data = get_session_data(clean_phone)
     
-    if clean_phone not in otp_sessions:
+    if not session_data:
         return {"error": "No session found"}
-    
-    session_data = otp_sessions[clean_phone]
     
     return {
         "phone": clean_phone,
@@ -331,7 +375,7 @@ async def debug_session(phone: str):
         "session_length": len(session_data.get('session_string', '')),
         "hash_preview": session_data.get('phone_code_hash', '')[:10] + "..." if session_data.get('phone_code_hash') else None,
         "created_at": session_data.get('created_at'),
-        "expires_at": session_data.get('expires_at').isoformat() if session_data.get('expires_at') else None,
+        "expires_at": session_data.get('expires_at'),
         "attempts": session_data.get('attempts', 0)
     }
 

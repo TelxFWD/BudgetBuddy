@@ -5,22 +5,31 @@ import { useNavigate } from 'react-router-dom'
 
 const LoginPage: React.FC = () => {
   const [step, setStep] = useState<'phone' | 'otp'>('phone')
-  const [phone, setPhone] = useState('')
+  const [phone, setPhone] = useState('+917588993347') // Auto-fill test phone number
   const [otp, setOtp] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [otpMessage, setOtpMessage] = useState('')
+  const [otpSent, setOtpSent] = useState(false) // Track if OTP was sent
   const { login, verifyOTP } = useAuth()
   const navigate = useNavigate()
 
   const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Don't send OTP if already sent
+    if (otpSent) {
+      setStep('otp')
+      return
+    }
+    
     setLoading(true)
     setError('')
 
     try {
       const response = await login(phone)
-      setOtpMessage(response.message || 'OTP sent successfully')
+      setOtpMessage(`Please enter the OTP received on Telegram for ${phone}`)
+      setOtpSent(true)
       setStep('otp')
     } catch (err) {
       setError('Failed to send OTP. Please check your phone number.')
@@ -112,6 +121,8 @@ const LoginPage: React.FC = () => {
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : otpSent ? (
+                  'Continue to OTP'
                 ) : (
                   'Send Verification Code'
                 )}
