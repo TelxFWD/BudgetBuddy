@@ -82,11 +82,11 @@ async def send_otp_production(
             session_storage[phone_number] = {
                 'phone_code_hash': sent_code.phone_code_hash,
                 'client_session': client.session.save(),
-                'expires_at': datetime.utcnow() + timedelta(minutes=10)
+                'expires_at': datetime.utcnow() + timedelta(minutes=10),
+                'client': client  # Keep the client object for verification
             }
             
             # Keep client connected for verification
-            # Don't disconnect here as we need it for verification
             
             logger.info(f"Real OTP sent via Telegram to {phone_number}")
             
@@ -134,10 +134,11 @@ async def verify_otp_production(
         phone_number = clean_phone_number(request.phone)
         otp_code = request.otp.strip()
         
-        logger.info(f"OTP verification for {phone_number}")
+        logger.info(f"OTP verification for {phone_number}, OTP: {otp_code[:2]}***")
         
         # Get session data
         session_data = session_storage.get(phone_number)
+        logger.info(f"Session data found: {session_data is not None}")
         if not session_data:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -152,14 +153,18 @@ async def verify_otp_production(
                 detail="OTP session expired. Please request a new one."
             )
         
-        # Create client from stored session
-        client = TelegramClient(
-            StringSession(session_data['client_session']),
-            TELEGRAM_API_ID,
-            TELEGRAM_API_HASH
-        )
-        
-        await client.connect()
+        # Get the stored client
+        client = session_data.get('client')
+        if not client:
+            # Recreate client from stored session if not available
+            client = TelegramClient(
+                StringSession(session_data['client_session']),
+                TELEGRAM_API_ID,
+                TELEGRAM_API_HASH
+            )
+            await client.connect()
+        elif not client.is_connected():
+            await client.connect()
         
         try:
             # Verify the OTP with Telegram
