@@ -1,0 +1,47 @@
+ 
+ 
+ POST https://23e06392-5047-4715-a866-5e12f0119e43-00-3fvacrrzdifft.janeway.replit.dev/api/telegram/send-otp 404 (Not Found)
+dispatchXhrRequest	@	axios.js:1651
+xhr	@	axios.js:1531
+dispatchRequest	@	axios.js:2006
+Promise.then		
+_request	@	axios.js:2209
+request	@	axios.js:2118
+httpMethod	@	axios.js:2256
+wrap	@	axios.js:8
+login	@	AuthContext.tsx:64
+handlePhoneSubmit	@	LoginPage.tsx:30
+AuthContext.tsx:67 
+ Login error: 
+AxiosError {message: 'Request failed with status code 404', name: 'AxiosError', code: 'ERR_BAD_REQUEST', config: {…}, request: XMLHttpRequest, …}
+code
+: 
+"ERR_BAD_REQUEST"
+config
+: 
+{transitional: {…}, adapter: Array(3), transformRequest: Array(1), transformResponse: Array(1), timeout: 30000, …}
+message
+: 
+"Request failed with status code 404"
+name
+: 
+"AxiosError"
+request
+: 
+XMLHttpRequest {onreadystatechange: null, readyState: 4, timeout: 30000, withCredentials: false, upload: XMLHttpRequestUpload, …}
+response
+: 
+{data: {…}, status: 404, statusText: 'Not Found', headers: AxiosHeaders, config: {…}, …}
+status
+: 
+404
+stack
+: 
+"AxiosError: Request failed with status code 404\n    at settle (https://23e06392-5047-4715-a866-5e12f0119e43-00-3fvacrrzdifft.janeway.replit.dev/node_modules/.vite/deps/axios.js?v=54c9db78:1232:12)\n    at XMLHttpRequest.onloadend (https://23e06392-5047-4715-a866-5e12f0119e43-00-3fvacrrzdifft.janeway.replit.dev/node_modules/.vite/deps/axios.js?v=54c9db78:1564:7)\n    at Axios.request (https://23e06392-5047-4715-a866-5e12f0119e43-00-3fvacrrzdifft.janeway.replit.dev/node_modules/.vite/deps/axios.js?v=54c9db78:2122:41)\n    at async login (https://23e06392-5047-4715-a866-5e12f0119e43-00-3fvacrrzdifft.janeway.replit.dev/src/context/AuthContext.tsx:54:24)\n    at async handlePhoneSubmit (https://23e06392-5047-4715-a866-5e12f0119e43-00-3fvacrrzdifft.janeway.replit.dev/src/pages/LoginPage.tsx:42:24)"
+[[Prototype]]
+: 
+Error
+login	@	AuthContext.tsx:67
+await in login		
+handlePhoneSubmit	@	LoginPage.tsx:30
+﻿
