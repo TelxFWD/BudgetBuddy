@@ -1,193 +1,281 @@
+"""
+Session manager for handling Telegram and Discord session lifecycle management.
+Coordinates between multiple clients and manages session health.
+"""
+
 import asyncio
 import logging
-import os
-from typing import Dict, Optional, Any
-from telethon import TelegramClient, events
-from telethon.errors import SessionPasswordNeededError, PhoneCodeExpiredError
-from database.models import TelegramAccount, ForwardingPair
-from database.db import SessionLocal
-from utils.logger import logger
+from typing import Dict, List, Optional, Any
+from sqlalchemy.orm import Session
+
+from database.db import get_db
+from database.models import TelegramAccount, DiscordAccount, User
+from bots.telegram_client import TelegramClient
+from bots.discord_client import DiscordClient
+from utils.logger import setup_logger
+
+logger = setup_logger()
 
 class SessionManager:
+    """Centralized session manager for all platform clients."""
+    
     def __init__(self):
-        self.clients: Dict[int, TelegramClient] = {}
-        self.active_sessions: Dict[int, dict] = {}
-        self.forwarding_handlers: Dict[int, Any] = {}
-
-    async def initialize_session(self, account_id: int) -> Optional[TelegramClient]:
-        """Initialize Telegram session for an account."""
-        logger.info(f"Initializing session for account {account_id}")
-
+        self.telegram_client = TelegramClient()
+        self.discord_client = DiscordClient()
+        self._initialized = False
+    
+    async def initialize(self):
+        """Initialize all client managers."""
+        if self._initialized:
+            return
+        
+        logger.info("Initializing Session Manager")
+        
         try:
-            db = SessionLocal()
-            account = db.query(TelegramAccount).filter(TelegramAccount.id == account_id).first()
-
-            if not account:
-                logger.error(f"Account {account_id} not found")
-                return None
-
-            # Create client
-            client = TelegramClient(
-                f"sessions/telegram/account_{account_id}",
-                api_id=int(os.getenv("TELEGRAM_API_ID", "0")),
-                api_hash=os.getenv("TELEGRAM_API_HASH", "")
-            )
-
-            await client.connect()
-
-            if not await client.is_user_authorized():
-                logger.error(f"Account {account_id} not authorized")
-                return None
-
-            self.clients[account_id] = client
-            logger.info(f"✅ Session initialized for account {account_id}")
-
-            return client
-
+            # Initialize Telegram client
+            await self.telegram_client.initialize()
+            
+            # Initialize Discord client
+            await self.discord_client.initialize()
+            
+            self._initialized = True
+            logger.info("Session Manager initialized successfully")
+            
         except Exception as e:
-            logger.error(f"Failed to initialize session for account {account_id}: {str(e)}")
-            return None
-        finally:
-            db.close()
-
-    async def get_client(self, account_id: int) -> Optional[TelegramClient]:
-        """Get or initialize Telegram client."""
-        if account_id not in self.clients:
-            return await self.initialize_session(account_id)
-        return self.clients[account_id]
-
-    async def start_forwarding_handlers(self):
-        """Start event handlers for all active forwarding pairs."""
-        logger.info("🚀 Starting forwarding handlers...")
-
+            logger.error(f"Failed to initialize Session Manager: {e}")
+            raise
+    
+    async def get_user_sessions(self, user_id: int) -> Dict[str, Any]:
+        """Get all active sessions for a user."""
+        db: Session = next(get_db())
+        
         try:
-            db = SessionLocal()
-            active_pairs = db.query(ForwardingPair).filter(
-                ForwardingPair.is_active == True,
-                ForwardingPair.platform_type.like("%telegram%")
+            # Get Telegram accounts
+            telegram_accounts = db.query(TelegramAccount).filter(
+                TelegramAccount.user_id == user_id,
+                TelegramAccount.status == "active"
             ).all()
-
-            logger.info(f"Found {len(active_pairs)} active Telegram forwarding pairs")
-
-            for pair in active_pairs:
-                await self.setup_forwarding_handler(pair)
-
-        except Exception as e:
-            logger.error(f"Failed to start forwarding handlers: {str(e)}")
+            
+            # Get Discord accounts
+            discord_accounts = db.query(DiscordAccount).filter(
+                DiscordAccount.user_id == user_id,
+                DiscordAccount.status == "active"
+            ).all()
+            
+            # Get detailed information for each account
+            telegram_sessions = []
+            for account in telegram_accounts:
+                info = await self.telegram_client.get_account_info(account.id)
+                if info:
+                    telegram_sessions.append({
+                        "account_id": account.id,
+                        "phone_number": account.phone_number,
+                        "telegram_user_id": account.telegram_user_id,
+                        "status": account.status,
+                        "info": info
+                    })
+            
+            discord_sessions = []
+            for account in discord_accounts:
+                info = await self.discord_client.get_account_info(account.id)
+                if info:
+                    discord_sessions.append({
+                        "account_id": account.id,
+                        "status": account.status,
+                        "servers": account.discord_servers,
+                        "info": info
+                    })
+            
+            return {
+                "telegram_sessions": telegram_sessions,
+                "discord_sessions": discord_sessions,
+                "total_sessions": len(telegram_sessions) + len(discord_sessions)
+            }
+            
         finally:
             db.close()
-
-    async def setup_forwarding_handler(self, pair: ForwardingPair):
-        """Set up message forwarding handler for a specific pair."""
-        logger.info(f"⏩ Setting up forwarding handler for pair {pair.id}: {pair.source_channel} -> {pair.destination_channel}")
-
+    
+    async def add_telegram_account(self, user_id: int, phone_number: str) -> Dict[str, Any]:
+        """Add a new Telegram account for a user."""
         try:
-            # Get source client
-            source_client = await self.get_client(pair.telegram_account_id)
-            if not source_client:
-                logger.error(f"⚠️ Cannot get source client for pair {pair.id}")
-                return
-
-            # Convert channel IDs to integers (handle negative IDs)
-            try:
-                source_chat_id = int(pair.source_channel)
-                dest_chat_id = int(pair.destination_channel)
-            except ValueError:
-                logger.error(f"⚠️ Invalid channel IDs for pair {pair.id}")
-                return
-
-            # Create event handler function
-            async def forward_handler(event):
-                logger.info(f"⏩ New message received in source channel {pair.source_channel} for pair {pair.id}")
-                await self.handle_message_forwarding(pair, event, source_client)
-
-            # Add event handler for new messages
-            source_client.add_event_handler(
-                forward_handler,
-                events.NewMessage(chats=[source_chat_id])
-            )
-
-            # Store handler reference for cleanup
-            self.forwarding_handlers[pair.id] = forward_handler
-
-            logger.info(f"✅ Forwarding handler set up for pair {pair.id}")
-
+            result = await self.telegram_client.add_account(user_id, phone_number)
+            logger.info(f"Telegram account added for user {user_id}: {phone_number}")
+            return result
         except Exception as e:
-            logger.error(f"Failed to setup forwarding handler for pair {pair.id}: {str(e)}")
-
-    async def handle_message_forwarding(self, pair: ForwardingPair, event, source_client):
-        """Handle the actual message forwarding."""
-        logger.info(f"⏩ Starting forwarding for pair {pair.id}")
-
+            logger.error(f"Failed to add Telegram account for user {user_id}: {e}")
+            raise
+    
+    async def verify_telegram_account(self, account_id: int, otp_code: str, phone_hash: str) -> bool:
+        """Verify a Telegram account with OTP."""
         try:
-            # Get destination client (for now, using same client)
-            dest_client = source_client  # For Telegram to Telegram, we can use the same client
-
-            # Apply delay if needed
-            if pair.delay > 0:
-                logger.info(f"⏳ Applying {pair.delay}s delay for pair {pair.id}")
-                await asyncio.sleep(pair.delay)
-
-            # Convert destination channel ID
-            dest_chat_id = int(pair.destination_channel)
-
-            # Forward the message
-            result = await dest_client.forward_messages(
-                entity=dest_chat_id,
-                messages=event.message,
-                from_peer=int(pair.source_channel)
-            )
-
-            logger.info(f"✅ Forwarded message {event.message.id} from {pair.source_channel} to {pair.destination_channel}")
-
-            # Update pair statistics (optional)
+            result = await self.telegram_client.verify_account(account_id, otp_code, phone_hash)
+            logger.info(f"Telegram account {account_id} verified successfully")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to verify Telegram account {account_id}: {e}")
+            raise
+    
+    async def add_discord_account(self, user_id: int, discord_token: str, server_ids: List[str] = None) -> Dict[str, Any]:
+        """Add a new Discord account for a user."""
+        try:
+            result = await self.discord_client.add_account(user_id, discord_token, server_ids)
+            logger.info(f"Discord account added for user {user_id}")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to add Discord account for user {user_id}: {e}")
+            raise
+    
+    async def remove_telegram_account(self, account_id: int) -> bool:
+        """Remove a Telegram account."""
+        try:
+            result = await self.telegram_client.remove_account(account_id)
+            logger.info(f"Telegram account {account_id} removed successfully")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to remove Telegram account {account_id}: {e}")
+            raise
+    
+    async def remove_discord_account(self, account_id: int) -> bool:
+        """Remove a Discord account."""
+        try:
+            result = await self.discord_client.remove_account(account_id)
+            logger.info(f"Discord account {account_id} removed successfully")
+            return result
+        except Exception as e:
+            logger.error(f"Failed to remove Discord account {account_id}: {e}")
+            raise
+    
+    async def get_session_health(self) -> Dict[str, Any]:
+        """Get health status of all sessions."""
+        try:
+            telegram_count = await self.telegram_client.get_session_count()
+            discord_count = await self.discord_client.get_session_count()
+            
+            # Get database counts for comparison
+            db: Session = next(get_db())
             try:
-                db = SessionLocal()
-                db_pair = db.query(ForwardingPair).filter(ForwardingPair.id == pair.id).first()
-                if db_pair:
-                    # You can add message count tracking here if needed
-                    pass
-                db.commit()
-            except Exception as e:
-                logger.error(f"Failed to update pair statistics: {str(e)}")
+                db_telegram_count = db.query(TelegramAccount).filter(
+                    TelegramAccount.status == "active"
+                ).count()
+                
+                db_discord_count = db.query(DiscordAccount).filter(
+                    DiscordAccount.status == "active"
+                ).count()
+                
+                return {
+                    "telegram": {
+                        "active_sessions": telegram_count,
+                        "database_accounts": db_telegram_count,
+                        "health": "healthy" if telegram_count == db_telegram_count else "degraded"
+                    },
+                    "discord": {
+                        "active_sessions": discord_count,
+                        "database_accounts": db_discord_count,
+                        "health": "healthy" if discord_count == db_discord_count else "degraded"
+                    },
+                    "overall_health": "healthy" if (
+                        telegram_count == db_telegram_count and 
+                        discord_count == db_discord_count
+                    ) else "degraded"
+                }
+                
             finally:
                 db.close()
-
+                
         except Exception as e:
-            logger.error(f"⚠️ Failed to forward message for pair {pair.id}: {str(e)}")
-
-    async def add_new_pair_handler(self, pair: ForwardingPair):
-        """Add handler for a newly created forwarding pair."""
-        logger.info(f"🔄 Adding handler for new pair {pair.id}")
-        await self.setup_forwarding_handler(pair)
-
-    async def remove_pair_handler(self, pair_id: int):
-        """Remove handler for a deleted forwarding pair."""
-        if pair_id in self.forwarding_handlers:
-            del self.forwarding_handlers[pair_id]
-            logger.info(f"🗑️ Removed handler for pair {pair_id}")
-
-    async def start_all_clients(self):
-        """Start all Telegram clients and begin polling."""
-        logger.info("🚀 Starting all Telegram clients...")
-
+            logger.error(f"Failed to get session health: {e}")
+            return {
+                "telegram": {"health": "unknown"},
+                "discord": {"health": "unknown"},
+                "overall_health": "unknown",
+                "error": str(e)
+            }
+    
+    async def restart_session(self, platform: str, account_id: int) -> bool:
+        """Restart a specific session."""
         try:
-            # Start forwarding handlers
-            await self.start_forwarding_handlers()
-
-            # Start polling for all clients
-            tasks = []
-            for client in self.clients.values():
-                tasks.append(client.run_until_disconnected())
-
-            if tasks:
-                logger.info(f"✅ Started {len(tasks)} Telegram clients")
-                await asyncio.gather(*tasks)
-            else:
-                logger.warning("⚠️ No Telegram clients to start")
-
+            if platform.lower() == "telegram":
+                # Remove and re-add the account
+                db: Session = next(get_db())
+                try:
+                    account = db.query(TelegramAccount).filter(TelegramAccount.id == account_id).first()
+                    if account and account.status == "active":
+                        # Stop current session
+                        if account_id in self.telegram_client.clients:
+                            client = self.telegram_client.clients[account_id]
+                            await client.stop()
+                            del self.telegram_client.clients[account_id]
+                        
+                        # Restart session
+                        await self.telegram_client._create_client(account)
+                        return True
+                finally:
+                    db.close()
+                    
+            elif platform.lower() == "discord":
+                # Remove and re-add the bot
+                db: Session = next(get_db())
+                try:
+                    account = db.query(DiscordAccount).filter(DiscordAccount.id == account_id).first()
+                    if account and account.status == "active":
+                        # Stop current bot
+                        if account_id in self.discord_client.bots:
+                            bot = self.discord_client.bots[account_id]
+                            await bot.close()
+                            del self.discord_client.bots[account_id]
+                            if account_id in self.discord_client.bot_tokens:
+                                del self.discord_client.bot_tokens[account_id]
+                        
+                        # Restart bot
+                        await self.discord_client._create_bot(account)
+                        return True
+                finally:
+                    db.close()
+            
+            return False
+            
         except Exception as e:
-            logger.error(f"Failed to start Telegram clients: {str(e)}")
-
-# Global session manager instance
-session_manager = SessionManager()
+            logger.error(f"Failed to restart {platform} session {account_id}: {e}")
+            return False
+    
+    async def get_telegram_session_count(self) -> int:
+        """Get the number of active Telegram sessions."""
+        return await self.telegram_client.get_session_count()
+    
+    async def get_discord_session_count(self) -> int:
+        """Get the number of active Discord sessions."""
+        return await self.discord_client.get_session_count()
+    
+    async def send_telegram_message(self, account_id: int, chat_id: str, message: str) -> bool:
+        """Send a message via Telegram."""
+        return await self.telegram_client.send_message(account_id, chat_id, message)
+    
+    async def send_discord_message(self, account_id: int, channel_id: int, message: str) -> bool:
+        """Send a message via Discord."""
+        return await self.discord_client.send_message(account_id, channel_id, message)
+    
+    async def forward_telegram_message(self, account_id: int, from_chat_id: str, to_chat_id: str, message_id: int) -> bool:
+        """Forward a message via Telegram."""
+        return await self.telegram_client.forward_message(account_id, from_chat_id, to_chat_id, message_id)
+    
+    async def forward_discord_message(self, account_id: int, to_channel_id: int, message_content: str, attachments: List[Any] = None) -> bool:
+        """Forward a message via Discord."""
+        return await self.discord_client.forward_message(account_id, to_channel_id, message_content, attachments)
+    
+    async def get_discord_server_channels(self, account_id: int, server_id: int) -> List[Dict[str, Any]]:
+        """Get channels for a Discord server."""
+        return await self.discord_client.get_server_channels(account_id, server_id)
+    
+    async def cleanup(self):
+        """Cleanup all session managers."""
+        logger.info("Cleaning up Session Manager")
+        
+        try:
+            await self.telegram_client.cleanup()
+            await self.discord_client.cleanup()
+            
+            self._initialized = False
+            logger.info("Session Manager cleanup completed")
+            
+        except Exception as e:
+            logger.error(f"Error during Session Manager cleanup: {e}")

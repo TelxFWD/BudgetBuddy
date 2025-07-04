@@ -10,10 +10,9 @@ from datetime import datetime
 from pydantic import BaseModel
 
 from database.db import get_db
-from database.models import User, ForwardingPair, TelegramAccount
+from database.models import User, ForwardingPair
 from api.auth import get_current_user
 from utils.logger import logger
-import asyncio
 
 router = APIRouter(prefix="/forwarding", tags=["forwarding"])
 
@@ -146,29 +145,10 @@ async def create_pair(
             detail="Forwarding pair already exists"
         )
     
-    # Get or create Telegram account for the user
-    telegram_account = db.query(TelegramAccount).filter(
-        TelegramAccount.user_id == current_user.id,
-        TelegramAccount.status == "active"
-    ).first()
-    
-    if not telegram_account:
-        # Create a default Telegram account if none exists
-        telegram_account = TelegramAccount(
-            user_id=current_user.id,
-            phone_number="default",  # This should be updated when user adds real account
-            status="active"
-        )
-        db.add(telegram_account)
-        db.commit()
-        db.refresh(telegram_account)
-        logger.info(f"Created default Telegram account for user {current_user.username}")
-    
     # Create new pair
     new_pair = ForwardingPair(
         user_id=current_user.id,
         name=pair_data.name,
-        telegram_account_id=telegram_account.id,  # Link to Telegram account
         source_channel=pair_data.source_id,
         destination_channel=pair_data.target_id,
         delay=pair_data.delay_seconds,  # Use delay_seconds directly
@@ -184,16 +164,6 @@ async def create_pair(
         db.refresh(new_pair)
         
         logger.info(f"Simple forwarding pair created: {new_pair.id} by user {current_user.username}")
-        
-        # Add forwarding handler for the new pair
-        try:
-            from services.session_manager import session_manager
-            asyncio.create_task(session_manager.add_new_pair_handler(new_pair))
-            logger.info(f"✅ Added forwarding handler for new pair {new_pair.id}")
-        except Exception as handler_error:
-            logger.error(f"Failed to add forwarding handler for pair {new_pair.id}: {str(handler_error)}")
-            # Don't fail the pair creation if handler setup fails
-        
     except Exception as e:
         db.rollback()
         logger.error(f"Error creating forwarding pair: {str(e)}")
