@@ -3,7 +3,9 @@ import axios from 'axios'
 const axiosInstance = axios.create({
   baseURL: process.env.NODE_ENV === 'production' 
     ? 'https://autoforwardx.com'
-    : 'http://0.0.0.0:8000',
+    : window.location.protocol === 'https:' 
+      ? window.location.origin.replace(':5000', ':8000')
+      : 'http://0.0.0.0:8000',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
