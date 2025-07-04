@@ -19,7 +19,7 @@ export const forwardingAPI = {
   resumePair: (id: number) => axiosInstance.post(`/forwarding/pairs/${id}/resume`),
   bulkAction: (action: string, pairIds: number[]) => 
     axiosInstance.post('/forwarding/pairs/bulk', { action, pair_ids: pairIds }),
-  updatePairSettings: (id: number, settings: { copy_mode?: boolean; blockText?: boolean; blockImage?: boolean }) =>
+  updatePairSettings: (id: number, settings: { copy_mode?: boolean; block_text?: boolean; block_images?: boolean }) =>
     axiosInstance.patch(`/forwarding/pairs/${id}/settings`, settings),
 }
 

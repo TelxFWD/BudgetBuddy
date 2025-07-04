@@ -54,7 +54,7 @@ class AuthUrlResponse(BaseModel):
     state: str
 
 # Telegram Account Endpoints
-@router.get("/accounts/telegram", response_model=List[TelegramAccountResponse])
+@router.get("/accounts/telegram")
 async def get_telegram_accounts(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -72,21 +72,21 @@ async def get_telegram_accounts(
             sessions = 1 if account.status == "active" else 0
             last_active = "Recently active" if account.status == "active" else "Inactive"
             
-            result.append(TelegramAccountResponse(
-                id=account.id,
-                phone=account.phone_number,
-                username=account.telegram_user_id or f"User{account.id}",
-                status=status,
-                sessions=sessions,
-                lastActive=last_active
-            ))
+            result.append({
+                "id": account.id,
+                "phone": account.phone_number,
+                "username": account.telegram_user_id or f"@User{account.id}",
+                "status": status,
+                "sessions": sessions,
+                "lastActive": last_active
+            })
         
         return result
     except Exception as e:
         logger.error(f"Failed to get Telegram accounts: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve Telegram accounts")
 
-@router.get("/accounts/discord", response_model=List[DiscordAccountResponse])
+@router.get("/accounts/discord")
 async def get_discord_accounts(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -104,13 +104,13 @@ async def get_discord_accounts(
             guilds = 2 if account.is_active else 0
             last_active = "Recently active" if account.is_active else "Inactive"
             
-            result.append(DiscordAccountResponse(
-                id=account.id,
-                username=account.bot_username or f"Bot#{account.id}",
-                status=status,
-                guilds=guilds,
-                lastActive=last_active
-            ))
+            result.append({
+                "id": account.id,
+                "username": account.bot_username or f"Bot#{account.id}",
+                "status": status,
+                "guilds": guilds,
+                "lastActive": last_active
+            })
         
         return result
     except Exception as e:

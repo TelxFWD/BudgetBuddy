@@ -105,7 +105,7 @@ def validate_account_ownership(user_id: int, platform: str, account_id: int, db:
     
     return False
 
-@router.get("/pairs", response_model=List[ForwardingPairResponse])
+@router.get("/pairs")
 async def list_forwarding_pairs(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -125,25 +125,28 @@ async def list_forwarding_pairs(
         dest_platform = "discord" if source_platform == "telegram" else "telegram"
         dest_account_id = source_account_id  # This would need proper mapping
         
-        result.append(ForwardingPairResponse(
-            id=pair.id,
-            source_platform=source_platform,
-            source_account_id=source_account_id,
-            source_chat_id=pair.source_channel,
-            destination_platform=dest_platform,
-            destination_account_id=dest_account_id,
-            destination_chat_id=pair.destination_channel,
-            delay_seconds=pair.delay,
-            is_active=pair.is_active,
-            silent_mode=pair.silent_mode,
-            copy_mode=pair.copy_mode,
-            platform_type=pair.platform_type,
-            created_at=pair.created_at,
-            custom_header=pair.custom_header,
-            custom_footer=pair.custom_footer,
-            remove_header=pair.remove_header or False,
-            remove_footer=pair.remove_footer or False
-        ))
+        result.append({
+            "id": pair.id,
+            "source_platform": source_platform,
+            "source_account_id": source_account_id,
+            "source_chat": pair.source_channel,
+            "destination_platform": dest_platform,
+            "destination_account_id": dest_account_id,
+            "destination_chat": pair.destination_channel,
+            "delay_minutes": pair.delay // 60 if pair.delay else 0,
+            "status": "active" if pair.is_active else "paused",
+            "silent_mode": pair.silent_mode,
+            "copy_mode": pair.copy_mode,
+            "platform_type": pair.platform_type,
+            "created_at": pair.created_at,
+            "messages_forwarded": 0,  # Placeholder
+            "block_images": False,  # Placeholder
+            "block_text": False,  # Placeholder
+            "custom_header": pair.custom_header,
+            "custom_footer": pair.custom_footer,
+            "remove_header": pair.remove_header or False,
+            "remove_footer": pair.remove_footer or False
+        })
     
     return result
 

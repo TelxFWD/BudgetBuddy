@@ -138,7 +138,15 @@ const PlanSummaryPanel: React.FC<PlanSummaryPanelProps> = ({ onAddPairClick, onR
   const fetchStats = async () => {
     try {
       const response = await forwardingAPI.getPairs();
-      const pairs = response.data || [];
+      // Robust array handling for stats
+      const pairsData = Array.isArray(response.data) 
+        ? response.data 
+        : Array.isArray(response) 
+          ? response 
+          : response.data?.data || response.data?.pairs || [];
+      
+      const pairs = Array.isArray(pairsData) ? pairsData : [];
+      
       setStats({
         activePairs: pairs.filter((p: any) => p.status === 'active').length,
         messagesForwarded: pairs.reduce((sum: number, p: any) => sum + (p.messages_forwarded || 0), 0),
@@ -146,6 +154,12 @@ const PlanSummaryPanel: React.FC<PlanSummaryPanelProps> = ({ onAddPairClick, onR
       });
     } catch (error) {
       console.error('Failed to fetch stats:', error);
+      // Set default stats on error
+      setStats({
+        activePairs: 0,
+        messagesForwarded: 0,
+        planUsage: { used: 0, limit: currentPlan.pairs }
+      });
     }
   };
 
@@ -236,10 +250,17 @@ const ForwardingPairsPanel: React.FC<ForwardingPairsPanelProps> = ({ onAddPairCl
     try {
       setLoading(true)
       const response = await forwardingAPI.getPairs()
-      setPairs(response.data || [])
+      // Robust array handling with multiple fallbacks
+      const pairsData = Array.isArray(response.data) 
+        ? response.data 
+        : Array.isArray(response) 
+          ? response 
+          : response.data?.data || response.data?.pairs || []
+      
+      setPairs(Array.isArray(pairsData) ? pairsData : [])
     } catch (error) {
       console.error('Failed to load forwarding pairs:', error)
-      setPairs([]) // Use empty array, no fallback data
+      setPairs([]) // Use empty array on error
     } finally {
       setLoading(false)
     }
@@ -363,7 +384,11 @@ const ForwardingPairsPanel: React.FC<ForwardingPairsPanelProps> = ({ onAddPairCl
         </div>
       </div>
 
-      {pairs.length === 0 ? (
+      {loading ? (
+        <div className="text-center py-12">
+          <div className="text-gray-400 mb-4">Loading forwarding pairs...</div>
+        </div>
+      ) : !Array.isArray(pairs) || pairs.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-gray-400 mb-4">No forwarding pairs yet</div>
           <button 
@@ -642,9 +667,22 @@ const AccountManagerPanel: React.FC = () => {
         accountsAPI.getDiscordAccounts()
       ])
       
+      // Robust array handling for both responses
+      const telegramData = Array.isArray(telegramResponse.data) 
+        ? telegramResponse.data 
+        : Array.isArray(telegramResponse) 
+          ? telegramResponse 
+          : telegramResponse.data?.data || []
+      
+      const discordData = Array.isArray(discordResponse.data) 
+        ? discordResponse.data 
+        : Array.isArray(discordResponse) 
+          ? discordResponse 
+          : discordResponse.data?.data || []
+      
       const allAccounts = [
-        ...(telegramResponse.data || []).map((acc: any) => ({ ...acc, platform: 'Telegram' })),
-        ...(discordResponse.data || []).map((acc: any) => ({ ...acc, platform: 'Discord' }))
+        ...telegramData.map((acc: any) => ({ ...acc, platform: 'Telegram' })),
+        ...discordData.map((acc: any) => ({ ...acc, platform: 'Discord' }))
       ]
       
       setAccounts(allAccounts.slice(0, 3)) // Show only first 3 accounts in dashboard preview
@@ -785,7 +823,7 @@ const AccountManagerPanel: React.FC = () => {
 
       {loading ? (
         <div className="text-gray-400 text-center py-8">Loading accounts...</div>
-      ) : accounts.length === 0 ? (
+      ) : !Array.isArray(accounts) || accounts.length === 0 ? (
         <div className="text-gray-400 text-center py-8">
           No accounts connected. Add your first account to start forwarding messages.
         </div>
@@ -874,6 +912,35 @@ const AccountManagerPanel: React.FC = () => {
   )
 }
 
+// Error Boundary Component
+const ErrorBoundary: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ children, fallback }) => {
+  const [hasError, setHasError] = useState(false)
+
+  const resetError = () => setHasError(false)
+
+  if (hasError) {
+    return fallback || (
+      <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-center">
+        <div className="text-red-400 mb-4">Something went wrong loading this section</div>
+        <button 
+          onClick={resetError}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    )
+  }
+
+  try {
+    return <>{children}</>
+  } catch (error) {
+    console.error('Error boundary caught:', error)
+    setHasError(true)
+    return null
+  }
+}
+
 // Main Dashboard Home Component
 const DashboardHome: React.FC = () => {
   const [showAddPairModal, setShowAddPairModal] = useState(false)
@@ -901,22 +968,30 @@ const DashboardHome: React.FC = () => {
       </div>
 
       {/* Plan Summary and Quick Actions */}
-      <PlanSummaryPanel 
-        onAddPairClick={handleAddPairClick}
-        onRefresh={handleRefresh}
-      />
+      <ErrorBoundary>
+        <PlanSummaryPanel 
+          onAddPairClick={handleAddPairClick}
+          onRefresh={handleRefresh}
+        />
+      </ErrorBoundary>
 
       {/* Forwarding Pairs */}
-      <ForwardingPairsPanel 
-        onAddPairClick={handleAddPairClick}
-        onRefresh={handleRefresh}
-        key={refreshKey} // Force refresh when needed
-      />
+      <ErrorBoundary>
+        <ForwardingPairsPanel 
+          onAddPairClick={handleAddPairClick}
+          onRefresh={handleRefresh}
+          key={refreshKey} // Force refresh when needed
+        />
+      </ErrorBoundary>
 
       {/* Analytics and Account Manager in Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <AnalyticsPanel />
-        <AccountManagerPanel />
+        <ErrorBoundary>
+          <AnalyticsPanel />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <AccountManagerPanel />
+        </ErrorBoundary>
       </div>
 
       {/* Add Pair Modal */}
