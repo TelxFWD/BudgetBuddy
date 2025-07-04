@@ -1,58 +1,78 @@
-import axios from 'axios'
+
+import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: process.env.NODE_ENV === 'production' 
-    ? 'https://autoforwardx.com'
-    : window.location.protocol === 'https:' 
-      ? window.location.origin.replace(':5000', ':8000')
-      : 'http://0.0.0.0:8000',
+  baseURL: window.location.origin,
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
-})
+});
 
-// Add request interceptor for auth token
+// Request interceptor to add auth token
 axiosInstance.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('access_token')
+    const token = localStorage.getItem('access_token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`
+      config.headers.Authorization = `Bearer ${token}`;
     }
-    return config
+    return config;
   },
   (error) => {
-    return Promise.reject(error)
+    return Promise.reject(error);
   }
-)
+);
 
-// Add response interceptor for token refresh
+// Response interceptor to handle token refresh and errors
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   async (error) => {
-    if (error.response?.status === 401) {
-      // Token expired, try to refresh
-      const refreshToken = localStorage.getItem('refresh_token')
-      if (refreshToken) {
-        try {
+    const originalRequest = error.config;
+
+    // Handle 401 errors (unauthorized)
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+
+      try {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
           const response = await axios.post('/api/auth/refresh', {
             refresh_token: refreshToken
-          })
-          const { access_token } = response.data
-          localStorage.setItem('access_token', access_token)
-          // Retry original request
-          error.config.headers.Authorization = `Bearer ${access_token}`
-          return axiosInstance.request(error.config)
-        } catch (refreshError) {
-          // Refresh failed, redirect to login
-          localStorage.removeItem('access_token')
-          localStorage.removeItem('refresh_token')
-          window.location.href = '/login'
+          });
+
+          if (response.data.access_token) {
+            localStorage.setItem('access_token', response.data.access_token);
+            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${response.data.access_token}`;
+            originalRequest.headers['Authorization'] = `Bearer ${response.data.access_token}`;
+            return axiosInstance(originalRequest);
+          }
         }
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+        // Clear tokens and redirect to login
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        delete axiosInstance.defaults.headers.common['Authorization'];
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
       }
     }
-    return Promise.reject(error)
-  }
-)
 
-export default axiosInstance
+    // Handle specific error cases
+    if (error.response?.status === 429) {
+      console.error('Rate limit exceeded');
+    } else if (error.response?.status >= 500) {
+      console.error('Server error:', error.response.data);
+    } else if (error.code === 'ECONNABORTED') {
+      console.error('Request timeout');
+    } else if (!error.response) {
+      console.error('Network error');
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default axiosInstance;

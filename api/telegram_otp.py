@@ -1,3 +1,4 @@
+
 """
 Telegram OTP Authentication System
 Simple phone-based authentication with OTP verification
@@ -27,10 +28,14 @@ class SendOTPRequest(BaseModel):
 class VerifyOTPRequest(BaseModel):
     phone: str = Field(..., description="Phone number with country code") 
     otp: str = Field(..., description="6-digit OTP code")
+    session_string: Optional[str] = Field(None, description="Session string from send-otp")
+    phone_code_hash: Optional[str] = Field(None, description="Phone code hash from send-otp")
 
 class OTPResponse(BaseModel):
     success: bool
     message: str
+    session_string: Optional[str] = None
+    phone_code_hash: Optional[str] = None
     access_token: Optional[str] = None
     refresh_token: Optional[str] = None
     user: Optional[Dict] = None
@@ -38,6 +43,14 @@ class OTPResponse(BaseModel):
 def generate_otp() -> str:
     """Generate a 6-digit OTP code."""
     return ''.join(random.choices(string.digits, k=6))
+
+def generate_session_string() -> str:
+    """Generate a mock session string for demo purposes."""
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=32))
+
+def generate_phone_code_hash() -> str:
+    """Generate a mock phone code hash for demo purposes."""
+    return ''.join(random.choices(string.ascii_letters + string.digits, k=16))
 
 def clean_phone_number(phone: str) -> str:
     """Clean and normalize phone number."""
@@ -56,12 +69,16 @@ async def send_otp(
         phone_number = clean_phone_number(request.phone)
         logger.info(f"OTP requested for phone: {phone_number}")
 
-        # Generate OTP
+        # Generate OTP and session data
         otp_code = generate_otp()
+        session_string = generate_session_string()
+        phone_code_hash = generate_phone_code_hash()
 
         # Store OTP with 5-minute expiration
         otp_storage[phone_number] = {
             'code': otp_code,
+            'session_string': session_string,
+            'phone_code_hash': phone_code_hash,
             'expires_at': datetime.utcnow() + timedelta(minutes=5),
             'attempts': 0
         }
@@ -72,7 +89,9 @@ async def send_otp(
 
         return OTPResponse(
             success=True,
-            message="OTP sent successfully"
+            message="OTP sent successfully",
+            session_string=session_string,
+            phone_code_hash=phone_code_hash
         )
 
     except Exception as e:
@@ -107,7 +126,7 @@ async def verify_otp(
         if datetime.utcnow() > otp_data['expires_at']:
             del otp_storage[phone_number]
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="OTP expired. Please request a new one."
             )
 
@@ -117,6 +136,19 @@ async def verify_otp(
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Too many failed attempts. Please request a new OTP."
+            )
+
+        # Verify session data if provided
+        if request.session_string and request.session_string != otp_data['session_string']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid session data"
+            )
+
+        if request.phone_code_hash and request.phone_code_hash != otp_data['phone_code_hash']:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid phone code hash"
             )
 
         # Verify OTP
@@ -167,7 +199,8 @@ async def verify_otp(
             "username": user.username,
             "email": user.email,
             "plan": user.plan,
-            "status": user.status
+            "status": user.status,
+            "phone_number": phone_number
         }
 
         logger.info(f"User {user.id} authenticated successfully")
