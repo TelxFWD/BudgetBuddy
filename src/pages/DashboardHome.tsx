@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { forwardingAPI, systemAPI, accountsAPI } from '../api/endpoints'
 import { useAuth } from '../context/AuthContext'
-import AddPairModal from '../components/AddPairModal'
+import AddPairModalSimple from '../components/AddPairModalSimple'
 
 // Component for System Status Panel
 const SystemStatusPanel: React.FC = () => {
@@ -995,7 +995,7 @@ const DashboardHome: React.FC = () => {
       </div>
 
       {/* Add Pair Modal */}
-      <AddPairModal
+      <AddPairModalSimple
         isOpen={showAddPairModal}
         onClose={() => setShowAddPairModal(false)}
         onSuccess={handleModalSuccess}

@@ -208,6 +208,9 @@ const ForwardingPairs: React.FC = () => {
           ) : (
             filteredPairs.map((pair) => (
               <div key={pair.id} className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <div className="mb-3">
+                  <h3 className="text-lg font-semibold text-white">{pair.name || `Pair ${pair.id}`}</h3>
+                </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">

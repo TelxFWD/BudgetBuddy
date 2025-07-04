@@ -18,19 +18,24 @@ router = APIRouter(prefix="/forwarding", tags=["forwarding"])
 
 # Simple Pydantic models matching frontend expectations
 class SimpleForwardingPairCreate(BaseModel):
+    name: str            # Pair name (required)
     source_platform: str  # "telegram" or "discord"
     target_platform: str  # "telegram" or "discord"
     source_id: str       # Channel/chat ID
     target_id: str       # Channel/chat ID
+    delay_mode: str = "realtime"  # "realtime", "24h", "custom"
     delay_minutes: int = 0
+    copy_mode: bool = False
 
 class SimpleForwardingPairResponse(BaseModel):
     id: int
+    name: str
     source_platform: str
     target_platform: str
     source_id: str
     target_id: str
     status: str  # "active", "paused", "error"
+    delay_mode: str = "realtime"
     delay_minutes: int
     messages_forwarded: int
     created_at: str
@@ -81,15 +86,17 @@ async def get_pairs(
         
         result.append(SimpleForwardingPairResponse(
             id=pair.id,
+            name=getattr(pair, 'name', f'Pair {pair.id}'),
             source_platform="telegram",  # Simplified for demo
             target_platform="telegram",  # Simplified for demo
             source_id=getattr(pair, 'source_channel', '') or "",
             target_id=getattr(pair, 'destination_channel', '') or "",
             status=status,
+            delay_mode="realtime" if (getattr(pair, 'delay', 0) or 0) == 0 else "custom",
             delay_minutes=(getattr(pair, 'delay', 0) or 0) // 60,
             messages_forwarded=getattr(pair, 'messages_forwarded', 0) or 0,
             created_at=pair.created_at.isoformat() if hasattr(pair, 'created_at') and pair.created_at else "",
-            last_forwarded=pair.last_forwarded.isoformat() if hasattr(pair, 'last_forwarded') and pair.last_forwarded else None,
+            last_forwarded=getattr(pair, 'last_forwarded', None) and pair.last_forwarded.isoformat(),
             copy_mode=getattr(pair, 'copy_mode', False) or False,
             custom_header=getattr(pair, 'custom_header', None),
             custom_footer=getattr(pair, 'custom_footer', None),
@@ -136,12 +143,14 @@ async def create_pair(
     # Create new pair
     new_pair = ForwardingPair(
         user_id=current_user.id,
+        name=pair_data.name,
         source_channel=pair_data.source_id,
         destination_channel=pair_data.target_id,
         delay=pair_data.delay_minutes * 60,  # Convert to seconds
         platform_type=f"{pair_data.source_platform}_to_{pair_data.target_platform}",
         is_active=True,
         messages_forwarded=0,
+        copy_mode=pair_data.copy_mode,
         created_at=datetime.utcnow()
     )
     
@@ -153,16 +162,18 @@ async def create_pair(
     
     return SimpleForwardingPairResponse(
         id=new_pair.id,
+        name=pair_data.name,
         source_platform=pair_data.source_platform,
         target_platform=pair_data.target_platform,
         source_id=pair_data.source_id,
         target_id=pair_data.target_id,
         status="active",
+        delay_mode=pair_data.delay_mode,
         delay_minutes=pair_data.delay_minutes,
         messages_forwarded=0,
         created_at=new_pair.created_at.isoformat(),
         last_forwarded=None,
-        copy_mode=False
+        copy_mode=pair_data.copy_mode
     )
 
 @router.delete("/pairs/{pair_id}")

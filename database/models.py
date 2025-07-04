@@ -103,6 +103,7 @@ class ForwardingPair(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    name = Column(String(100), nullable=False)  # User-friendly name for the pair
     telegram_account_id = Column(Integer, ForeignKey("telegram_accounts.id"), nullable=True)
     discord_account_id = Column(Integer, ForeignKey("discord_accounts.id"), nullable=True)
     source_channel = Column(String(200), nullable=False)  # Source channel/chat ID

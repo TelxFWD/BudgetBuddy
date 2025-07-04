@@ -22,20 +22,22 @@ export interface AuthContextType {
 // Forwarding Pair types
 export interface ForwardingPair {
   id: number
-  user_id: number
-  source_type: 'telegram' | 'discord'
-  source_account_id: number
-  destination_type: 'telegram' | 'discord'
-  destination_account_id: number
-  source_chat_id: string
-  destination_chat_id: string
-  is_active: boolean
-  delay_seconds: number
+  name: string
+  source_platform: 'telegram' | 'discord'
+  target_platform: 'telegram' | 'discord'
+  source_id: string
+  target_id: string
+  status: 'active' | 'paused' | 'error'
+  delay_mode: 'realtime' | '24h' | 'custom'
+  delay_minutes: number
+  messages_forwarded: number
   created_at: string
   last_forwarded?: string
-  messages_forwarded: number
-  source_chat_name?: string
-  destination_chat_name?: string
+  copy_mode: boolean
+  custom_header?: string
+  custom_footer?: string
+  remove_header: boolean
+  remove_footer: boolean
 }
 
 // Account types
