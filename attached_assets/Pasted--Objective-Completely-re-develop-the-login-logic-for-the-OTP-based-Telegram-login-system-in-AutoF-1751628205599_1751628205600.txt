@@ -1,0 +1,72 @@
+🎯 Objective: Completely re-develop the login logic for the OTP-based Telegram login system in AutoForwardX.
+
+---
+
+🧩 Required Features (from scratch):
+
+1. ✅ **Phone Input & OTP Flow**
+   - Input format: Must accept `+91xxxxxxxxxx` format (international number supported)
+   - Button: `Send OTP` (disabled while loading)
+   - Backend endpoint: `POST /api/telegram/send-otp`
+   - On success, store response:
+     - `session_string`
+     - `phone_code_hash`
+     - `phone`
+
+2. ✅ **OTP Input Screen**
+   - 5-digit OTP input (custom styled inputs or simple text field)
+   - Button: `Verify OTP` (calls `POST /api/telegram/verify-otp`)
+   - On success:
+     - Save JWT from backend response (if sent)
+     - Redirect to `/dashboard`
+     - Initialize AuthContext with `/api/auth/me`
+   - On failure:
+     - Show validation message (e.g., “Incorrect OTP”, “Session expired”)
+
+3. ✅ **Error Handling**
+   - Show `Invalid Phone Number` for invalid numbers
+   - Show `OTP Expired` or `Invalid OTP` if backend returns 400/422/500
+   - Handle network errors with retry support
+
+4. ✅ **Prevent OTP Resend Spam**
+   - After `send-otp`, disable resend for 60 seconds
+   - Timer countdown shown to user
+   - Re-enable after timeout
+
+5. ✅ **Development Restrictions**
+   - REMOVE all `demo login`, `development mode`, `mock auth`, and `default JWTs`
+   - Remove hardcoded user redirect or fallback
+
+6. ✅ **Clean Up State**
+   - Clear state on logout
+   - Reset input fields and timers
+
+7. ✅ **Code Structure**
+   - `LoginPage.tsx` handles both Phone and OTP steps (step logic inside)
+   - Use `AuthContext.tsx` for storing JWT, user info
+   - Store session data temporarily in `useState` or `localStorage`
+
+8. ✅ **Additional Frontend Notes**
+   - Use Tailwind for UI: clean, minimal, mobile-friendly
+   - Use `axiosInstance.ts` for API calls
+   - Use `loading` states on buttons
+
+---
+
+🧪 Test Scenario (Use this for hard testing):
+- Phone: `+917588993347`
+- Ask developer to request the OTP via Telegram
+- You will manually share OTP when asked, and it should not trigger resend
+
+---
+
+📦 Backend Assumptions:
+- `/api/telegram/send-otp` returns: `{ session_string, phone_code_hash }`
+- `/api/telegram/verify-otp` expects `{ phone, otp, session_string, phone_code_hash }`
+- On success, returns `{ access_token, user }`
+
+---
+
+📌 Summary:
+Replace the existing broken OTP login logic completely with a clean, validated, and fully working flow including UI/UX feedback, backend integration, and secure JWT handling.
+
