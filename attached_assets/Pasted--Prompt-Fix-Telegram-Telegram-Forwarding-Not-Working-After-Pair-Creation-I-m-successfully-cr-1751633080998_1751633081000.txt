@@ -1,0 +1,97 @@
+🎯 Prompt: Fix Telegram → Telegram Forwarding Not Working After Pair Creation
+
+I'm successfully creating a forwarding pair via:
+
+POST /api/forwarding/pairs
+
+cpp
+Copy
+Edit
+
+Confirmed pair data:
+```json
+{
+  "name": "forex",
+  "source_platform": "telegram",
+  "target_platform": "telegram",
+  "source_id": "-1002833847948",
+  "target_id": "-1002840509370",
+  "delay_mode": "realtime",
+  "delay_minutes": 0,
+  "delay_seconds": 0,
+  "copy_mode": false,
+  "filter_keywords": [],
+  "add_header": false,
+  "add_footer": false,
+  "strip_mentions": false
+}
+🚨 But the actual message forwarding is NOT happening.
+Please do the following:
+
+✅ 1. Check Telegram Session
+Make sure the Telegram account is logged in using valid session
+
+Ensure the source account is:
+
+✅ An admin in the source channel (source_id)
+
+✅ Can read messages
+
+Ensure the target account:
+
+✅ Is admin with post permission in the target channel (target_id)
+
+If session is not loaded, check Redis or the Telegram client manager initialization log.
+
+✅ 2. Celery Queue & Worker Check
+Ensure Celery is running and connected to Redis
+
+Inspect if tasks are queued or stuck in pending/processing
+
+Verify worker is consuming from the correct queue like:
+
+nginx
+Copy
+Edit
+celery -A app.celery_app worker --loglevel=info
+Add a log in handle_forwarding_task() or process_telegram_to_telegram() to confirm if it’s being triggered
+
+✅ 3. Add Debug Logs (Backend)
+In your forwarding task:
+
+python
+Copy
+Edit
+logger.info(f"⏩ Starting forwarding for pair {pair_id}")
+logger.info(f"✅ Forwarded message {message_id} to {target_id}")
+logger.warning(f"⚠️ Skipped forwarding due to missing session or permissions")
+Check if it logs anything when a message is sent in the source channel.
+
+✅ 4. Check Webhooks / Polling
+Confirm if you are using Telethon polling or webhook mode
+
+For polling, ensure:
+
+Telegram client is authenticated
+
+client.run_until_disconnected() is active
+
+For webhook, check FastAPI route /webhook exists and is triggered by Telegram
+
+✅ 5. Fix if Missing:
+If source_id/target_id is being stored but not monitored, run:
+
+python
+Copy
+Edit
+telegram_client.add_event_handler(forward_handler, events.NewMessage(chats=[source_id]))
+✅ 6. Manual Test:
+Send a message in the source group/channel and check logs for any activity:
+
+No log = session not loaded or handler not attached
+
+Error log = likely a permission issue or Telegram rate-limiting
+
+Once issue is found and fixed, confirm by replying:
+
+✅ Forwarding now works between source and target Telegram channels
