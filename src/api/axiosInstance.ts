@@ -1,29 +1,16 @@
 import axios from 'axios'
 
-// Determine the correct base URL based on environment
-const getBaseURL = (): string => {
-  const isReplit = window.location.hostname.includes('replit.dev') || window.location.hostname.includes('replit.app')
-  
-  if (isReplit) {
-    // For Replit environment, use proxy to avoid CORS and port access issues
-    return '/api'
-  }
-  
-  // For local development, use proxy
-  return '/api'
-}
-
-const baseURL = getBaseURL()
-
 const axiosInstance = axios.create({
-  baseURL: baseURL,
-  timeout: 15000, // Increased timeout for Replit
+  baseURL: process.env.NODE_ENV === 'production' 
+    ? 'https://your-production-domain.com' 
+    : 'http://localhost:8000',
+  timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 })
 
-// Request interceptor to add auth token
+// Add request interceptor for auth token
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token')
@@ -37,35 +24,31 @@ axiosInstance.interceptors.request.use(
   }
 )
 
-// Response interceptor to handle token refresh
+// Add response interceptor for token refresh
 axiosInstance.interceptors.response.use(
   (response) => response,
   async (error) => {
-    const originalRequest = error.config
-
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true
-
-      try {
-        const refreshToken = localStorage.getItem('refresh_token')
-        if (refreshToken) {
-          const response = await axios.post(`${baseURL}/auth/refresh`, {
+    if (error.response?.status === 401) {
+      // Token expired, try to refresh
+      const refreshToken = localStorage.getItem('refresh_token')
+      if (refreshToken) {
+        try {
+          const response = await axios.post('/api/auth/refresh', {
             refresh_token: refreshToken
           })
-          
           const { access_token } = response.data
           localStorage.setItem('access_token', access_token)
-          
-          originalRequest.headers.Authorization = `Bearer ${access_token}`
-          return axiosInstance(originalRequest)
+          // Retry original request
+          error.config.headers.Authorization = `Bearer ${access_token}`
+          return axiosInstance.request(error.config)
+        } catch (refreshError) {
+          // Refresh failed, redirect to login
+          localStorage.removeItem('access_token')
+          localStorage.removeItem('refresh_token')
+          window.location.href = '/login'
         }
-      } catch (refreshError) {
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
-        window.location.href = '/login'
       }
     }
-
     return Promise.reject(error)
   }
 )

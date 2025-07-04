@@ -34,6 +34,11 @@ router = APIRouter(prefix="/api/telegram", tags=["Telegram Authentication"])
 TELEGRAM_API_ID = int(os.getenv("TELEGRAM_API_ID", "23697291"))
 TELEGRAM_API_HASH = os.getenv("TELEGRAM_API_HASH", "b3a10e33ef507e864ed7018df0495ca8")
 
+# Log configuration for debugging
+logger.info(f"Telegram API ID: {TELEGRAM_API_ID}")
+logger.info(f"Telegram API Hash: {TELEGRAM_API_HASH[:10]}...")
+logger.info(f"Redis available: {REDIS_AVAILABLE}")
+
 # Redis setup for session storage
 try:
     import redis
@@ -108,8 +113,32 @@ def delete_session_data(phone: str) -> None:
 async def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
     """Send OTP code using Telethon client."""
     try:
+        # Validate input
+        if not request.phone:
+            logger.error("Phone number is required")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Phone number is required"
+            )
+        
         phone = clean_phone_number(request.phone)
         logger.info(f"Sending OTP to phone: {phone}")
+        
+        # Validate phone number format
+        if len(phone) < 10 or not phone.startswith('+'):
+            logger.error(f"Invalid phone number format: {phone}")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid phone number format. Please include country code (e.g., +1234567890)"
+            )
+        
+        # Check API credentials
+        if not TELEGRAM_API_ID or not TELEGRAM_API_HASH:
+            logger.error("Telegram API credentials not configured")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Telegram API not configured"
+            )
         
         # Create new Telegram client
         client = TelegramClient(
@@ -120,6 +149,13 @@ async def send_otp(request: SendOTPRequest, db: Session = Depends(get_db)):
         
         await client.connect()
         logger.info(f"Telegram client connected for {phone}")
+        
+        if not client.is_connected():
+            logger.error("Failed to connect to Telegram")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to connect to Telegram servers"
+            )
         
         try:
             # Send code request

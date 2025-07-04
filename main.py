@@ -89,7 +89,7 @@ app.include_router(analytics.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(payments.router, prefix="/api")
 app.include_router(realtime.router, prefix="/api")
-app.include_router(telegram_auth_fixed.router)  # Fixed Telethon-based OTP system (primary)
+app.include_router(telegram_auth_production.router)  # Production Telethon-based OTP system
 # app.include_router(telegram_auth.router, prefix="/api")
 app.include_router(telegram_auth_simple.router, prefix="/api/telegram")  # Fallback endpoints
 app.include_router(accounts.router, prefix="/api")
